@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+    gateway:
+        container_name: '${GATEWAY_SERVICE_NAME}'
+        image: nginx:1.19.6-alpine
+        restart: always
+        depends_on:
+            - supportpal
+        environment:
+            WEB_CONTAINER: ${WEB_SERVICE_NAME}
+        volumes:
+            - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
+        ports:
+            - '${HTTP_REMOTE_PORT}:80'
+        networks:
+            - supportpal_frontend
+
+    supportpal:
+        container_name: '${WEB_SERVICE_NAME}'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web-buster'
+        depends_on:
+            - db
+            - redis
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            HOST: ${HOST}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+        networks:
+            - supportpal_frontend
+            - supportpal_backend
+        command: 'php-fpm'
+
+    db:
+        container_name: '${DATABASE_SERVICE_NAME}'
+        image: mysql:8.0.23
+        restart: always
+        environment:
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+            MYSQL_USER_FILE: /run/secrets/db_user
+            MYSQL_PASSWORD_FILE: /run/secrets/db_password
+        volumes:
+            - '${DB_VOLUME}:/var/lib/mysql'
+        networks:
+            - supportpal_backend
+        secrets:
+            - db_user
+            - db_password
+            - db_root_password
+
+    redis:
+        container_name: '${CACHE_SERVICE_NAME}'
+        restart: always
+        image: redis:6.0.9-alpine
+        command: redis-server --appendonly yes
+        volumes:
+            - '${CACHE_VOLUME}:/data'
+        networks:
+            - supportpal_backend
+
+    mailer:
+        container_name: ${MAILER_SERVICE_NAME}
+        image: namshi/smtp
+        restart: always
+        networks:
+            - supportpal_backend
+
+volumes:
+    supportpal_db:
+        external: true
+        name: ${DB_VOLUME}
+    supportpal_cache:
+        external: true
+        name: ${CACHE_VOLUME}
+
+networks:
+    supportpal_frontend:
+        name: supportpal_frontend
+    supportpal_backend:
+        name: supportpal_backend
+
+secrets:
+    db_user:
+        file: '${SECRETS_DIR}/db_user.txt'
+    db_password:
+        file: '${SECRETS_DIR}/db_password.txt'
+    db_root_password:
+        file: '${SECRETS_DIR}/db_root_password.txt'

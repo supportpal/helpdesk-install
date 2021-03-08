@@ -1,0 +1,10 @@
+option_settings:
+    aws:elasticbeanstalk:application:environment:
+        WEB_SERVICE_NAME: supportpal
+        CRON_SERVICE_NAME: supportpal_cron
+        APP_VERSION: 3.3.1
+        MAILER_SERVICE_NAME: mailer
+        CACHE_SERVICE_NAME: REDIS_AWS_ENDPOINT
+        REDIS_PORT: 6379
+        HOST: example.com
+        GATEWAY_SERVICE_NAME: gateway

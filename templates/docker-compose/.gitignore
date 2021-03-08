@@ -1,0 +1,8 @@
+/.env
+/create-self-signed.sh
+/init-letsencrypt.sh
+/postfix/
+/gateway/
+/secrets/
+/ssl/
+*.yml

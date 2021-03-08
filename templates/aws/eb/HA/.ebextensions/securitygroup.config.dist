@@ -1,0 +1,3 @@
+option_settings:
+  aws:autoscaling:launchconfiguration:
+    SecurityGroups: sg-XXXX, sg-YYYY, sg-ZZZZ

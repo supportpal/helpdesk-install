@@ -1,0 +1,9 @@
+#config files
+/gateway/
+/docker-compose.yml
+/docker-compose.override.yml
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

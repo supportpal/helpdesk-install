@@ -1,0 +1,7 @@
+commands:
+  01_create_ssl:
+    command: "mkdir -p /supportpal/ssl"
+
+container_commands:
+    01_create_ssl_certificate:
+        command: "sh init-letsencrypt.sh && rm init-letsencrypt.sh"

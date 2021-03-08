@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+    gateway:
+        volumes:
+            - ./gateway/nginx-https.conf:/etc/nginx/templates/default.conf.template
+            - ./ssl/certbot/conf:/etc/letsencrypt
+            - ./ssl/certbot/www:/var/www/certbot
+            - ./gateway/reload.sh:/docker-entrypoint.d/reload.sh
+        environment:
+            DOMAIN_NAME: ${DOMAIN_NAME}
+        ports:
+            - '${HTTPS_REMOTE_PORT}:443'
+
+    certbot:
+        container_name: certbot
+        image: certbot/certbot
+        restart: unless-stopped
+        volumes:
+            - ./ssl/certbot/conf:/etc/letsencrypt
+            - ./ssl/certbot/www:/var/www/certbot
+        entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"

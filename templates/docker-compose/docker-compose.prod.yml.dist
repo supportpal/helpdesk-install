@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+    gateway:
+        volumes:
+            - supportpal_resources:/supportpal/resources:ro
+            - supportpal_app:/supportpal/app:ro
+
+    supportpal:
+        volumes:
+            - supportpal_resources:/supportpal/resources
+            - supportpal_app:/supportpal/app
+            - '${CONFIG_VOLUME}:/supportpal/config/production'
+            - '${STORAGE_VOLUME}:/supportpal/storage'
+
+    supportpal_cron:
+        container_name: '${CRON_SERVICE_NAME}'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron-buster'
+        depends_on:
+            - db
+            - redis
+            - mailer
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            HOST: ${HOST}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+        volumes:
+            - supportpal_resources:/supportpal/resources
+            - supportpal_app:/supportpal/app
+            - '${CONFIG_VOLUME}:/supportpal/config/production'
+            - '${STORAGE_VOLUME}:/supportpal/storage'
+        networks:
+            - supportpal_frontend
+            - supportpal_backend
+        secrets:
+            - db_user
+            - db_password
+        command: 'bash -c "service cron start && tail -f /var/log/cron.log"'
+
+    mailer:
+        volumes:
+            - '${MAILER_VOLUME}:/var/spool/exim4'
+
+volumes:
+    supportpal_resources:
+    supportpal_app:
+    supportpal_mailer:
+        external: true
+        name: ${MAILER_VOLUME}
+    supportpal_config:
+        external: true
+        name: ${CONFIG_VOLUME}
+    supportpal_storage:
+        external: true
+        name: ${STORAGE_VOLUME}
