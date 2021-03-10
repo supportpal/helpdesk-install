@@ -106,6 +106,17 @@ identify_os() {
   fi
 }
 
+backup() {
+  if [[ -e "$1" ]]; then
+    i=1
+    while [[ -e "$1.old_$i" || -L "$1.old_$i" ]] ; do
+        (( i++ ))
+    done
+
+    cp "$1" "$1.old_$i"
+  fi
+}
+
 install() {
   if [[ $os_type = 'rhel' ]]; then
     yum install -y "$@"
@@ -134,6 +145,8 @@ install_apache() {
     systemctl start httpd && systemctl enable httpd.service
     firewall-cmd --add-service=http --permanent && firewall-cmd --reload
 
+    backup /etc/httpd/conf/httpd.conf
+
     sed 's/DirectoryIndex index\.html/DirectoryIndex index\.php index\.html/' -i -- /etc/httpd/conf/httpd.conf
     sed 's/AllowOverride None/AllowOverride All/' -i -- /etc/httpd/conf/httpd.conf
 
@@ -144,6 +157,9 @@ install_apache() {
     install apache2
 
     a2enmod rewrite
+
+    backup /etc/apache2/sites-available/000-default.conf
+
     sed '/DocumentRoot \/var\/www\/html/r'<(
         echo -e "\t<Directory \"/var/www/html\">"
         echo -e "\t    AllowOverride All"
@@ -182,8 +198,15 @@ install_php() {
 
   if [[ $os_type = 'debian' ]]; then
     apt-get -y install apt-transport-https lsb-release ca-certificates curl gnupg2
-    curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
-    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
+
+    GPG_PATH="/etc/apt/trusted.gpg.d/php.gpg"
+    backup "$GPG_PATH"
+    curl -o "$GPG_PATH" https://packages.sury.org/php/apt.gpg
+
+    APT_SOURCES_PATH="/etc/apt/sources.list.d/php.list"
+    backup "$APT_SOURCES_PATH"
+    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > "$APT_SOURCES_PATH"
+
     apt-get update
     apt-get install -y "libapache2-mod-php${php_version}" "php${php_version}" "php${php_version}-dom" "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
   fi
@@ -209,13 +232,20 @@ install_ioncube() {
   cp "ioncube/ioncube_loader_lin_${php_version}.so" "${PHP_EXT_DIR}"
 
   if [[ $os_type = 'rhel' ]]; then
-    echo "$IONCUBE_EXT" > "/etc/opt/remi/php${php_version}/php.d/00-ioncube.ini"
+    INI_PATH="/etc/opt/remi/php${php_version}/php.d/00-ioncube.ini"
+    backup "$INI_PATH"
+    echo "$IONCUBE_EXT" > "$INI_PATH"
 
     systemctl restart httpd
   fi
 
   if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
-    echo "$IONCUBE_EXT" > "/etc/php/${php_version}/apache2/conf.d/00-ioncube.ini"
+    INI_PATH="/etc/php/${php_version}/apache2/conf.d/00-ioncube.ini"
+    backup "$INI_PATH"
+    echo "$IONCUBE_EXT" > "$INI_PATH"
+
+    INI_PATH="/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
+    backup "$INI_PATH"
     echo "$IONCUBE_EXT" > "/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
 
     service apache2 restart
@@ -225,6 +255,10 @@ install_ioncube() {
 }
 
 install_supportpal() {
+  if [ -n "$(ls -A /var/www/html)" ]; then
+    error "Unable to install SupportPal, /var/www/html already contains files. Please ensure the directory is empty."
+  fi
+
   install jq unzip
   SP_VERSION=$(curl -s https://licensing.supportpal.com/api/version/latest.json | jq -r ".version")
   curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /var/www/html/supportpal.zip
