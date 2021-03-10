@@ -32,7 +32,7 @@ os_type=
 # os_version as demanded by the OS (codename, major release, etc.)
 os_version=
 # php version to install
-php_version='74'
+php_version=
 
 identify_os() {
   arch=$(uname -m)
@@ -40,6 +40,7 @@ identify_os() {
   if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]
   then
     os_type=rhel
+    php_version='74'
     el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
       5*) os_version=5 ; error "RHEL/CentOS 5 is no longer supported" "$supported" ;;
@@ -55,6 +56,7 @@ identify_os() {
     case $ID in
       debian)
         os_type=debian
+        php_version='7.4'
         debian_version=$(< /etc/debian_version)
         case $debian_version in
           9*) os_version=stretch ;;
@@ -64,6 +66,7 @@ identify_os() {
         ;;
       ubuntu)
         os_type=ubuntu
+        php_version='74'
         . /etc/lsb-release
         os_version=$DISTRIB_CODENAME
         case $os_version in
@@ -94,11 +97,11 @@ identify_os() {
 
 install() {
   if [[ $os_type = 'rhel' ]]; then
-    yum install -y "$1"
+    yum install -y "$@"
   fi
 
   if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
-    apt-get install -y "$1"
+    apt-get install -y "$@"
   fi
 }
 
@@ -113,6 +116,8 @@ update() {
 }
 
 install_apache() {
+  echo "Installing Apache2..."
+
   if [[ $os_type = 'rhel' ]]; then
     install httpd
     systemctl start httpd && systemctl enable httpd.service
@@ -120,6 +125,8 @@ install_apache() {
 
     sed 's/DirectoryIndex index\.html/DirectoryIndex index\.php index\.html/' -i -- /etc/httpd/conf/httpd.conf
     sed 's/AllowOverride None/AllowOverride All/' -i -- /etc/httpd/conf/httpd.conf
+
+    systemctl restart httpd
   fi
 
   if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
@@ -131,33 +138,49 @@ install_apache() {
         echo -e "\t    AllowOverride All"
         echo -e "\t</Directory>"
     ) -i -- /etc/apache2/sites-available/000-default.conf
+
+    service apache2 restart
   fi
 }
 
 install_mariadb() {
-  install "ca-certificates curl"
+  echo "Installing MariaDB..."
+
+  install ca-certificates curl
   if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
     install apt-transport-https
   fi
 
-  curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+  curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
 
-  install "mariadb-server mariadb-client"
+  install mariadb-server mariadb-client
+
+  service mariadb start
 
   mariadb-secure-installation
 }
 
 install_php() {
+  echo "Installing PHP..."
+
   if [[ $os_type = 'rhel' ]]; then
     yum install -y epel-release
     yum -y install "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
-    yum -y -enablerepo=remi install "php${php_version}-mod_php php${php_version} php${php_version}-php-bcmath php${php_version}-php-gd php${php_version}-php-mbstring php${php_version}-php-mysql php${php_version}-php-xml php${php_version}-php-imap php${php_version}-php-ldap"
+    yum -y -enablerepo=remi install "php${php_version}-mod_php" "php${php_version}" "php${php_version}-php-bcmath" "php${php_version}-php-gd" "php${php_version}-php-mbstring" "php${php_version}-php-mysql" "php${php_version}-php-xml" "php${php_version}-php-imap" "php${php_version}-php-ldap"
   fi
 
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
-    apt-get install -y software-properties-common
+  if [[ $os_type = 'debian' ]]; then
+    apt-get -y install apt-transport-https lsb-release ca-certificates curl gnupg2
+    curl -o /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
+    apt-get update
+    apt-get install -y "libapache2-mod-php${php_version}" "php${php_version}" "php${php_version}-dom" "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
+  fi
+
+  if [[ $os_type = 'ubuntu' ]]; then
+    apt-get install -y software-properties-common gnupg2
     add-apt-repository ppa:ondrej/php -y && apt-get update -y
-    apt-get install -y "libapache2-mod-php${php_version} php${php_version} php${php_version}-dom php${php_version}-gd php${php_version}-mbstring php${php_version}-mysql php${php_version}-xml php${php_version}-curl php${php_version}-bcmath php${php_version}-ldap php${php_version}-imap"
+    apt-get install -y "libapache2-mod-php${php_version}" "php${php_version}" "php${php_version}-dom" "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
   fi
 
   install_ioncube
@@ -176,26 +199,34 @@ install_ioncube() {
 
   if [[ $os_type = 'rhel' ]]; then
     echo "$IONCUBE_EXT" > "/etc/opt/remi/php${php_version}/php.d/00-ioncube.ini"
+
+    systemctl restart httpd
   fi
 
   if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
     echo "$IONCUBE_EXT" > "/etc/php/${php_version}/apache2/conf.d/00-ioncube.ini"
     echo "$IONCUBE_EXT" > "/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
+
+    service apache2 restart
   fi
 
   rm -rf ioncube*
-
-  # todo restart apache
 }
 
 install_supportpal() {
-  apt-get install jq unzip -y
+  install jq unzip
   SP_VERSION=$(curl -s https://licensing.supportpal.com/api/version/latest.json | jq -r ".version")
   curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /var/www/html/supportpal.zip
   unzip /var/www/html/supportpal.zip -d /var/www/html
   chown -R www-data:www-data /var/www/html
 }
 
+identify_os
+if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+  export DEBIAN_FRONTEND=noninteractive
+fi
+
+update
 install_apache
 install_mariadb
 install_php
