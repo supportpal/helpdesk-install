@@ -128,12 +128,8 @@ install() {
 }
 
 update() {
-  if [[ $os_type = 'rhel' ]]; then
-    yum update
-  fi
-
   if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
-    apt-get update
+    apt-get update -y
   fi
 }
 
