@@ -8,7 +8,7 @@ supported="The following Linux OSs are supported, on x86_64 only:
     * Ubuntu 16.04 LTS (xenial), 18.04 LTS (bionic), & 20.04 LTS (focal)
     * Debian 9 (stretch) & 10 (buster)"
 
-usage="Usage: curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash
 
 $supported
 
