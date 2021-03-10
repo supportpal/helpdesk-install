@@ -230,6 +230,12 @@ install_supportpal() {
   curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /var/www/html/supportpal.zip
   unzip /var/www/html/supportpal.zip -d /var/www/html
   chown -R www-data:www-data /var/www/html
+
+  if [[ $os_type = 'rhel' ]]; then
+    chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/bootstrap/cache/
+    chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/config/
+    chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/storage/
+  fi
 }
 
 identify_os
