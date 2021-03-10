@@ -27,7 +27,7 @@ os_type=
 # os_version as demanded by the OS (codename, major release, etc.)
 os_version=
 # php version to install
-php_version=
+php_version='7.4'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -56,7 +56,6 @@ identify_os() {
   if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]
   then
     os_type=rhel
-    php_version='74'
     el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
       5*) os_version=5 ; error "RHEL/CentOS 5 is no longer supported" "$supported" ;;
@@ -72,7 +71,6 @@ identify_os() {
     case $ID in
       debian)
         os_type=debian
-        php_version='7.4'
         debian_version=$(< /etc/debian_version)
         case $debian_version in
           9*) os_version=stretch ;;
@@ -82,7 +80,6 @@ identify_os() {
         ;;
       ubuntu)
         os_type=ubuntu
-        php_version='74'
         . /etc/lsb-release
         os_version=$DISTRIB_CODENAME
         case $os_version in
@@ -208,10 +205,16 @@ install_mysql() {
 install_php() {
   msg "info" "Installing PHP..."
 
+  # Remove . from php_version
+  local stripped_version=${php_version//\./}
+
   if [[ $os_type = 'rhel' ]]; then
     yum install -y epel-release
     yum -y install "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
-    yum -y --enablerepo=remi install "php${php_version}-mod_php" "php${php_version}" "php${php_version}-php-bcmath" "php${php_version}-php-gd" "php${php_version}-php-mbstring" "php${php_version}-php-mysql" "php${php_version}-php-xml" "php${php_version}-php-imap" "php${php_version}-php-ldap"
+    yum -y --enablerepo=remi install "php${stripped_version}-mod_php" \
+      "php${stripped_version}" "php${stripped_version}-php-bcmath" "php${stripped_version}-php-gd" \
+      "php${stripped_version}-php-mbstring" "php${stripped_version}-php-mysql" "php${stripped_version}-php-xml" \
+      "php${stripped_version}-php-imap" "php${stripped_version}-php-ldap"
   fi
 
   if [[ $os_type = 'debian' ]]; then
@@ -226,13 +229,18 @@ install_php() {
     echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > "$APT_SOURCES_PATH"
 
     apt-get update
-    apt-get install -y "libapache2-mod-php${php_version}" "php${php_version}" "php${php_version}-dom" "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
+    apt-get install -y "libapache2-mod-php${php_version}" "php${php_version}" "php${php_version}-dom" \
+      "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
+      "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
   fi
 
   if [[ $os_type = 'ubuntu' ]]; then
     apt-get install -y software-properties-common gnupg2
     add-apt-repository ppa:ondrej/php -y && apt-get update -y
-    apt-get install -y "libapache2-mod-php${php_version}" "php${php_version}" "php${php_version}-dom" "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
+    apt-get install -y "libapache2-mod-php${stripped_version}" "php${stripped_version}" "php${stripped_version}-dom" \
+      "php${stripped_version}-gd" "php${stripped_version}-mbstring" "php${stripped_version}-mysql" \
+      "php${stripped_version}-xml" "php${stripped_version}-curl" "php${stripped_version}-bcmath" \
+      "php${stripped_version}-ldap" "php${stripped_version}-imap"
   fi
 
   install_ioncube
