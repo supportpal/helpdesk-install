@@ -153,7 +153,7 @@ install_apache() {
 
   if [[ $os_type = 'rhel' ]]; then
     install httpd firewalld
-    systemctl start httpd && systemctl enable httpd.service
+    systemctl restart httpd && systemctl enable httpd.service
     firewall-cmd --add-service=http --permanent && firewall-cmd --reload
 
     backup /etc/httpd/conf/httpd.conf
@@ -188,6 +188,7 @@ install_mysql() {
     if (( os_version == 7 )); then
       yum install -y https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
     fi
+
     if (( os_version == 8 )); then
       yum install -y https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
       yum module disable mysql
