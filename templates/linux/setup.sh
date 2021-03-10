@@ -247,7 +247,7 @@ install_php() {
 
 install_ioncube() {
   # Get PHP extension directory.
-  PHP_EXT_DIR=$(php -i | grep extension_dir | awk -F '=> ' '{print $3}')
+  PHP_EXT_DIR=$(php -i | grep ^extension_dir | awk -F '=> ' '{print $3}')
   [[ "${PHP_EXT_DIR}" != */ ]] && PHP_EXT_DIR="${PHP_EXT_DIR}/"
 
   # Install Ioncube Loaders
