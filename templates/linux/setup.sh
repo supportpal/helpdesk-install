@@ -137,7 +137,7 @@ install_apache() {
   msg "info" "Installing Apache2..."
 
   if [[ $os_type = 'rhel' ]]; then
-    install httpd
+    install httpd firewalld
     systemctl start httpd && systemctl enable httpd.service
     firewall-cmd --add-service=http --permanent && firewall-cmd --reload
 
