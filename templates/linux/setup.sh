@@ -135,6 +135,12 @@ update() {
   fi
 }
 
+install_rpm() {
+  set +e
+  yum install -y "$@"
+  set -e
+}
+
 setup() {
   # Allow us to test this script in docker, not intended for production use.
   if (( is_docker == 1)); then
@@ -186,11 +192,11 @@ install_mysql() {
 
   if [[ $os_type = 'rhel' ]]; then
     if (( os_version == 7 )); then
-      yum install -y https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+      install_rpm https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
     fi
 
     if (( os_version == 8 )); then
-      yum install -y https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
+      install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
       yum module disable mysql
     fi
   fi
@@ -211,7 +217,7 @@ install_php() {
 
   if [[ $os_type = 'rhel' ]]; then
     yum install -y epel-release yum-utils
-    yum -y reinstall "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
+    install_rpm "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
     yum-config-manager --enable remi-php74
     yum -y --enablerepo=remi install php-mod_php php \
       php-bcmath php-gd  php-mbstring php-mysql php-xml php-imap php-ldap
