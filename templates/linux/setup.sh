@@ -291,12 +291,17 @@ install_supportpal() {
   SP_VERSION=$(curl -s https://licensing.supportpal.com/api/version/latest.json | jq -r ".version")
   curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /var/www/html/supportpal.zip
   unzip /var/www/html/supportpal.zip -d /var/www/html
-  chown -R www-data:www-data /var/www/html
 
   if [[ $os_type = 'rhel' ]]; then
+    chown -R apache:apache /var/www/html
+
     chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/bootstrap/cache/
     chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/config/
     chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/storage/
+  fi
+
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    chown -R www-data:www-data /var/www/html
   fi
 }
 
