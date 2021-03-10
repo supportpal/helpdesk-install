@@ -34,6 +34,17 @@ os_version=
 # php version to install
 php_version=
 
+msg(){
+    type=$1 #${1^^}
+    shift
+    printf "[$type] %s\n" "$@" >&2
+}
+
+error(){
+    msg error "$@"
+    exit 1
+}
+
 identify_os() {
   arch=$(uname -m)
   # Check for RHEL/CentOS, Fedora, etc.
@@ -116,7 +127,7 @@ update() {
 }
 
 install_apache() {
-  echo "Installing Apache2..."
+  msg "info" "Installing Apache2..."
 
   if [[ $os_type = 'rhel' ]]; then
     install httpd
@@ -144,7 +155,7 @@ install_apache() {
 }
 
 install_mariadb() {
-  echo "Installing MariaDB..."
+  msg "info" "Installing MariaDB..."
 
   install ca-certificates curl
   if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
@@ -161,7 +172,7 @@ install_mariadb() {
 }
 
 install_php() {
-  echo "Installing PHP..."
+  msg "info" "Installing PHP..."
 
   if [[ $os_type = 'rhel' ]]; then
     yum install -y epel-release
