@@ -209,12 +209,11 @@ install_php() {
   local stripped_version=${php_version//\./}
 
   if [[ $os_type = 'rhel' ]]; then
-    yum install -y epel-release
-    yum -y install "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
-    yum -y --enablerepo=remi install "php${stripped_version}-mod_php" \
-      "php${stripped_version}" "php${stripped_version}-php-bcmath" "php${stripped_version}-php-gd" \
-      "php${stripped_version}-php-mbstring" "php${stripped_version}-php-mysql" "php${stripped_version}-php-xml" \
-      "php${stripped_version}-php-imap" "php${stripped_version}-php-ldap"
+    yum install -y epel-release yum-utils
+    yum -y reinstall "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
+    yum-config-manager --enable remi-php74
+    yum -y --enablerepo=remi install php-mod_php php \
+      php-bcmath php-gd  php-mbstring php-mysql php-xml php-imap php-ldap
   fi
 
   if [[ $os_type = 'debian' ]]; then
@@ -258,7 +257,10 @@ install_ioncube() {
   cp "ioncube/ioncube_loader_lin_${php_version}.so" "${PHP_EXT_DIR}"
 
   if [[ $os_type = 'rhel' ]]; then
-    INI_PATH="/etc/opt/remi/php${php_version}/php.d/00-ioncube.ini"
+    # Remove . from php_version
+    local stripped_version=${php_version//\./}
+
+    INI_PATH="/etc/php.d/00-ioncube.ini"
     backup "$INI_PATH"
     echo "$IONCUBE_EXT" > "$INI_PATH"
 
