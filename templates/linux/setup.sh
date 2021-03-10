@@ -16,23 +16,28 @@ Options:
     --help                  Display this help and exit.
 
     --version               Output the script version and exit.
+
+    --docker                Replaces systemctl to all script to run inside docker containers.
 "
 
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    --version) echo "$version"; exit 0 ;;
-    --help) echo "$usage"; exit 0 ;;
-    *) echo "Unknown parameter passed: $1"; exit 1 ;;
-  esac
-  shift
-done
-
+# whether running in docker container
+is_docker=
 # os_type = ubuntu, debian, rhel, sles
 os_type=
 # os_version as demanded by the OS (codename, major release, etc.)
 os_version=
 # php version to install
 php_version=
+
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --version) echo "$version"; exit 0 ;;
+    --help) echo "$usage"; exit 0 ;;
+    --docker) is_docker=1 ;;
+    *) echo "Unknown parameter passed: $1"; exit 1 ;;
+  esac
+  shift
+done
 
 msg(){
     type=$1 #${1^^}
@@ -133,6 +138,19 @@ update() {
   fi
 }
 
+setup() {
+  # Allow us to test this script in docker, not intended for production use.
+  if (( is_docker == 1)); then
+    install curl python3 which
+    SYSTEMCTL=$(which systemctl)
+    curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
+  fi
+
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    export DEBIAN_FRONTEND=noninteractive
+  fi
+}
+
 install_apache() {
   msg "info" "Installing Apache2..."
 
@@ -166,21 +184,25 @@ install_apache() {
   fi
 }
 
-install_mariadb() {
-  msg "info" "Installing MariaDB..."
+install_mysql() {
+  msg "info" "Installing MySQL..."
 
-  install ca-certificates curl
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
-    install apt-transport-https
+  if [[ $os_type = 'rhel' ]]; then
+    if (( os_version == 7 )); then
+      yum install -y https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+    fi
+    if (( os_version == 8 )); then
+      yum install -y https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
+      yum module disable mysql
+    fi
   fi
 
-  curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    apt-get install https://repo.mysql.com//mysql-apt-config_0.8.13-1_all.deb
+    apt-get update
+  fi
 
-  install mariadb-server mariadb-client
-
-  service mariadb start
-
-  mariadb-secure-installation
+  install mysql-community-server
 }
 
 install_php() {
@@ -189,7 +211,7 @@ install_php() {
   if [[ $os_type = 'rhel' ]]; then
     yum install -y epel-release
     yum -y install "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
-    yum -y -enablerepo=remi install "php${php_version}-mod_php" "php${php_version}" "php${php_version}-php-bcmath" "php${php_version}-php-gd" "php${php_version}-php-mbstring" "php${php_version}-php-mysql" "php${php_version}-php-xml" "php${php_version}-php-imap" "php${php_version}-php-ldap"
+    yum -y --enablerepo=remi install "php${php_version}-mod_php" "php${php_version}" "php${php_version}-php-bcmath" "php${php_version}-php-gd" "php${php_version}-php-mbstring" "php${php_version}-php-mysql" "php${php_version}-php-xml" "php${php_version}-php-imap" "php${php_version}-php-ldap"
   fi
 
   if [[ $os_type = 'debian' ]]; then
@@ -269,12 +291,10 @@ install_supportpal() {
 }
 
 identify_os
-if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
-  export DEBIAN_FRONTEND=noninteractive
-fi
+setup
 
 update
 install_apache
-install_mariadb
+install_mysql
 install_php
 install_supportpal
