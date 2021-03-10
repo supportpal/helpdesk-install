@@ -1,6 +1,6 @@
-# SupportPal Docker Templates
+# SupportPal Installation Templates
 
-This repository contains templates to get started using SupportPal with Docker.
+This repository contains templates to get started using SupportPal.
 
 ## Docker Compose
 
@@ -20,3 +20,7 @@ This [directory](templates/aws/eb/Single) contains a production ready [template]
 ### High Availability
 
 This [directory](templates/aws/eb/HA) contains a production ready [template](templates/aws/eb/HA/README.md) intended for high availability deployments.
+
+## Linux
+
+A [convenience script](https://docs.supportpal.com/current/Deploy+on+Linux) to install and configure system on supported Linux operating systems.

@@ -1,0 +1,202 @@
+#!/bin/bash
+set -e
+
+version="0.0.1"
+
+supported="The following Linux OSs are supported, on x86_64 only:
+    * RHEL/CentOS 7 & 8 (rhel)
+    * Ubuntu 16.04 LTS (xenial), 18.04 LTS (bionic), & 20.04 LTS (focal)
+    * Debian 9 (stretch) & 10 (buster)"
+
+usage="Usage: curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+
+$supported
+
+Options:
+    --help                  Display this help and exit.
+
+    --version               Output the script version and exit.
+"
+
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+    --version) echo "$version"; exit 0 ;;
+    --help) echo "$usage"; exit 0 ;;
+    *) echo "Unknown parameter passed: $1"; exit 1 ;;
+  esac
+  shift
+done
+
+# os_type = ubuntu, debian, rhel, sles
+os_type=
+# os_version as demanded by the OS (codename, major release, etc.)
+os_version=
+# php version to install
+php_version='74'
+
+identify_os() {
+  arch=$(uname -m)
+  # Check for RHEL/CentOS, Fedora, etc.
+  if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]
+  then
+    os_type=rhel
+    el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
+    case $el_version in
+      5*) os_version=5 ; error "RHEL/CentOS 5 is no longer supported" "$supported" ;;
+      6*) os_version=6 ; error "RHEL/CentOS 6 is no longer supported" "$supported" ;;
+      7*) os_version=7 ;;
+      8*) os_version=8 ;;
+       *) error "Detected RHEL or compatible but version ($el_version) is not supported." "$supported" ;;
+    esac
+  elif [[ -e /etc/os-release ]]
+  then
+    . /etc/os-release
+    # Is it Debian?
+    case $ID in
+      debian)
+        os_type=debian
+        debian_version=$(< /etc/debian_version)
+        case $debian_version in
+          9*) os_version=stretch ;;
+          10*) os_version=buster ;;
+           *) error "Detected Debian but version ($debian_version) is not supported." "$supported" ;;
+        esac
+        ;;
+      ubuntu)
+        os_type=ubuntu
+        . /etc/lsb-release
+        os_version=$DISTRIB_CODENAME
+        case $os_version in
+          precise ) error 'Ubuntu version 12.04 LTS has reached End of Life and is no longer supported.' ;;
+          trusty ) error 'Ubuntu version 14.04 LTS has reached End of Life and is no longer supported.' ;;
+          xenial ) ;;
+          bionic ) ;;
+          focal ) ;;
+          *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
+        esac
+        if [[ $arch == aarch64 ]]
+        then
+          case $os_version in
+            xenial ) ;;
+            bionic ) ;;
+            focal ) ;;
+            *) error "Only Ubuntu 16/xenial, 18/bionic, and 20/focal are supported for ARM64. Detected version: '$os_version'" ;;
+          esac
+        fi
+        ;;
+    esac
+  fi
+  if ! [[ $os_type ]] || ! [[ $os_version ]]
+  then
+    error "Unsupported operating system." "$supported"
+  fi
+}
+
+install() {
+  if [[ $os_type = 'rhel' ]]; then
+    yum install -y "$1"
+  fi
+
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    apt-get install -y "$1"
+  fi
+}
+
+update() {
+  if [[ $os_type = 'rhel' ]]; then
+    yum update
+  fi
+
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    apt-get update
+  fi
+}
+
+install_apache() {
+  if [[ $os_type = 'rhel' ]]; then
+    install httpd
+    systemctl start httpd && systemctl enable httpd.service
+    firewall-cmd --add-service=http --permanent && firewall-cmd --reload
+
+    sed 's/DirectoryIndex index\.html/DirectoryIndex index\.php index\.html/' -i -- /etc/httpd/conf/httpd.conf
+    sed 's/AllowOverride None/AllowOverride All/' -i -- /etc/httpd/conf/httpd.conf
+  fi
+
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    install apache2
+
+    a2enmod rewrite
+    sed '/DocumentRoot \/var\/www\/html/r'<(
+        echo -e "\t<Directory \"/var/www/html\">"
+        echo -e "\t    AllowOverride All"
+        echo -e "\t</Directory>"
+    ) -i -- /etc/apache2/sites-available/000-default.conf
+  fi
+}
+
+install_mariadb() {
+  install "ca-certificates curl"
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    install apt-transport-https
+  fi
+
+  curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash
+
+  install "mariadb-server mariadb-client"
+
+  mariadb-secure-installation
+}
+
+install_php() {
+  if [[ $os_type = 'rhel' ]]; then
+    yum install -y epel-release
+    yum -y install "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
+    yum -y -enablerepo=remi install "php${php_version}-mod_php php${php_version} php${php_version}-php-bcmath php${php_version}-php-gd php${php_version}-php-mbstring php${php_version}-php-mysql php${php_version}-php-xml php${php_version}-php-imap php${php_version}-php-ldap"
+  fi
+
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    apt-get install -y software-properties-common
+    add-apt-repository ppa:ondrej/php -y && apt-get update -y
+    apt-get install -y "libapache2-mod-php${php_version} php${php_version} php${php_version}-dom php${php_version}-gd php${php_version}-mbstring php${php_version}-mysql php${php_version}-xml php${php_version}-curl php${php_version}-bcmath php${php_version}-ldap php${php_version}-imap"
+  fi
+
+  install_ioncube
+}
+
+install_ioncube() {
+  # Get PHP extension directory.
+  PHP_EXT_DIR=$(php -i | grep extension_dir | awk -F '=> ' '{print $3}')
+  [[ "${PHP_EXT_DIR}" != */ ]] && PHP_EXT_DIR="${PHP_EXT_DIR}/"
+
+  # Install Ioncube Loaders
+  IONCUBE_EXT="zend_extension = "${PHP_EXT_DIR}ioncube_loader_lin_${php_version}.so""
+  curl -O http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
+  tar xvfz ioncube_loaders_lin_x86-64.tar.gz
+  cp "ioncube/ioncube_loader_lin_${php_version}.so" "${PHP_EXT_DIR}"
+
+  if [[ $os_type = 'rhel' ]]; then
+    echo "$IONCUBE_EXT" > "/etc/opt/remi/php${php_version}/php.d/00-ioncube.ini"
+  fi
+
+  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+    echo "$IONCUBE_EXT" > "/etc/php/${php_version}/apache2/conf.d/00-ioncube.ini"
+    echo "$IONCUBE_EXT" > "/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
+  fi
+
+  rm -rf ioncube*
+
+  # todo restart apache
+}
+
+install_supportpal() {
+  apt-get install jq unzip -y
+  SP_VERSION=$(curl -s https://licensing.supportpal.com/api/version/latest.json | jq -r ".version")
+  curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /var/www/html/supportpal.zip
+  unzip /var/www/html/supportpal.zip -d /var/www/html
+  chown -R www-data:www-data /var/www/html
+}
+
+install_apache
+install_mariadb
+install_php
+install_supportpal
