@@ -195,6 +195,8 @@ setup() {
 #
 
 configure_php_fpm() {
+  mkdir -p "$(dirname "$socket_path")" && touch "$socket_path"
+
   echo "[supportpal]
 
 listen = ${socket_path}
@@ -254,6 +256,9 @@ install_php_deb() {
   apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
     "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
     "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
+
+  configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
+  systemd start "php${php_version}-fpm"
 }
 
 install_php_ubuntu() {
