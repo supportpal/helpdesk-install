@@ -258,24 +258,11 @@ install_php_deb() {
   echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >"$APT_SOURCES_PATH"
 
   apt-get update
-  apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
-    "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
-    "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
-
-  configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
-  systemd start "php${php_version}-fpm"
 }
 
 install_php_ubuntu() {
-  # Remove . from php_version
-  local stripped_version=${php_version//\./}
-
   apt-get install -y software-properties-common gnupg2
-  add-apt-repository ppa:ondrej/php -y && apt-get update -y
-  apt-get install -y "php${stripped_version}" "php${stripped_version}-fpm" "php${stripped_version}-dom" \
-    "php${stripped_version}-gd" "php${stripped_version}-mbstring" "php${stripped_version}-mysql" \
-    "php${stripped_version}-xml" "php${stripped_version}-curl" "php${stripped_version}-bcmath" \
-    "php${stripped_version}-ldap" "php${stripped_version}-imap"
+  LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php -y && apt-get update -y
 }
 
 install_php() {
@@ -283,10 +270,19 @@ install_php() {
 
   if [[ $os_type == 'rhel' ]]; then
     install_php_rhel
-  elif [[ $os_type == 'debian' ]]; then
-    install_php_deb
-  elif [[ $os_type == 'ubuntu' ]]; then
-    install_php_ubuntu
+  elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    if [[ $os_type == 'debian' ]]; then
+      install_php_deb
+    elif [[ $os_type == 'ubuntu' ]]; then
+      install_php_ubuntu
+    fi
+
+    apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
+    "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
+    "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
+
+    configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
+    systemd start "php${php_version}-fpm"
   fi
 
   install_ioncube
@@ -298,6 +294,7 @@ install_ioncube() {
   [[ "${PHP_EXT_DIR}" != */ ]] && PHP_EXT_DIR="${PHP_EXT_DIR}/"
 
   # Install Ioncube Loaders
+  install curl
   IONCUBE_EXT="zend_extension = "${PHP_EXT_DIR}ioncube_loader_lin_${php_version}.so""
   curl -O http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
   tar xvfz ioncube_loaders_lin_x86-64.tar.gz
