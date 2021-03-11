@@ -421,19 +421,29 @@ install_mysql() {
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    apt-get install https://repo.mysql.com//mysql-apt-config_0.8.13-1_all.deb
-    apt-get update
+    install wget debconf-utils curl
+    debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-product select Ok"
+    debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
+    debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
+
+    curl -O https://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb
+    dpkg -i mysql-apt-config_0.8.13-1_all.deb && apt-get update
   fi
 
-  install mysql-community-server
-
   if [[ $os_type == 'rhel' ]]; then
+    install mysql-community-server
     systemd restart mysqld
 
     TMP_PASS=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
     mysql --connect-expired-password -u"root" -p"$TMP_PASS" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$root_password';"
-    mysql -u"root" -p"$root_password" -e "CREATE DATABASE ${database}; CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password'; GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost'; FLUSH PRIVILEGES;"
   fi
+
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    install mysql-server
+    systemd restart mysql
+  fi
+
+  mysql -u"root" -p"$root_password" -e "CREATE DATABASE ${database}; CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password'; GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost'; FLUSH PRIVILEGES;"
 }
 
 install_supportpal() {
@@ -467,7 +477,7 @@ setup
 
 update
 install_apache
-#install_mysql
+install_mysql
 install_supportpal
 
 echo "######################################################################"
