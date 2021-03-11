@@ -17,7 +17,7 @@ Options:
 
     --version               Output the script version and exit.
 
-    --docker                Replaces systemctl to all script to run inside docker containers.
+    --docker                Use for testing purposes only; replaces systemd to allow testing in docker containers.
 "
 
 # whether running in docker container
@@ -484,6 +484,21 @@ install_supportpal() {
     chown -R www-data:www-data "${install_path}"
   fi
 }
+
+echo "######################################################################"
+echo
+echo "                  !!  Use at your own risk !!                         "
+echo
+echo " This script is intended to be used on a new server that has not "
+echo " been previously modified in any way."
+echo
+echo " Press CTRL+C to cancel if you're not sure if you want to proceed."
+echo
+echo "######################################################################"
+
+if ((is_docker == 0)); then
+  sleep 10
+fi
 
 identify_os
 setup
