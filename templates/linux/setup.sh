@@ -398,12 +398,16 @@ install_apache() {
 # Database
 #
 
+generate_password() {
+  openssl rand -base64 14
+}
+
 install_mysql() {
   msg "info" "Installing MySQL..."
 
   install openssl
-  root_password=$(openssl rand -base64 14)
-  user_password=$(openssl rand -base64 14)
+  root_password="$(generate_password)"
+  user_password="$(generate_password)"
 
   if [[ $os_type == 'rhel' ]]; then
     if ((os_version == 7)); then
