@@ -167,21 +167,29 @@ install_rpm() {
 }
 
 systemd() {
-  if [[ $os_type == 'rhel' ]]; then
-    # Allow us to test this script in docker, not intended for production use.
-    # We replace systemctl every time because sometimes the package manager updates systemd between calls.
-    if ((is_docker == 1)); then
-      install curl python3 which
-      SYSTEMCTL=$(which systemctl)
-      curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
+  msg "info" "issuing $1 of service: $2..."
+
+  # Allow us to test this script in docker, not intended for production use.
+  # We replace systemctl every time because sometimes the package manager updates systemd between calls.
+  if ((is_docker == 1)); then
+    if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+      install debconf-utils
+    elif [[ $os_type = 'rhel' ]]; then
+      install which
     fi
 
+    install curl python3
+    SYSTEMCTL=$(which systemctl || echo '/bin/systemctl')
+    curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
+    chmod +x "$SYSTEMCTL"
+    systemctl "$1" "$2"
+  elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    service "$2" "$1"
+  elif [[ $os_type = 'rhel' ]]; then
     systemctl "$1" "$2"
   fi
 
-  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    service "$2" "$1"
-  fi
+  msg "info" "issued $1 of service: $2"
 }
 
 setup() {
@@ -258,6 +266,9 @@ install_php_deb() {
   echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >"$APT_SOURCES_PATH"
 
   apt-get update
+
+  FPM_PATH='/run/php/php7.4-fpm.sock'
+  mkdir -p "$(dirname "$FPM_PATH")" && touch "$FPM_PATH"
 }
 
 install_php_ubuntu() {
@@ -421,13 +432,14 @@ install_mysql() {
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    install wget debconf-utils curl lsb-release
+    install wget debconf-utils lsb-release gnupg2
     debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-product select Ok"
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
 
-    curl -O https://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb
-    dpkg -i mysql-apt-config_0.8.13-1_all.deb && apt-get update
+    wget -O mysql-apt-config.deb https://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb
+    dpkg -i mysql-apt-config.deb && apt-get update
+    rm mysql-apt-config.deb
   fi
 
   if [[ $os_type == 'rhel' ]]; then
