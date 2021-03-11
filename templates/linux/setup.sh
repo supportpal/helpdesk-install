@@ -210,6 +210,11 @@ group = $1
 
 pm = ondemand
 pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
+pm.process_idle_timeout = 10s
+pm.max_requests = 500
 
 php_admin_value[error_log] = ${log_path}/php-fpm-error.log
 php_admin_value[log_errors] = on
