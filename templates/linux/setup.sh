@@ -300,6 +300,8 @@ install_ioncube() {
     INI_PATH="/etc/php.d/00-ioncube.ini"
     backup "$INI_PATH"
     echo "$IONCUBE_EXT" >"$INI_PATH"
+
+    systemd restart php-fpm
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
@@ -310,9 +312,10 @@ install_ioncube() {
     INI_PATH="/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
     backup "$INI_PATH"
     echo "$IONCUBE_EXT" >"$INI_PATH"
+
+    systemd restart "php${php_version}-fpm"
   fi
 
-  systemd restart php-fpm
   rm -rf ioncube*
 }
 
