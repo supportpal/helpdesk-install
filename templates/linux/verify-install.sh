@@ -2,7 +2,7 @@
 
 (
 	echo "INFO: Executing script!"
-	bash setup.sh
+	bash setup.sh --docker
 )
 
 if ! php --version; then
@@ -10,10 +10,15 @@ if ! php --version; then
 	exit 1
 fi
 
+if ! mysql -V; then
+  echo "ERROR: Did mysql get installed?"
+  exit 2
+fi
+
 curl -fSL -o /tmp/test.txt http://localhost/
 if ! grep -q "SupportPal" /tmp/test.txt; then
   echo "ERROR: SupportPal is not loading via HTTP"
-  exit 2
+  exit 3
 fi
 
 echo "INFO: Successfully verified!"
