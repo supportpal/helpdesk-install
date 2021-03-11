@@ -476,8 +476,8 @@ identify_os
 setup
 
 update
-install_apache
 install_mysql
+install_apache
 install_supportpal
 
 echo "######################################################################"
