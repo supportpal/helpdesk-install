@@ -180,7 +180,7 @@ systemd() {
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    service "$1" "$2"
+    service "$2" "$1"
   fi
 }
 
