@@ -1,0 +1,25 @@
+name: linux-install CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        os:
+          - centos:7
+          - centos:8
+          - ubuntu:16.04
+          - ubuntu:18.04
+          - ubuntu:20.04
+          - debian:9
+          - debian:10
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Shellcheck
+        run: make shellcheck
+      - name: Check distribution
+        run: TEST_IMAGE=${{ matrix.os }} make test
