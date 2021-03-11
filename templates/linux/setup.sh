@@ -303,13 +303,13 @@ install_ioncube() {
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    INI_PATH="/etc/php/${php_version}/apache2/conf.d/00-ioncube.ini"
+    INI_PATH="/etc/php/${php_version}/fpm/conf.d/00-ioncube.ini"
     backup "$INI_PATH"
     echo "$IONCUBE_EXT" >"$INI_PATH"
 
     INI_PATH="/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
     backup "$INI_PATH"
-    echo "$IONCUBE_EXT" >"/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
+    echo "$IONCUBE_EXT" >"$INI_PATH"
   fi
 
   systemd restart php-fpm
