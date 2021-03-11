@@ -266,9 +266,6 @@ install_php_deb() {
   echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >"$APT_SOURCES_PATH"
 
   apt-get update
-
-  FPM_PATH='/run/php/php7.4-fpm.sock'
-  mkdir -p "$(dirname "$FPM_PATH")" && touch "$FPM_PATH"
 }
 
 install_php_ubuntu() {
@@ -293,6 +290,10 @@ install_php() {
     "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
 
     configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
+
+    FPM_PATH='/run/php/php7.4-fpm.sock'
+    mkdir -p "$(dirname "$FPM_PATH")" && touch "$FPM_PATH"
+
     systemd start "php${php_version}-fpm"
   fi
 
