@@ -368,6 +368,7 @@ install_apache_deb() {
 
   write_vhost /etc/apache2/sites-available/supportpal.conf
   ln -s /etc/apache2/sites-available/supportpal.conf /etc/apache2/sites-enabled/supportpal.conf
+  unlink /etc/apache2/sites-enabled/000-default.conf
 
   systemd restart apache2
 }
