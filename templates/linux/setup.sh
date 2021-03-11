@@ -484,6 +484,8 @@ echo "######################################################################"
 echo
 echo " Successfully installed dependencies."
 echo
+echo "######################################################################"
+echo
 echo " You can now open your web browser and run the SupportPal installer."
 echo
 echo " Directories"
