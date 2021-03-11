@@ -2,6 +2,10 @@ name: linux-install CI
 
 on: [push, pull_request]
 
+defaults:
+  run:
+    working-directory: ./templates/linux
+
 jobs:
   test:
     runs-on: ubuntu-latest
