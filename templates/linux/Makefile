@@ -1,12 +1,13 @@
 TEST_IMAGE?=ubuntu:16.04
 
-VOLUME_MOUNTS=-v "$(CURDIR)":/v
+WORK_DIR="/supportpal"
+VOLUME_MOUNTS=-v "$(CURDIR):$(WORK_DIR)"
 
 .PHONY: shellcheck
 shellcheck: setup.sh
 	docker run --rm \
 		$(VOLUME_MOUNTS) \
-		-w /v \
+		-w $(WORK_DIR) \
 		koalaman/shellcheck \
 		$(addprefix -e, SC1091 SC1117) \
 		"$<"
@@ -15,7 +16,7 @@ shellcheck: setup.sh
 test: verify-install.sh
 	docker run --rm -i \
 		$(VOLUME_MOUNTS) \
-		-w /v \
+		-w $(WORK_DIR) \
 		-p 80:80 \
 		$(TEST_IMAGE) \
 		bash "$<"
