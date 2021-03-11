@@ -28,82 +28,101 @@ os_type=
 os_version=
 # php version to install
 php_version='7.4'
+# mysql authentication
+root_password=
+database='supportpal'
+username='supportpal'
+user_password=
+# php-fpm
+log_path='/var/log/supportpal'
+socket_path='/var/run/php-fpm/supportpal.sock'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
-    --version) echo "$version"; exit 0 ;;
-    --help) echo "$usage"; exit 0 ;;
-    --docker) is_docker=1 ;;
-    *) echo "Unknown parameter passed: $1"; exit 1 ;;
+  --version)
+    echo "$version"
+    exit 0
+    ;;
+  --help)
+    echo "$usage"
+    exit 0
+    ;;
+  --docker) is_docker=1 ;;
+  *)
+    echo "Unknown parameter passed: $1"
+    exit 1
+    ;;
   esac
   shift
 done
 
-msg(){
-    type=$1 #${1^^}
-    shift
-    printf "[$type] %s\n" "$@" >&2
+msg() {
+  type=$1 #${1^^}
+  shift
+  printf "[$type] %s\n" "$@" >&2
 }
 
-error(){
-    msg error "$@"
-    exit 1
+error() {
+  msg error "$@"
+  exit 1
 }
 
 identify_os() {
   arch=$(uname -m)
   # Check for RHEL/CentOS, Fedora, etc.
-  if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]
-  then
+  if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]; then
     os_type=rhel
     el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
-      5*) os_version=5 ; error "RHEL/CentOS 5 is no longer supported" "$supported" ;;
-      6*) os_version=6 ; error "RHEL/CentOS 6 is no longer supported" "$supported" ;;
-      7*) os_version=7 ;;
-      8*) os_version=8 ;;
-       *) error "Detected RHEL or compatible but version ($el_version) is not supported." "$supported" ;;
+    5*)
+      os_version=5
+      error "RHEL/CentOS 5 is no longer supported" "$supported"
+      ;;
+    6*)
+      os_version=6
+      error "RHEL/CentOS 6 is no longer supported" "$supported"
+      ;;
+    7*) os_version=7 ;;
+    8*) os_version=8 ;;
+    *) error "Detected RHEL or compatible but version ($el_version) is not supported." "$supported" ;;
     esac
-  elif [[ -e /etc/os-release ]]
-  then
+  elif [[ -e /etc/os-release ]]; then
     . /etc/os-release
     # Is it Debian?
     case $ID in
-      debian)
-        os_type=debian
-        debian_version=$(< /etc/debian_version)
-        case $debian_version in
-          9*) os_version=stretch ;;
-          10*) os_version=buster ;;
-           *) error "Detected Debian but version ($debian_version) is not supported." "$supported" ;;
-        esac
-        ;;
-      ubuntu)
-        os_type=ubuntu
-        . /etc/lsb-release
-        os_version=$DISTRIB_CODENAME
+    debian)
+      os_type=debian
+      debian_version=$(</etc/debian_version)
+      case $debian_version in
+      9*) os_version=stretch ;;
+      10*) os_version=buster ;;
+      *) error "Detected Debian but version ($debian_version) is not supported." "$supported" ;;
+      esac
+      ;;
+    ubuntu)
+      os_type=ubuntu
+      . /etc/lsb-release
+      os_version=$DISTRIB_CODENAME
+      case $os_version in
+      precise) error 'Ubuntu version 12.04 LTS has reached End of Life and is no longer supported.' ;;
+      trusty) error 'Ubuntu version 14.04 LTS has reached End of Life and is no longer supported.' ;;
+      xenial) ;;
+      bionic) ;;
+      focal) ;;
+      *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
+      esac
+      if [[ $arch == aarch64 ]]; then
         case $os_version in
-          precise ) error 'Ubuntu version 12.04 LTS has reached End of Life and is no longer supported.' ;;
-          trusty ) error 'Ubuntu version 14.04 LTS has reached End of Life and is no longer supported.' ;;
-          xenial ) ;;
-          bionic ) ;;
-          focal ) ;;
-          *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
+        xenial) ;;
+        bionic) ;;
+        focal) ;;
+        *) error "Only Ubuntu 16/xenial, 18/bionic, and 20/focal are supported for ARM64. Detected version: '$os_version'" ;;
         esac
-        if [[ $arch == aarch64 ]]
-        then
-          case $os_version in
-            xenial ) ;;
-            bionic ) ;;
-            focal ) ;;
-            *) error "Only Ubuntu 16/xenial, 18/bionic, and 20/focal are supported for ARM64. Detected version: '$os_version'" ;;
-          esac
-        fi
-        ;;
+      fi
+      ;;
     esac
   fi
-  if ! [[ $os_type ]] || ! [[ $os_version ]]
-  then
+  if ! [[ $os_type ]] || ! [[ $os_version ]]; then
     error "Unsupported operating system." "$supported"
   fi
 }
@@ -111,8 +130,8 @@ identify_os() {
 backup() {
   if [[ -e "$1" ]]; then
     i=1
-    while [[ -e "$1.old_$i" || -L "$1.old_$i" ]] ; do
-        (( i++ ))
+    while [[ -e "$1.old_$i" || -L "$1.old_$i" ]]; do
+      ((i++))
     done
 
     cp "$1" "$1.old_$i"
@@ -120,133 +139,143 @@ backup() {
 }
 
 install() {
-  if [[ $os_type = 'rhel' ]]; then
+  if [[ $os_type == 'rhel' ]]; then
     yum install -y "$@"
   fi
 
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     apt-get install -y "$@"
   fi
 }
 
 update() {
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     apt-get update -y
   fi
 }
 
 install_rpm() {
   set +e
-  yum install -y "$@"
+  if ((os_version == 7)); then
+    yum install -y "$@"
+  fi
+  if ((os_version == 8)); then
+    dnf install -y "$@"
+  fi
   set -e
 }
 
-setup() {
+systemd() {
   # Allow us to test this script in docker, not intended for production use.
-  if (( is_docker == 1)); then
+  # We replace systemctl every time because sometimes the package manager updates systemd between calls.
+  if ((is_docker == 1)); then
     install curl python3 which
     SYSTEMCTL=$(which systemctl)
     curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
   fi
 
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+  if [[ $os_type == 'rhel' ]]; then
+    systemctl "$1" "$2"
+  fi
+
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    service "$1" "$2"
+  fi
+}
+
+setup() {
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     export DEBIAN_FRONTEND=noninteractive
   fi
 }
 
-install_apache() {
-  msg "info" "Installing Apache2..."
+#
+# PHP
+#
 
-  if [[ $os_type = 'rhel' ]]; then
-    install httpd firewalld
-    systemctl restart httpd && systemctl enable httpd.service
-    firewall-cmd --add-service=http --permanent && firewall-cmd --reload
+configure_php_fpm() {
+  echo "[supportpal]
 
-    backup /etc/httpd/conf/httpd.conf
+listen = ${socket_path}
+listen.allowed_clients = 127.0.0.1
+listen.owner = $1
+listen.group = $1
+listen.mode = 0666
 
-    sed 's/DirectoryIndex index\.html/DirectoryIndex index\.php index\.html/' -i -- /etc/httpd/conf/httpd.conf
-    sed 's/AllowOverride None/AllowOverride All/' -i -- /etc/httpd/conf/httpd.conf
+user = $1
+group = $1
 
-    systemctl restart httpd
-  fi
+pm = ondemand
+pm.max_children = 50
 
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
-    install apache2
-
-    a2enmod rewrite
-
-    backup /etc/apache2/sites-available/000-default.conf
-
-    sed '/DocumentRoot \/var\/www\/html/r'<(
-        echo -e "\t<Directory \"/var/www/html\">"
-        echo -e "\t    AllowOverride All"
-        echo -e "\t</Directory>"
-    ) -i -- /etc/apache2/sites-available/000-default.conf
-
-    service apache2 restart
-  fi
+php_admin_value[error_log] = ${log_path}/php-fpm-error.log
+php_admin_value[log_errors] = on
+" > "$2"
 }
 
-install_mysql() {
-  msg "info" "Installing MySQL..."
+install_php_rhel() {
+  # Remove . from php_version
+  local stripped_version=${php_version//\./}
 
-  if [[ $os_type = 'rhel' ]]; then
-    if (( os_version == 7 )); then
-      install_rpm https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
-    fi
-
-    if (( os_version == 8 )); then
-      install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
-      yum module disable mysql
-    fi
+  if ((os_version == 7)); then
+    install_rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    install_rpm https://rpms.remirepo.net/enterprise/remi-release-7.rpm
+    yum -y install yum-utils
+    yum-config-manager --disable 'remi-php*' && yum-config-manager --enable "remi-php${stripped_version}"
+    yum-config-manager --enable "remi-php${stripped_version}"
+    yum -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
   fi
 
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
-    apt-get install https://repo.mysql.com//mysql-apt-config_0.8.13-1_all.deb
-    apt-get update
+  if ((os_version == 8)); then
+    install_rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    install_rpm https://rpms.remirepo.net/enterprise/remi-release-8.rpm
+    dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
+    dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
   fi
 
-  install mysql-community-server
+  configure_php_fpm apache /etc/php-fpm.d/supportpal.conf
+
+  systemd restart php-fpm
+}
+
+install_php_deb() {
+  apt-get -y install apt-transport-https lsb-release ca-certificates curl gnupg2
+
+  GPG_PATH="/etc/apt/trusted.gpg.d/php.gpg"
+  backup "$GPG_PATH"
+  curl -o "$GPG_PATH" https://packages.sury.org/php/apt.gpg
+
+  APT_SOURCES_PATH="/etc/apt/sources.list.d/php.list"
+  backup "$APT_SOURCES_PATH"
+  echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" >"$APT_SOURCES_PATH"
+
+  apt-get update
+  apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
+    "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
+    "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
+}
+
+install_php_ubuntu() {
+  # Remove . from php_version
+  local stripped_version=${php_version//\./}
+
+  apt-get install -y software-properties-common gnupg2
+  add-apt-repository ppa:ondrej/php -y && apt-get update -y
+  apt-get install -y "php${stripped_version}" "php${stripped_version}-fpm" "php${stripped_version}-dom" \
+    "php${stripped_version}-gd" "php${stripped_version}-mbstring" "php${stripped_version}-mysql" \
+    "php${stripped_version}-xml" "php${stripped_version}-curl" "php${stripped_version}-bcmath" \
+    "php${stripped_version}-ldap" "php${stripped_version}-imap"
 }
 
 install_php() {
   msg "info" "Installing PHP..."
 
-  # Remove . from php_version
-  local stripped_version=${php_version//\./}
-
-  if [[ $os_type = 'rhel' ]]; then
-    yum install -y epel-release yum-utils
-    install_rpm "http://rpms.remirepo.net/enterprise/remi-release-$os_version.rpm"
-    yum-config-manager --enable remi-php74
-    yum -y --enablerepo=remi install php-mod_php php \
-      php-bcmath php-gd  php-mbstring php-mysql php-xml php-imap php-ldap
-  fi
-
-  if [[ $os_type = 'debian' ]]; then
-    apt-get -y install apt-transport-https lsb-release ca-certificates curl gnupg2
-
-    GPG_PATH="/etc/apt/trusted.gpg.d/php.gpg"
-    backup "$GPG_PATH"
-    curl -o "$GPG_PATH" https://packages.sury.org/php/apt.gpg
-
-    APT_SOURCES_PATH="/etc/apt/sources.list.d/php.list"
-    backup "$APT_SOURCES_PATH"
-    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > "$APT_SOURCES_PATH"
-
-    apt-get update
-    apt-get install -y "libapache2-mod-php${php_version}" "php${php_version}" "php${php_version}-dom" \
-      "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
-      "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
-  fi
-
-  if [[ $os_type = 'ubuntu' ]]; then
-    apt-get install -y software-properties-common gnupg2
-    add-apt-repository ppa:ondrej/php -y && apt-get update -y
-    apt-get install -y "libapache2-mod-php${stripped_version}" "php${stripped_version}" "php${stripped_version}-dom" \
-      "php${stripped_version}-gd" "php${stripped_version}-mbstring" "php${stripped_version}-mysql" \
-      "php${stripped_version}-xml" "php${stripped_version}-curl" "php${stripped_version}-bcmath" \
-      "php${stripped_version}-ldap" "php${stripped_version}-imap"
+  if [[ $os_type == 'rhel' ]]; then
+    install_php_rhel
+  elif [[ $os_type == 'debian' ]]; then
+    install_php_deb
+  elif [[ $os_type == 'ubuntu' ]]; then
+    install_php_ubuntu
   fi
 
   install_ioncube
@@ -263,30 +292,135 @@ install_ioncube() {
   tar xvfz ioncube_loaders_lin_x86-64.tar.gz
   cp "ioncube/ioncube_loader_lin_${php_version}.so" "${PHP_EXT_DIR}"
 
-  if [[ $os_type = 'rhel' ]]; then
+  if [[ $os_type == 'rhel' ]]; then
     # Remove . from php_version
     local stripped_version=${php_version//\./}
 
     INI_PATH="/etc/php.d/00-ioncube.ini"
     backup "$INI_PATH"
-    echo "$IONCUBE_EXT" > "$INI_PATH"
+    echo "$IONCUBE_EXT" >"$INI_PATH"
 
-    systemctl restart httpd
+    systemd restart httpd
   fi
 
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     INI_PATH="/etc/php/${php_version}/apache2/conf.d/00-ioncube.ini"
     backup "$INI_PATH"
-    echo "$IONCUBE_EXT" > "$INI_PATH"
+    echo "$IONCUBE_EXT" >"$INI_PATH"
 
     INI_PATH="/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
     backup "$INI_PATH"
-    echo "$IONCUBE_EXT" > "/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
+    echo "$IONCUBE_EXT" >"/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
 
-    service apache2 restart
+    systemd restart apache2
   fi
 
   rm -rf ioncube*
+}
+
+#
+# Web Server
+#
+
+write_vhost() {
+  mkdir -p "${log_path}"
+
+  echo "<VirtualHost _default_:80>
+    DocumentRoot \"/opt/supportpal\"
+    DirectoryIndex index.php
+
+    <Directory \"/opt/supportpal\">
+        Require all granted
+        AllowOverride All
+    </Directory>
+
+    ErrorLog ${log_path}/error.log
+    CustomLog ${log_path}/access.log combined
+
+    <Proxy \"unix:${socket_path}|fcgi://php-fpm\">
+    	  ProxySet disablereuse=off
+    </Proxy>
+
+    <FilesMatch \.php$>
+        SetHandler proxy:fcgi://php-fpm
+    </FilesMatch>
+</VirtualHost>
+" >"$1"
+}
+
+install_apache_rhel() {
+  install httpd firewalld
+  systemd restart httpd && systemd enable httpd
+  firewall-cmd --add-service=http --permanent && firewall-cmd --reload
+
+  backup /etc/httpd/conf.d/welcome.conf
+  rm /etc/httpd/conf.d/welcome.conf
+
+  write_vhost /etc/httpd/conf.d/supportpal.conf
+
+  systemd restart httpd
+}
+
+install_apache_deb() {
+  install apache2
+  a2enmod rewrite proxy_fcgi
+
+  write_vhost /etc/apache2/sites-available/supportpal.conf
+  ln -s /etc/apache2/sites-available/supportpal.conf /etc/apache2/sites-enabled/supportpal.conf
+
+  systemd restart apache2
+}
+
+install_apache() {
+  msg "info" "Configuring Apache2..."
+
+  if [[ $os_type == 'rhel' ]]; then
+    install_apache_rhel
+  fi
+
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    install_apache_deb
+  fi
+
+  install_php
+}
+
+#
+# Database
+#
+
+install_mysql() {
+  msg "info" "Installing MySQL..."
+
+  install openssl
+  root_password=$(openssl rand -base64 14)
+  user_password=$(openssl rand -base64 14)
+
+  if [[ $os_type == 'rhel' ]]; then
+    if ((os_version == 7)); then
+      install_rpm https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+    fi
+
+    if ((os_version == 8)); then
+      install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
+      yum -y module disable mysql
+    fi
+  fi
+
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    apt-get install https://repo.mysql.com//mysql-apt-config_0.8.13-1_all.deb
+    apt-get update
+  fi
+
+  install mysql-community-server
+
+  if [[ $os_type == 'rhel' ]]; then
+    systemd restart mysqld
+
+    TMP_PASS=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
+    mysql --connect-expired-password -u"root" -p"$TMP_PASS" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$root_password';"
+    mysql -u"root" -p"$root_password" -e "CREATE DATABASE ${database}; CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password'; GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost'; FLUSH PRIVILEGES;"
+  fi
 }
 
 install_supportpal() {
@@ -299,15 +433,17 @@ install_supportpal() {
   curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /var/www/html/supportpal.zip
   unzip /var/www/html/supportpal.zip -d /var/www/html
 
-  if [[ $os_type = 'rhel' ]]; then
+  if [[ $os_type == 'rhel' ]]; then
     chown -R apache:apache /var/www/html
 
-    chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/bootstrap/cache/
-    chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/config/
-    chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/storage/
+    if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
+      chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/bootstrap/cache/
+      chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/config/
+      chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/storage/
+    fi
   fi
 
-  if [[ $os_type = 'debian' ]] || [[ $os_type = 'ubuntu' ]]; then
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     chown -R www-data:www-data /var/www/html
   fi
 }
@@ -317,6 +453,18 @@ setup
 
 update
 install_apache
-install_mysql
-install_php
-install_supportpal
+#install_mysql
+#install_supportpal
+
+echo "######################################################################"
+echo
+echo " Successfully installed dependencies."
+echo " You can now open your web browser and run the SupportPal installer."
+echo
+echo " MySQL authentication"
+echo "   Root Password: ${root_password}"
+echo "   Database name: ${database}"
+echo "   Username:      ${username}"
+echo "   Password:      ${user_password}"
+echo
+echo "######################################################################"
