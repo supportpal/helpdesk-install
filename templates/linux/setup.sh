@@ -34,6 +34,7 @@ database='supportpal'
 username='supportpal'
 user_password=
 # php-fpm
+install_path='/var/www/supportpal'
 log_path='/var/log/supportpal'
 socket_path='/var/run/php-fpm/supportpal.sock'
 
@@ -166,15 +167,15 @@ install_rpm() {
 }
 
 systemd() {
-  # Allow us to test this script in docker, not intended for production use.
-  # We replace systemctl every time because sometimes the package manager updates systemd between calls.
-  if ((is_docker == 1)); then
-    install curl python3 which
-    SYSTEMCTL=$(which systemctl)
-    curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
-  fi
-
   if [[ $os_type == 'rhel' ]]; then
+    # Allow us to test this script in docker, not intended for production use.
+    # We replace systemctl every time because sometimes the package manager updates systemd between calls.
+    if ((is_docker == 1)); then
+      install curl python3 which
+      SYSTEMCTL=$(which systemctl)
+      curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
+    fi
+
     systemctl "$1" "$2"
   fi
 
@@ -299,8 +300,6 @@ install_ioncube() {
     INI_PATH="/etc/php.d/00-ioncube.ini"
     backup "$INI_PATH"
     echo "$IONCUBE_EXT" >"$INI_PATH"
-
-    systemd restart httpd
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
@@ -311,10 +310,9 @@ install_ioncube() {
     INI_PATH="/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
     backup "$INI_PATH"
     echo "$IONCUBE_EXT" >"/etc/php/${php_version}/cli/conf.d/00-ioncube.ini"
-
-    systemd restart apache2
   fi
 
+  systemd restart php-fpm
   rm -rf ioncube*
 }
 
@@ -326,10 +324,10 @@ write_vhost() {
   mkdir -p "${log_path}"
 
   echo "<VirtualHost _default_:80>
-    DocumentRoot \"/opt/supportpal\"
+    DocumentRoot \"${install_path}\"
     DirectoryIndex index.php
 
-    <Directory \"/opt/supportpal\">
+    <Directory \"${install_path}\">
         Require all granted
         AllowOverride All
     </Directory>
@@ -424,27 +422,28 @@ install_mysql() {
 }
 
 install_supportpal() {
-  if [ -n "$(ls -A /var/www/html)" ]; then
-    error "Unable to install SupportPal, /var/www/html already contains files. Please ensure the directory is empty."
+  if [ -n "$(ls -A $install_path)" ]; then
+    error "Unable to install SupportPal, ${install_path} already contains files. Please ensure the directory is empty."
   fi
 
   install jq unzip
   SP_VERSION=$(curl -s https://licensing.supportpal.com/api/version/latest.json | jq -r ".version")
-  curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /var/www/html/supportpal.zip
-  unzip /var/www/html/supportpal.zip -d /var/www/html
+  curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /tmp/supportpal.zip
+  unzip /tmp/supportpal.zip -d "${install_path}"
+  rm /tmp/supportpal.zip
 
   if [[ $os_type == 'rhel' ]]; then
-    chown -R apache:apache /var/www/html
+    chown -R apache:apache "${install_path}"
 
     if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
-      chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/bootstrap/cache/
-      chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/config/
-      chcon -Rv --type=httpd_sys_rw_content_t /var/www/html/storage/
+      chcon -Rv --type=httpd_sys_rw_content_t "${install_path}/bootstrap/cache/"
+      chcon -Rv --type=httpd_sys_rw_content_t "${install_path}/config/"
+      chcon -Rv --type=httpd_sys_rw_content_t "${install_path}/storage/"
     fi
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    chown -R www-data:www-data /var/www/html
+    chown -R www-data:www-data "${install_path}"
   fi
 }
 
@@ -454,14 +453,19 @@ setup
 update
 install_apache
 #install_mysql
-#install_supportpal
+install_supportpal
 
 echo "######################################################################"
 echo
 echo " Successfully installed dependencies."
+echo
 echo " You can now open your web browser and run the SupportPal installer."
 echo
-echo " MySQL authentication"
+echo " Directories"
+echo "   SupportPal: /var/www/supportpal"
+echo "   Logs:       /var/log/supportpal"
+echo
+echo " MySQL"
 echo "   Root Password: ${root_password}"
 echo "   Database name: ${database}"
 echo "   Username:      ${username}"
