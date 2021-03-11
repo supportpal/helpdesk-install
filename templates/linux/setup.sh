@@ -421,7 +421,7 @@ install_mysql() {
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    install wget debconf-utils curl
+    install wget debconf-utils curl lsb-release
     debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-product select Ok"
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
