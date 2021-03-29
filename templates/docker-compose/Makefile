@@ -13,7 +13,7 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(SELF_FILENAME) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: install
-install: create_secrets create_volumes ## Install the help desk.
+install: configure create_secrets create_volumes ## Install the help desk.
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d $(GATEWAY_SERVICE_NAME) $(WEB_SERVICE_NAME) $(DATABASE_SERVICE_NAME) $(CACHE_SERVICE_NAME)
 	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) su www-data -s /usr/local/bin/php artisan app:install
 
@@ -59,3 +59,9 @@ create_volumes:
 create_secrets:
 	$(DOCKER_BIN) run -e SECRETS_DIR="$(SECRETS_DIR)" -v "$(SECRETS_DIR):/secrets" "public.ecr.aws/supportpal/helpdesk-configurator:$(CONFIGURATOR_VERSION)" sh "//app//scripts//create_secrets.sh"
 
+.PHONY: configure
+configure:
+	cp -n .env.dist .env || true
+	cp -n docker-compose.yml.dist docker-compose.yml || true
+	cp -n docker-compose.prod.yml.dist docker-compose.prod.yml || true
+	cp -n -R ../../configs/gateway . || true
