@@ -6,9 +6,7 @@ CONFIGURATOR_VERSION=latest
 COMPOSE_FILES=-f docker-compose.yml -f docker-compose.prod.yml
 
 .PHONY: install
-install:
-	$(MAKE) create_secrets
-	$(MAKE) create_volumes
+install: create_secrets create_volumes
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d $(GATEWAY_SERVICE_NAME) $(WEB_SERVICE_NAME) $(DATABASE_SERVICE_NAME) $(CACHE_SERVICE_NAME)
 	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) su www-data -s /usr/local/bin/php artisan app:install
 
@@ -21,9 +19,7 @@ stop:
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) stop
 
 .PHONY: restart
-restart:
-	$(MAKE) stop
-	$(MAKE) start
+restart: stop start ;
 
 .PHONY: create_volumes
 create_volumes:
