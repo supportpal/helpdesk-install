@@ -9,15 +9,13 @@ install:
 	$(MAKE) create_secrets
 	$(MAKE) create_volumes
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d $(GATEWAY_SERVICE_NAME) $(WEB_SERVICE_NAME) $(DATABASE_SERVICE_NAME) $(CACHE_SERVICE_NAME)
+	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) su www-data -s /usr/local/bin/php artisan app:install
 
 start:
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d
 
 stop:
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) stop
-
-setup:
-	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) su www-data -s /usr/local/bin/php artisan app:install
 
 restart:
 	$(MAKE) stop
