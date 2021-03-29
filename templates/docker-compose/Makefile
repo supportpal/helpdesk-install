@@ -28,6 +28,25 @@ stop: ## Stop the help desk.
 .PHONY: restart
 restart: stop start ; ## Restart help desk.
 
+.PHONY: uninstall
+uninstall: ## Irreversibly uninstall the help desk and all associated data.
+	@printf "\033[0;33m|---------------------|\n"
+	@printf "\033[0;33m|       WARNING       |\n"
+	@printf "\033[0;33m|---------------------|\n"
+	@echo
+	@printf "\033[0;33mThis action will irreversibly uninstall your help desk. This includes, but not limited to permanent removal of the database and all user files.\n"
+	@printf "\033[0;33mDo NOT continue without a recent full system backup.\n"
+	@echo
+	@printf "\033[0;33mPress CTRL + C to this operation. Waiting 15 seconds...\n"
+	@sleep 15
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
+	$(DOCKER_BIN) volume remove supportpal_db
+	$(DOCKER_BIN) volume remove supportpal_config
+	$(DOCKER_BIN) volume remove supportpal_storage
+	$(DOCKER_BIN) volume remove supportpal_cache
+	$(DOCKER_BIN) volume remove supportpal_mailer
+	rm -rf secrets
+
 .PHONY: create_volumes
 create_volumes:
 	$(DOCKER_BIN) volume create --name $(DB_VOLUME)
