@@ -15,6 +15,14 @@ help:
 .PHONY: install
 install: configure create_secrets create_volumes ## Install the help desk.
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d $(GATEWAY_SERVICE_NAME) $(WEB_SERVICE_NAME) $(DATABASE_SERVICE_NAME) $(CACHE_SERVICE_NAME)
+	@echo
+	@printf "Database Configuration:\n"
+	@printf "\tHostname: db\n"
+	@printf "\tPort: 3306\n"
+	@printf "\tDatabase: supportpal\n"
+	@printf "\tUsername: $$(cat secrets/db_user.txt)\n"
+	@printf "\tPassword: $$(cat secrets/db_password.txt)\n"
+	@echo
 	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) su www-data -s /usr/local/bin/php artisan app:install
 
 .PHONY: start
