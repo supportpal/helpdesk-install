@@ -2,6 +2,7 @@
 /gateway/
 /docker-compose.yml
 /docker-compose.override.yml
+init-letsencrypt.sh
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

@@ -1,4 +1,4 @@
-# Supportpal Elasticbeanstalk Single Instance Deployment
+# SupportPal Deployment via AWS Elastic Beanstalk
 
 
 ## First time setup
@@ -76,28 +76,28 @@ Setting up SSH is optional.
 
 ### 3. Configuration
 
-* Inside your `02storage-efs-mountfilesystem.config`, update the filesystem id value using the EFS id you created earlier:
+* Inside `.ebextensions/00storage-efs-mountfilesystem.config`, update the filesystem id value using the EFS id you created earlier:
 ```yaml
 option_settings:
   aws:elasticbeanstalk:application:environment:
     FILE_SYSTEM_ID: fs-XXXXX
 ```
 
-* Inside your `options.config`, update the `HOST` environment variable.
+* Inside `.ebextensions/options.config`, update the `HOST` environment variable.
 ```yaml
 option_settings:
     aws:elasticbeanstalk:application:environment:
         HOST: example.com
 ```  
 
-* Inside your `securitygroup.config`, add the security groups you created earlier (web, internal, ssh):
+* Inside `.ebextensions/securitygroup.config`, add the security groups you created earlier (web, internal, ssh):
 ```yaml
 option_settings:
   aws:autoscaling:launchconfiguration:
-    SecurityGroups: sg-XXXX, g-YYYY, g-ZZZZ
+    SecurityGroups: sg-XXXX, sg-YYYY, sg-ZZZZ
 ```
 
-* Inside your `vpc.config`, add the id of your VPC, and add at least 3 availability zones.
+* Inside `.ebextensions/vpc.config`, add the id of your VPC, and add at least 3 availability zones.
 ```yaml
 option_settings:
 aws:ec2:vpc:
@@ -119,19 +119,24 @@ Once you see that the environment is deployed successfully, you can proceed to s
 
 By default, the software will run on HTTP using port 80. However, we recommend using HTTPS for added security. to enable HTTPS, we provide an integration with letsencrypt, you can enable it by using the following:
 
-* rename `docker-compose.override.yml.dist` to `docker-compose.override.yml`
-* rename `.ebextensions/ssl.config.dist` to `.ebextensions/ssl.config`
-* Inside `ebextensions/options.config` add a new environment variable:
+* Rename `*.dist` files:
+```
+cp docker-compose.override.yml.dist docker-compose.override.yml
+cp .ebextensions/ssl.config.dist .ebextensions/ssl.config
+cp ../../../../configs/letsencrypt/init-letsencrypt.sh .
+```
+* Inside `.ebextensions/options.config` add a new environment variable:
 ```dotenv
 DOMAIN_NAME: example.com
 ```
-* copy `cp ../../configs/letsencrypt/init-letsencrypt.sh .` then update the following parameters:
+* Inside `.ebextensions/ssl.config` update the domain names and email address:
 ```shell
-domains=(example.com www.example.com) #your domain name, the top level domain should match the env variable set in the previous step
-email="" # Adding a valid address is strongly recommended
-staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
+sh init-letsencrypt.sh --email user@company.com -- example.com www.example.com
 ```
-
+* Redeploy the application
+```shell
+eb deploy production
+```
 
 Enabling SSL with your own certificates might require special configuration based on the CA and cipher. You will need to make updates to the Nginx files by providing a directory that includes the keys, then map the keys so they can be read by the nginx container. We can't provide specific details as the process might not be the same across all certificates.
 
