@@ -1,15 +1,42 @@
 #!/bin/bash
+set -eu -o pipefail
+
+rsa_key_size=4096
+data_path="./ssl/certbot"
+email="" # Adding a valid address is strongly recommended
+staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
+
+usage="Usage: bash $0 [options] -- example.com www.example.com
+
+Options:
+    --help                  Display this help and exit.
+
+    --email=                An email address to receive renewal notifications.
+
+    --staging               Use in testing environments to avoid rate limits.
+"
+
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+  --help) echo "$usage" ; exit 0 ;;
+  --email) email="$2" ; shift ;;
+  --staging) staging=1 ;;
+  --) shift ; break ;;
+  *) echo "Unknown parameter passed: $1" >&2 ; exit 1 ;;
+  esac
+  shift
+done
+
+domains=( "$@" )
+if [ "${#domains[@]}" -lt "1" ]; then
+  echo "Error: expected 1 or more domains, ${#domains[@]} provided."  >&2
+  exit 1
+fi
 
 if ! [ -x "$(command -v docker-compose)" ]; then
   echo 'Error: docker-compose is not installed.' >&2
   exit 1
 fi
-
-domains=(example.com www.example.com)
-rsa_key_size=4096
-data_path="./ssl/certbot"
-email="" # Adding a valid address is strongly recommended
-staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
 
 if [ -d "$data_path" ]; then
   read -p "Existing data found for $domains. Continue and replace existing certificate? (y/N) " decision

@@ -1,13 +1,34 @@
 #!/bin/bash
+set -eu -o pipefail
+
+usage="Usage: bash $0 [options] -- example.com www.example.com
+
+Options:
+    --help                  Display this help and exit.
+"
+
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+  --help) echo "$usage" ; exit 0 ;;
+  --) shift ; break ;;
+  *) echo "Unknown parameter passed: $1" >&2 ; exit 1 ;;
+  esac
+  shift
+done
+
+domains=( "$@" )
+rsa_key_size=4096
+data_path="./ssl/certbot"
+
+if [ "${#domains[@]}" -lt "1" ]; then
+  echo "Error: expected 1 or more domains, ${#domains[@]} provided."  >&2
+  exit 1
+fi
 
 if ! [ -x "$(command -v docker-compose)" ]; then
   echo 'Error: docker-compose is not installed.' >&2
   exit 1
 fi
-
-domains=(example.com www.example.com)
-rsa_key_size=4096
-data_path="./ssl/certbot"
 
 if [ -d "$data_path" ]; then
   read -p "Existing data found for $domains. Continue and replace existing certificate? (y/N) " decision
