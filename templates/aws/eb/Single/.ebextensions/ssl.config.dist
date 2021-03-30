@@ -4,4 +4,4 @@ commands:
 
 container_commands:
     01_create_ssl_certificate:
-        command: "sh init-letsencrypt.sh --email user@company.com -- example.com www.example.com && rm init-letsencrypt.sh"
+        command: "sh init-letsencrypt.sh --email user@company.com --data_path /supportpal/ssl/certbot -- example.com www.example.com && rm init-letsencrypt.sh"
