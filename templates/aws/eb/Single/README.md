@@ -131,7 +131,7 @@ DOMAIN_NAME: example.com
 ```
 * Inside `.ebextensions/ssl.config` update the domain names and email address:
 ```shell
-sh init-letsencrypt.sh --email user@company.com -- example.com www.example.com
+sh init-letsencrypt.sh --email user@company.com --data_path /supportpal/ssl/certbot -- example.com www.example.com
 ```
 * Redeploy the application
 ```shell
