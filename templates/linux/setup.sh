@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eux -o pipefail
+set -eu -o pipefail
 
 version="0.0.1"
 
