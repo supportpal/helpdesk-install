@@ -41,8 +41,8 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-if [ -d "$data_path/live/$domains" ]; then
-  echo "Certificate already exists at $data_path/live/$domains."
+if [ -d "$data_path/conf/live/$domains" ]; then
+  echo "Certificate already exists at $data_path/conf/live/$domains."
   exit 0
 fi
 
