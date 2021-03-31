@@ -124,16 +124,46 @@ By default, the software will run on HTTP using port 80. However, we recommend u
 cp docker-compose.override.yml.dist docker-compose.override.yml
 cp .ebextensions/ssl.config.dist .ebextensions/ssl.config
 cp ../../../../configs/letsencrypt/init-letsencrypt.sh .
-cp .platform/hooks/postdeploy/01_setup_ssl.sh.dist .platform/hooks/postdeploy/01_setup_ssl.sh 
+cp .platform/hooks/postdeploy/01_setup_ssh.sh.dist .platform/hooks/postdeploy/01_setup_ssh.sh
 ```
+
+#### One domain configuration
 * Inside `.ebextensions/options.config` add a new environment variable:
 ```dotenv
 DOMAIN_NAME: example.com
 ```
-* Inside `.platform/hooks/postdeploy/01_setup_ssl.sh` update the domain names and email address:
+* Inside `.platform/hooks/postdeploy/01_setup_ssh.sh` update the domain names and email address:
 ```shell
 sh init-letsencrypt.sh --email user@company.com --data_path /supportpal/ssl/certbot -- example.com www.example.com
 ```
+
+#### Multiple domain configuration
+
+* Inside `.platform/hooks/postdeploy/01_setup_ssh.sh` update the domain names and email address:
+```shell
+sh init-letsencrypt.sh --email user@company.com -- example.com www.example.com example2.com www.example2.com
+```
+
+* Look for `gateway/nginx-domain.conf`, for each domain, manually create a copy and inside the file, replace `${DOMAIN_NAME}` with the domain name. You might also add `www.${DOMAIN_NAME}` variants to the server_name as you see fit.
+* Inside `docker-compose.override.yml` replace the following:
+```yaml
+...
+    gateway:
+        volumes:
+            - ./gateway/nginx-https.conf:/etc/nginx/templates/default.conf.template
+...
+```
+
+With:
+```yaml
+...
+    gateway:
+        volumes:
+            - ./gateway/nginx-example-com.conf:/etc/nginx/conf.d/nginx-example-com.conf
+            - ./gateway/nginx-example2-com.conf:/etc/nginx/conf.d/nginx-example2-com.conf
+...
+```
+
 * Redeploy the application
 ```shell
 eb deploy production
