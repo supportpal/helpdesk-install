@@ -448,7 +448,7 @@ install_mysql() {
     systemd restart mysqld
 
     TMP_PASS=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
-    mysql --connect-expired-password -u"root" -p"$TMP_PASS" -e "UNINSTALL COMPONENT 'file://component_validate_password'; ALTER USER 'root'@'localhost' IDENTIFIED BY '$root_password';"
+    mysql --connect-expired-password -u"root" -p"$TMP_PASS" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$root_password'; UNINSTALL COMPONENT 'file://component_validate_password';"
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
