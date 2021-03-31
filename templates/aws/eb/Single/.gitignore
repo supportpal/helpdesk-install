@@ -1,4 +1,5 @@
 #config files
+/.platform/hooks/postdeploy/*.sh
 /gateway/
 /docker-compose.yml
 /docker-compose.override.yml
