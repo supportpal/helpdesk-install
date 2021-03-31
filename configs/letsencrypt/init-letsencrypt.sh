@@ -14,12 +14,15 @@ Options:
     --email=                An email address to receive renewal notifications.
 
     --staging               Use in testing environments to avoid rate limits.
+
+    --data_path=             Customize where to save the certificate files
 "
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
   --help) echo "$usage" ; exit 0 ;;
   --email) email="$2" ; shift ;;
+  --data_path) data_path="$2" ; shift ;;
   --staging) staging=1 ;;
   --) shift ; break ;;
   *) echo "Unknown parameter passed: $1" >&2 ; exit 1 ;;
@@ -39,10 +42,8 @@ if ! [ -x "$(command -v docker-compose)" ]; then
 fi
 
 if [ -d "$data_path" ]; then
-  read -p "Existing data found for $domains. Continue and replace existing certificate? (y/N) " decision
-  if [ "$decision" != "Y" ] && [ "$decision" != "y" ]; then
-    exit
-  fi
+  echo "Existing data found for $domains at $data_path."
+  exit 0
 fi
 
 if [ ! -e "$data_path/conf/options-ssl-nginx.conf" ] || [ ! -e "$data_path/conf/ssl-dhparams.pem" ]; then
@@ -90,7 +91,7 @@ case "$email" in
 esac
 
 # Enable staging mode if needed
-if [ $staging != "0" ]; then staging_arg="--staging"; fi
+if [ $staging != "0" ]; then staging_arg="--staging"; else staging_arg=""; fi
 
 docker-compose run --rm --entrypoint "\
   certbot certonly --webroot -w /var/www/certbot \
@@ -99,8 +100,9 @@ docker-compose run --rm --entrypoint "\
     $domain_args \
     --rsa-key-size $rsa_key_size \
     --agree-tos \
+    --non-interactive \
     --force-renewal" certbot
 echo
 
 echo "### Reloading nginx ..."
-docker-compose exec gateway nginx -s reload
+docker-compose exec -T gateway nginx -s reload
