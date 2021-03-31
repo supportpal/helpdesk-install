@@ -100,8 +100,9 @@ docker-compose run --rm --entrypoint "\
     $domain_args \
     --rsa-key-size $rsa_key_size \
     --agree-tos \
+    --non-interactive \
     --force-renewal" certbot
 echo
 
 echo "### Reloading nginx ..."
-docker-compose exec gateway nginx -s reload
+docker-compose exec -T gateway nginx -s reload
