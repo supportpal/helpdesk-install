@@ -2,7 +2,7 @@
 
 (
 	echo "INFO: Executing script!"
-	bash setup.sh --docker
+	bash -x setup.sh --docker
 )
 
 if ! php --version; then
