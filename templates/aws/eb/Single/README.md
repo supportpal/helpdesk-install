@@ -124,12 +124,13 @@ By default, the software will run on HTTP using port 80. However, we recommend u
 cp docker-compose.override.yml.dist docker-compose.override.yml
 cp .ebextensions/ssl.config.dist .ebextensions/ssl.config
 cp ../../../../configs/letsencrypt/init-letsencrypt.sh .
+cp .platform/hooks/postdeploy/01_setup_ssl.sh.dist .platform/hooks/postdeploy/01_setup_ssl.sh 
 ```
 * Inside `.ebextensions/options.config` add a new environment variable:
 ```dotenv
 DOMAIN_NAME: example.com
 ```
-* Inside `.ebextensions/ssl.config` update the domain names and email address:
+* Inside `.platform/hooks/postdeploy/01_setup_ssl.sh` update the domain names and email address:
 ```shell
 sh init-letsencrypt.sh --email user@company.com --data_path /supportpal/ssl/certbot -- example.com www.example.com
 ```
