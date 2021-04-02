@@ -1,4 +1,4 @@
-TEST_IMAGE?=ubuntu:16.04
+TEST_IMAGE?=ubuntu:18.04
 
 WORK_DIR="/supportpal"
 VOLUME_MOUNTS=-v "$(CURDIR):$(WORK_DIR)"
