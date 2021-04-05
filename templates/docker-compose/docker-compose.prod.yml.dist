@@ -10,8 +10,8 @@ services:
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
-            - supportpal_cache:/supportpal/config/production
-            - supportpal_db:/supportpal/storage
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
 
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
