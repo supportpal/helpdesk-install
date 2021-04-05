@@ -14,7 +14,7 @@ help:
 
 .PHONY: install
 install: configure create_secrets create_volumes ## Install the help desk.
-	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d $(GATEWAY_SERVICE_NAME) $(WEB_SERVICE_NAME) $(DATABASE_SERVICE_NAME) $(CACHE_SERVICE_NAME)
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d gateway supportpal db redis
 	@echo
 	@printf "Database Configuration:\n"
 	@printf "\tHostname: db\n"
