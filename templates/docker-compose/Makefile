@@ -14,7 +14,7 @@ help:
 
 .PHONY: install
 install: configure create_secrets create_volumes ## Install the help desk.
-	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d $(GATEWAY_SERVICE_NAME) $(WEB_SERVICE_NAME) $(DATABASE_SERVICE_NAME) $(CACHE_SERVICE_NAME)
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d gateway supportpal db redis
 	@echo
 	@printf "Database Configuration:\n"
 	@printf "\tHostname: db\n"
@@ -48,11 +48,11 @@ uninstall: ## Irreversibly uninstall the help desk and all associated data.
 	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 15 seconds...\n"
 	@sleep 15
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
-	$(DOCKER_BIN) volume remove supportpal_db
-	$(DOCKER_BIN) volume remove supportpal_config
-	$(DOCKER_BIN) volume remove supportpal_storage
-	$(DOCKER_BIN) volume remove supportpal_cache
-	$(DOCKER_BIN) volume remove supportpal_mailer
+	$(DOCKER_BIN) volume remove $(DB_VOLUME)
+	$(DOCKER_BIN) volume remove $(CONFIG_VOLUME)
+	$(DOCKER_BIN) volume remove $(STORAGE_VOLUME)
+	$(DOCKER_BIN) volume remove $(CACHE_VOLUME)
+	$(DOCKER_BIN) volume remove $(MAILER_VOLUME)
 	rm -rf secrets
 
 .PHONY: create_volumes

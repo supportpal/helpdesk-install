@@ -10,8 +10,8 @@ services:
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
-            - '${CONFIG_VOLUME}:/supportpal/config/production'
-            - '${STORAGE_VOLUME}:/supportpal/storage'
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
 
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
@@ -28,8 +28,8 @@ services:
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
-            - '${CONFIG_VOLUME}:/supportpal/config/production'
-            - '${STORAGE_VOLUME}:/supportpal/storage'
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
         networks:
             - supportpal_frontend
             - supportpal_backend
@@ -40,7 +40,7 @@ services:
 
     mailer:
         volumes:
-            - '${MAILER_VOLUME}:/var/spool/exim4'
+            - supportpal_mailer:/var/spool/exim4
 
 volumes:
     supportpal_resources:
