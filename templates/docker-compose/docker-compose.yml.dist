@@ -77,9 +77,9 @@ volumes:
 
 networks:
     supportpal_frontend:
-        name: supportpal_frontend
+        name: ${FRONTEND_NETWORK}
     supportpal_backend:
-        name: supportpal_backend
+        name: ${BACKEND_NETWORK}
 
 secrets:
     db_user:
