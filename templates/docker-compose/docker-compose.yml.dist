@@ -42,7 +42,7 @@ services:
             MYSQL_USER_FILE: /run/secrets/db_user
             MYSQL_PASSWORD_FILE: /run/secrets/db_password
         volumes:
-            - '${DB_VOLUME}:/var/lib/mysql'
+            - supportpal_db:/var/lib/mysql
         networks:
             - supportpal_backend
         secrets:
@@ -56,7 +56,7 @@ services:
         image: redis:6.0.9-alpine
         command: redis-server --appendonly yes
         volumes:
-            - '${CACHE_VOLUME}:/data'
+            - supportpal_cache:/data
         networks:
             - supportpal_backend
 
