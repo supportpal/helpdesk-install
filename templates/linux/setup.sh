@@ -178,7 +178,7 @@ systemd() {
       install which
     fi
 
-    install curl python3
+    install python3
     SYSTEMCTL=$(which systemctl || echo '/bin/systemctl')
     curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
     chmod +x "$SYSTEMCTL"
@@ -196,6 +196,9 @@ setup() {
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     export DEBIAN_FRONTEND=noninteractive
   fi
+
+  update
+  install curl
 }
 
 #
@@ -255,7 +258,7 @@ install_php_rhel() {
 }
 
 install_php_deb() {
-  apt-get -y install apt-transport-https lsb-release ca-certificates curl gnupg2
+  apt-get -y install apt-transport-https lsb-release ca-certificates gnupg2
 
   GPG_PATH="/etc/apt/trusted.gpg.d/php.gpg"
   backup "$GPG_PATH"
@@ -306,7 +309,6 @@ install_ioncube() {
   [[ "${PHP_EXT_DIR}" != */ ]] && PHP_EXT_DIR="${PHP_EXT_DIR}/"
 
   # Install Ioncube Loaders
-  install curl
   IONCUBE_EXT="zend_extension = "${PHP_EXT_DIR}ioncube_loader_lin_${php_version}.so""
   curl -O http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
   tar xvfz ioncube_loaders_lin_x86-64.tar.gz
@@ -503,7 +505,6 @@ fi
 identify_os
 setup
 
-update
 install_mysql
 install_apache
 install_supportpal
@@ -514,7 +515,10 @@ echo " Successfully installed dependencies."
 echo
 echo "######################################################################"
 echo
-echo " You can now open your web browser and run the SupportPal installer."
+echo " You can now open your web browser to the following address and run"
+echo " the SupportPal installer."
+echo
+echo " http://$(curl -s https://api.ipify.org)/"
 echo
 echo " Directories"
 echo "   SupportPal: /var/www/supportpal"
