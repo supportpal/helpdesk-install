@@ -463,6 +463,11 @@ install_mysql() {
 
     TMP_PASS=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
     mysql --connect-expired-password -u"root" -p"$TMP_PASS" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$root_password'; UNINSTALL COMPONENT 'file://component_validate_password';"
+
+    # Allow SupportPal (httpd) to connect to the DB via 127.0.0.1
+    if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
+      setsebool -P httpd_can_network_connect 1
+    fi
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
