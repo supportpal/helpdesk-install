@@ -25,8 +25,8 @@ jobs:
           - ubuntu:20.04
           - debian:9
           - debian:10
-          - rhel:7
-          - rhel:8
+          - registry.redhat.io/rhel7:7.9
+          - registry.access.redhat.com/ubi8/ubi:8
 
     steps:
       - uses: actions/checkout@v2
