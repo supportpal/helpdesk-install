@@ -134,6 +134,12 @@ check_root() {
   fi
 }
 
+detect_supportpal() {
+  if [ -d "$install_path" ]; then
+    error "Unable to install SupportPal. ${install_path} already exists."
+  fi
+}
+
 backup() {
   if [[ -e "$1" ]]; then
     i=1
@@ -468,10 +474,6 @@ install_mysql() {
 }
 
 install_supportpal() {
-  if [ -n "$(ls -A $install_path)" ]; then
-    error "Unable to install SupportPal, ${install_path} already contains files. Please ensure the directory is empty."
-  fi
-
   install jq unzip
   SP_VERSION=$(curl -s https://licensing.supportpal.com/api/version/latest.json | jq -r ".version")
   curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /tmp/supportpal.zip
@@ -510,6 +512,7 @@ fi
 
 identify_os
 check_root
+detect_supportpal
 setup
 
 install_mysql
