@@ -26,6 +26,8 @@ is_docker=
 os_type=
 # os_version as demanded by the OS (codename, major release, etc.)
 os_version=
+# ip address
+ip=
 # php version to install
 php_version='7.4'
 # mysql authentication
@@ -342,6 +344,10 @@ install_ioncube() {
 # Web Server
 #
 
+ip() {
+  ip=$(curl -s https://api.ipify.org)
+}
+
 write_vhost() {
   mkdir -p "${log_path}"
 
@@ -501,6 +507,7 @@ if ((is_docker == 0)); then
 fi
 
 identify_os
+ip
 setup
 
 update
@@ -514,7 +521,10 @@ echo " Successfully installed dependencies."
 echo
 echo "######################################################################"
 echo
-echo " You can now open your web browser and run the SupportPal installer."
+echo " You can now open your web browser to the following address and run"
+echo " the SupportPal installer."
+echo
+echo " http://$ip/"
 echo
 echo " Directories"
 echo "   SupportPal: /var/www/supportpal"
