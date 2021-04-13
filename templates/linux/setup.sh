@@ -197,6 +197,7 @@ setup() {
     export DEBIAN_FRONTEND=noninteractive
   fi
 
+  update
   install curl
 }
 
@@ -504,7 +505,6 @@ fi
 identify_os
 setup
 
-update
 install_mysql
 install_apache
 install_supportpal
