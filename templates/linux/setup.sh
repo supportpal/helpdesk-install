@@ -502,7 +502,6 @@ if ((is_docker == 0)); then
 fi
 
 identify_os
-ip
 setup
 
 update
