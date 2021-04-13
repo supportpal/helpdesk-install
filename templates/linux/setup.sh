@@ -128,6 +128,12 @@ identify_os() {
   fi
 }
 
+check_root() {
+  if [ "$(id -u)" != "0" ]; then
+    error "This script must be ran as root."
+  fi
+}
+
 backup() {
   if [[ -e "$1" ]]; then
     i=1
@@ -360,7 +366,7 @@ write_vhost() {
     CustomLog ${log_path}/access.log combined
 
     <Proxy \"unix:${socket_path}|fcgi://php-fpm\">
-    	  ProxySet disablereuse=off
+        ProxySet disablereuse=off
     </Proxy>
 
     <FilesMatch \.php$>
@@ -503,6 +509,7 @@ if ((is_docker == 0)); then
 fi
 
 identify_os
+check_root
 setup
 
 install_mysql
