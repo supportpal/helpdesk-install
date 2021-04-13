@@ -4,7 +4,7 @@ set -eu -o pipefail
 version="0.0.1"
 
 supported="The following Linux OSs are supported, on x86_64 only:
-    * RHEL/CentOS 7 & 8 (rhel)
+    * CentOS 7 & 8 (rhel)
     * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal)
     * Debian 9 (stretch) & 10 (buster)"
 
@@ -70,18 +70,18 @@ error() {
 
 identify_os() {
   arch=$(uname -m)
-  # Check for RHEL/CentOS, Fedora, etc.
+  # Check for CentOS, Fedora, etc.
   if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]; then
     os_type=rhel
     el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
     5*)
       os_version=5
-      error "RHEL/CentOS 5 is no longer supported" "$supported"
+      error "CentOS 5 is no longer supported" "$supported"
       ;;
     6*)
       os_version=6
-      error "RHEL/CentOS 6 is no longer supported" "$supported"
+      error "CentOS 6 is no longer supported" "$supported"
       ;;
     7*) os_version=7 ;;
     8*) os_version=8 ;;
