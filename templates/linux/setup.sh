@@ -206,7 +206,7 @@ setup() {
 #
 
 configure_php_fpm() {
-  mkdir -p "$(dirname "$socket_path")" && touch "$socket_path"
+  mkdir -p "$(dirname "$socket_path")"
 
   echo "[supportpal]
 
