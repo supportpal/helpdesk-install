@@ -129,9 +129,9 @@ identify_os() {
 }
 
 check_root() {
-	if [ "$(id -u)" != "0" ]; then
-	  error "This script must be ran as root."
-	fi
+  if [ "$(id -u)" != "0" ]; then
+    error "This script must be ran as root."
+  fi
 }
 
 backup() {
@@ -366,7 +366,7 @@ write_vhost() {
     CustomLog ${log_path}/access.log combined
 
     <Proxy \"unix:${socket_path}|fcgi://php-fpm\">
-    	  ProxySet disablereuse=off
+        ProxySet disablereuse=off
     </Proxy>
 
     <FilesMatch \.php$>
