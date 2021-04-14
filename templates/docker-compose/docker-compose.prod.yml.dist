@@ -12,6 +12,7 @@ services:
             - supportpal_app:/supportpal/app
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
+            - ./customization/:/customization
 
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
@@ -30,6 +31,7 @@ services:
             - supportpal_app:/supportpal/app
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
+            - ./customization/:/customization
         networks:
             - supportpal_frontend
             - supportpal_backend
