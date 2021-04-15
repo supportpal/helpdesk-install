@@ -34,7 +34,7 @@ stop: ## Stop the help desk.
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) stop
 
 .PHONY: restart
-restart: stop start ; ## Restart help desk.
+restart: stop start ## Restart help desk.
 
 .PHONY: uninstall
 uninstall: ## Irreversibly uninstall the help desk and all associated data.
