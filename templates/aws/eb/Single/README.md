@@ -1,7 +1,8 @@
 # SupportPal Deployment via AWS Elastic Beanstalk
 
+----
 
-## First time setup
+## Install SupportPal
 
 Start by renaming:
 ```shell
@@ -161,7 +162,39 @@ ssh ec2-user@your-ec2-instance-dns-or-public-ip
 sudo docker exec -it supportpal su www-data -s /usr/local/bin/php artisan app:install
 ```
 
+----
 
-### 7. Helpdesk Customization
+## Customize SupportPal
 
-In order to add your customizations such as plugins or templates, you will need to place your files inside the `customization` directory.
+To [customize](https://docs.supportpal.com/current/Customisation) SupportPal:
+1. Place your customizations in the relevant `customizations` directory.
+
+   For example, `customizations/languages/de` would be used for German translation files.
+3. Redeploy the application
+```bash
+eb deploy production
+```
+
+----
+
+## Upgrade SupportPal
+
+To upgrade to a new SupportPal version:
+1. Open `.ebextensions/options.config`
+2. Change the application version
+```
+APP_VERSION: 3.3.1
+```
+3. Redeploy the application
+```bash
+eb deploy production
+```
+
+----
+
+## Debugging
+
+If you have any problems, read the log files:
+```bash
+eb logs production
+```
