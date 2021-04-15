@@ -181,7 +181,7 @@ eb deploy production
 
 Before upgrading, we recommend that you take a full backup of all your files and configurations.
 
-* Make sure that you backup your EFS filesystem on AWS ( all files and directories in your /supportpal directory)
+* Make sure that you backup your EFS filesystem on AWS (all files and directories in your `/supportpal` directory)
 * Make sure that you have a recent backup of your RDS database
 
 To upgrade to a new SupportPal version:
