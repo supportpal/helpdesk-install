@@ -1,5 +1,4 @@
 SELF_FILENAME := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
-TIMESTAMP := $$(date +%F-%I-%M-%S)
 
 include .env
 
