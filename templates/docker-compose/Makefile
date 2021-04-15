@@ -83,8 +83,8 @@ upgrade: ## Upgrade SupportPal to a later version.
 	@printf "\033[0;33mThis action will upgrade your system to the specified APP_VERSION. We recommend that you only proceed if you've taken a recent full system backup.\033[0m\n"
 	@printf "\033[0;33mYou can take a backup of your system by executing: make backup\033[0m\n"
 	@echo
-	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 5 seconds...\033[0m\n"
-	@sleep 5
+	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 10 seconds...\033[0m\n"
+	@sleep 10
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(MAKE) start
 	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:upgrade --confirm-backup'
