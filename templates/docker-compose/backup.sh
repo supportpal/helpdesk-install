@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eu -o pipefail
+
 . .env
 TIMESTAMP=$(date +%s-%F)
 
