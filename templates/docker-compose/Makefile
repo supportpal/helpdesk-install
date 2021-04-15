@@ -76,6 +76,15 @@ configure:
 
 .PHONY: upgrade
 upgrade: ## Upgrade SupportPal to a later version.
+	@printf "\033[0;33m|---------------------|\n"
+	@printf "\033[0;33m|       NOTICE        |\n"
+	@printf "\033[0;33m|---------------------|\n"
+	@echo
+	@printf "\033[0;33mThis action will upgrade your system to match your specified APP_VERSION. We recommend that you only proceed if you've taken a recent full system backup\n"
+	@printf "\033[0;33mYou can take a backup for your system by executing: make backup\n"
+	@echo
+	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 5 seconds...\n"
+	@sleep 5
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(MAKE) start
 
