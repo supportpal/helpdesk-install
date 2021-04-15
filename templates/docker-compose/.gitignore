@@ -6,3 +6,4 @@
 /secrets/
 /ssl/
 *.yml
+/backup/
