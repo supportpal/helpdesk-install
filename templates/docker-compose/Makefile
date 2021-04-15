@@ -1,4 +1,5 @@
 SELF_FILENAME := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
+TIMESTAMP := $$(date +%s)
 
 include .env
 
@@ -73,3 +74,16 @@ configure:
 	cp -n docker-compose.yml.dist docker-compose.yml || true
 	cp -n docker-compose.prod.yml.dist docker-compose.prod.yml || true
 	cp -n -R ../../configs/gateway . || true
+
+.PHONY: upgrade
+upgrade: backup
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -d
+	$(MAKE) start
+
+.PHONY: backup
+backup:
+	mkdir -p "backup/mysql/$(TIMESTAMP)" && docker cp "$(DATABASE_SERVICE_NAME):/var/lib/mysql" "backup/mysql/$(TIMESTAMP)"
+	mkdir -p "backup/cache/$(TIMESTAMP)" && docker cp "$(CACHE_SERVICE_NAME):/data" "backup/cache/$(TIMESTAMP)"
+	mkdir -p "backup/mailer/$(TIMESTAMP)" && docker cp "$(MAILER_SERVICE_NAME):/var/spool/exim4" "backup/mailer/$(TIMESTAMP)"
+	mkdir -p "backup/config/$(TIMESTAMP)" && docker cp "$(WEB_SERVICE_NAME):/supportpal/config/production" "backup/config/$(TIMESTAMP)"
+	mkdir -p "backup/storage/$(TIMESTAMP)" && docker cp "$(WEB_SERVICE_NAME):/supportpal/storage" "backup/storage/$(TIMESTAMP)"
