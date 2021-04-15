@@ -77,7 +77,7 @@ configure:
 
 .PHONY: upgrade
 upgrade: backup
-	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -d
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(MAKE) start
 
 .PHONY: backup
