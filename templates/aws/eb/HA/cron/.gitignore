@@ -1,4 +1,5 @@
 /gateway/*
+/customization/
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml

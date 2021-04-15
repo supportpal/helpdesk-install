@@ -154,7 +154,17 @@ ssh ec2-user@your-ec2-instance-dns-or-public-ip
 sudo docker exec -it supportpal su www-data -s /usr/local/bin/php artisan app:install
 ```
 
-### 6. CRON
+### 5. Helpdesk Customization
+
+In order to add your customizations such as plugins or templates, you will need to place your files inside the `customization` directory.
+Once you're done, execute the following command:
+
+```shell
+cp -R customization web/
+cp -R customization cron/
+```
+
+### 7. CRON
 
 Once you finish setting up your web environment, navigate to the CRON directory and create the environment
 ```shell
@@ -162,6 +172,6 @@ cd ../cron
 eb create cron-production --single
 ```
 
-### 7. Configure HTTPS
+### 8. Configure HTTPS
 
 By default, the software will run on HTTP using port 80. However, we recommend using HTTPS for added security. to enable HTTPS, we suggest that you do so at the level of the load balancer.  To do that please check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html).

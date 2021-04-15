@@ -157,3 +157,7 @@ sudo docker exec -it supportpal su www-data -s /usr/local/bin/php artisan app:in
 ## Debugging
 
 If you have any problems, run `eb logs preview` to read the log files.
+
+### 6. Helpdesk Customization
+
+In order to add your customizations such as plugins or templates, you will need to place your files inside the `customization` directory.
