@@ -1,7 +1,7 @@
 #!/bin/bash
 
 . .env
-TIMESTAMP=$(date +%F-%I-%M-%S)
+TIMESTAMP=$(date +%s-%F)
 
 mkdir -p "backup/${TIMESTAMP}/mysql/" && docker cp "${DATABASE_SERVICE_NAME}:/var/lib/mysql" "backup/${TIMESTAMP}/mysql/"
 mkdir -p "backup/${TIMESTAMP}/cache/" && docker cp "${CACHE_SERVICE_NAME}:/data" "backup/${TIMESTAMP}/cache/"
