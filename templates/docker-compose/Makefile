@@ -23,7 +23,7 @@ install: configure create_secrets create_volumes ## Install the help desk.
 	@printf "\tUsername: $$(cat secrets/db_user.txt)\n"
 	@printf "\tPassword: $$(cat secrets/db_password.txt)\n"
 	@echo
-	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) su www-data -s /usr/local/bin/php artisan app:install
+	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:install'
 
 .PHONY: start
 start: ## Start the help desk.
@@ -87,6 +87,7 @@ upgrade: ## Upgrade SupportPal to a later version.
 	@sleep 5
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(MAKE) start
+	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:upgrade --confirm-backup'
 
 .PHONY: backup
 backup: ## Create a full system backup.
