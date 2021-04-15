@@ -7,7 +7,7 @@
 > AWS recommends to decouple data services to prevent any accidental destruction of data.
 
 
-## Setup
+## Install SupportPal
 
 To proceed with this deployment, you will need to have AWS EB CLI utility installed. Please follow the following [documentation](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install.html) for more information.
 
@@ -154,10 +154,41 @@ ssh ec2-user@your-ec2-instance-dns-or-public-ip
 sudo docker exec -it supportpal su www-data -s /usr/local/bin/php artisan app:install
 ```
 
+----
+
+## Customize SupportPal
+
+To [customize](https://docs.supportpal.com/current/Customisation) SupportPal:
+1. Place your customizations in the relevant `customizations` directory.
+
+   For example, `customizations/languages/de` would be used for German translation files.
+3. Redeploy the application
+```bash
+eb deploy preview
+```
+
+----
+
+## Upgrade SupportPal
+
+Before upgrading, we recommend that you take a full backup of all your files and configurations.
+
+* Make sure that you backup your EFS filesystem on AWS (all files and directories in your `/supportpal` directory)
+* Make sure that you have a recent backup of your RDS database
+
+To upgrade to a new SupportPal version:
+1. Open `.ebextensions/environment.config`
+2. Change the application version
+```
+APP_VERSION: 3.3.1
+```
+3. Redeploy the application
+```bash
+eb deploy preview
+```
+
+----
+
 ## Debugging
 
 If you have any problems, run `eb logs preview` to read the log files.
-
-### 6. Helpdesk Customization
-
-In order to add your customizations such as plugins or templates, you will need to place your files inside the `customization` directory.
