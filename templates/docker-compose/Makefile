@@ -38,14 +38,14 @@ restart: stop start ; ## Restart help desk.
 
 .PHONY: uninstall
 uninstall: ## Irreversibly uninstall the help desk and all associated data.
-	@printf "\033[0;33m|---------------------|\n"
-	@printf "\033[0;33m|       WARNING       |\n"
-	@printf "\033[0;33m|---------------------|\n"
+	@printf "\033[0;33m|---------------------|\033[0m\n"
+	@printf "\033[0;33m|       WARNING       |\033[0m\n"
+	@printf "\033[0;33m|---------------------|\033[0m\n"
 	@echo
-	@printf "\033[0;33mThis action will irreversibly uninstall your help desk. This includes, but not limited to permanent removal of the database and all user files.\n"
-	@printf "\033[0;33mDo NOT continue without a recent full system backup.\n"
+	@printf "\033[0;33mThis action will irreversibly uninstall your help desk. This includes, but not limited to permanent removal of the database and all user files.\033[0m\n"
+	@printf "\033[0;33mDo NOT continue without a recent full system backup.\033[0m\n"
 	@echo
-	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 15 seconds...\n"
+	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 15 seconds...\033[0m\n"
 	@sleep 15
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(DOCKER_BIN) volume remove $(DB_VOLUME)
@@ -76,14 +76,14 @@ configure:
 
 .PHONY: upgrade
 upgrade: ## Upgrade SupportPal to a later version.
-	@printf "\033[0;33m|---------------------|\n"
-	@printf "\033[0;33m|       NOTICE        |\n"
-	@printf "\033[0;33m|---------------------|\n"
+	@printf "\033[0;33m|---------------------|\033[0m\n"
+	@printf "\033[0;33m|       NOTICE        |\033[0m\n"
+	@printf "\033[0;33m|---------------------|\033[0m\n"
 	@echo
-	@printf "\033[0;33mThis action will upgrade your system to match your specified APP_VERSION. We recommend that you only proceed if you've taken a recent full system backup\n"
-	@printf "\033[0;33mYou can take a backup for your system by executing: make backup\n"
+	@printf "\033[0;33mThis action will upgrade your system to match your specified APP_VERSION. We recommend that you only proceed if you've taken a recent full system backup\033[0m\n"
+	@printf "\033[0;33mYou can take a backup for your system by executing: make backup\033[0m\n"
 	@echo
-	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 5 seconds...\n"
+	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 5 seconds...\033[0m\n"
 	@sleep 5
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(MAKE) start
