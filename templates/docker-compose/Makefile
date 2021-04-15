@@ -23,7 +23,7 @@ install: configure create_secrets create_volumes ## Install the help desk.
 	@printf "\tUsername: $$(cat secrets/db_user.txt)\n"
 	@printf "\tPassword: $$(cat secrets/db_password.txt)\n"
 	@echo
-	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) su www-data -s /usr/local/bin/php artisan app:install
+	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:install'
 
 .PHONY: start
 start: ## Start the help desk.
@@ -34,18 +34,18 @@ stop: ## Stop the help desk.
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) stop
 
 .PHONY: restart
-restart: stop start ; ## Restart help desk.
+restart: stop start ## Restart help desk.
 
 .PHONY: uninstall
 uninstall: ## Irreversibly uninstall the help desk and all associated data.
-	@printf "\033[0;33m|---------------------|\n"
-	@printf "\033[0;33m|       WARNING       |\n"
-	@printf "\033[0;33m|---------------------|\n"
+	@printf "\033[0;33m|---------------------|\033[0m\n"
+	@printf "\033[0;33m|       WARNING       |\033[0m\n"
+	@printf "\033[0;33m|---------------------|\033[0m\n"
 	@echo
-	@printf "\033[0;33mThis action will irreversibly uninstall your help desk. This includes, but not limited to permanent removal of the database and all user files.\n"
-	@printf "\033[0;33mDo NOT continue without a recent full system backup.\n"
+	@printf "\033[0;33mThis action will irreversibly uninstall your help desk. This includes, but not limited to, permanent removal of the database and all user files.\033[0m\n"
+	@printf "\033[0;33mDo NOT continue without a recent full system backup. You can take a backup of your system by executing: make backup\033[0m\n"
 	@echo
-	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 15 seconds...\n"
+	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 15 seconds...\033[0m\n"
 	@sleep 15
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(DOCKER_BIN) volume remove $(DB_VOLUME)
@@ -73,3 +73,22 @@ configure:
 	cp -n docker-compose.yml.dist docker-compose.yml || true
 	cp -n docker-compose.prod.yml.dist docker-compose.prod.yml || true
 	cp -n -R ../../configs/gateway . || true
+
+.PHONY: upgrade
+upgrade: ## Upgrade SupportPal to a later version.
+	@printf "\033[0;33m|---------------------|\033[0m\n"
+	@printf "\033[0;33m|       NOTICE        |\033[0m\n"
+	@printf "\033[0;33m|---------------------|\033[0m\n"
+	@echo
+	@printf "\033[0;33mThis action will upgrade your system to the specified APP_VERSION. We recommend that you only proceed if you've taken a recent full system backup.\033[0m\n"
+	@printf "\033[0;33mYou can take a backup of your system by executing: make backup\033[0m\n"
+	@echo
+	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 10 seconds...\033[0m\n"
+	@sleep 10
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
+	$(MAKE) start
+	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:upgrade --confirm-backup'
+
+.PHONY: backup
+backup: ## Create a full system backup.
+	@ bash backup.sh
