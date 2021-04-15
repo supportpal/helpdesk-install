@@ -1,7 +1,8 @@
-# Supportpal Elastic Beanstalk High Availability Deployment
+# SupportPal Elastic Beanstalk High Availability Deployment
 
+----
 
-## First time setup
+## Install SupportPal
 
 Copy nginx configuration files from root repository.
 ```shell
@@ -154,17 +155,7 @@ ssh ec2-user@your-ec2-instance-dns-or-public-ip
 sudo docker exec -it supportpal su www-data -s /usr/local/bin/php artisan app:install
 ```
 
-### 5. Helpdesk Customization
-
-In order to add your customizations such as plugins or templates, you will need to place your files inside the `customization` directory.
-Once you're done, execute the following command:
-
-```shell
-cp -R customization web/
-cp -R customization cron/
-```
-
-### 7. CRON
+### 6. CRON
 
 Once you finish setting up your web environment, navigate to the CRON directory and create the environment
 ```shell
@@ -172,6 +163,56 @@ cd ../cron
 eb create cron-production --single
 ```
 
-### 8. Configure HTTPS
+### 7. Configure HTTPS
 
 By default, the software will run on HTTP using port 80. However, we recommend using HTTPS for added security. to enable HTTPS, we suggest that you do so at the level of the load balancer.  To do that please check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html).
+
+----
+
+## Customizing SupportPal
+
+To [customize](https://docs.supportpal.com/current/Customisation) SupportPal:
+1. Place your customizations in the relevant `customizations` directory. 
+   
+   For example, `customizations/languages/de` would be used for German translation files.
+2. Copy the changes to both cron and web deployments:
+```bash
+cp -R customization web/
+cp -R customization cron/
+```
+3. Redeploy the application
+```bash
+eb deploy web-production
+eb deploy cron-production
+```
+
+----
+
+## Upgrade SupportPal
+
+Before upgrading, we recommend that you take a full backup of all your files and configurations.
+
+* Make sure that you backup your EFS filesystem on AWS (all files and directories in your `/supportpal` directory)
+* Make sure that you have a recent backup of your RDS database
+
+To upgrade to a new SupportPal version:
+1. Open `.ebextensions/options.config`
+2. Change the application version
+```
+APP_VERSION: 3.3.1
+```
+3. Redeploy the application
+```bash
+eb deploy web-production
+eb deploy cron-production
+```
+
+----
+
+## Debugging
+
+If you have any problems, read the log files:
+```bash
+eb logs web-production
+eb logs cron-production
+```
