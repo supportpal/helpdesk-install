@@ -160,3 +160,8 @@ ssh-add ~/.ssh/your_ssh_key_pair
 ssh ec2-user@your-ec2-instance-dns-or-public-ip
 sudo docker exec -it supportpal su www-data -s /usr/local/bin/php artisan app:install
 ```
+
+
+### 7. Helpdesk Customization
+
+In order to add your customizations such as plugins or templates, you will need to place your files inside the `customization` directory.
