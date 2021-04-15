@@ -76,7 +76,7 @@ configure:
 	cp -n -R ../../configs/gateway . || true
 
 .PHONY: upgrade
-upgrade: backup
+upgrade: backup ## Upgrade SupportPal to a later version.
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(MAKE) start
 
