@@ -12,18 +12,13 @@ COMPOSE_FILES=-f docker-compose.yml -f docker-compose.prod.yml
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(SELF_FILENAME) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: install
-install: configure create_secrets create_volumes ## Install the help desk.
-	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d gateway supportpal db redis
-	@echo
-	@printf "Database Configuration:\n"
-	@printf "\tHostname: db\n"
-	@printf "\tPort: 3306\n"
-	@printf "\tDatabase: supportpal\n"
-	@printf "\tUsername: $$(cat secrets/db_user.txt)\n"
-	@printf "\tPassword: $$(cat secrets/db_password.txt)\n"
-	@echo
+.PHONY: install_cli
+install_cli: install_base ## Install the help desk using the CLI installer.
 	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:install'
+
+.PHONY: install
+install: install_base ## Install the helpdesk using the web installer.
+	@printf "Open your web browser and complete the installation using the above database details.\n"
 
 .PHONY: start
 start: ## Start the help desk.
@@ -73,6 +68,18 @@ configure:
 	cp -n docker-compose.yml.dist docker-compose.yml || true
 	cp -n docker-compose.prod.yml.dist docker-compose.prod.yml || true
 	cp -n -R ../../configs/gateway . || true
+
+.PHONY: install_base
+install_base: configure create_secrets create_volumes
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d gateway supportpal db redis
+	@echo
+	@printf "Database Configuration:\n"
+	@printf "\tHostname: db\n"
+	@printf "\tPort: 3306\n"
+	@printf "\tDatabase: supportpal\n"
+	@printf "\tUsername: $$(cat secrets/db_user.txt)\n"
+	@printf "\tPassword: $$(cat secrets/db_password.txt)\n"
+	@echo
 
 .PHONY: upgrade
 upgrade: ## Upgrade SupportPal to a later version.
