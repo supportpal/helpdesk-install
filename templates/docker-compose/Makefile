@@ -18,7 +18,7 @@ install_cli: install_base ## Install the help desk using the CLI installer.
 
 .PHONY: install
 install: install_base ## Install the helpdesk using the web installer.
-	@printf "Open your web browser and complete the installation using the above database details."
+	@printf "Open your web browser and complete the installation using the above database details.\n"
 
 .PHONY: start
 start: ## Start the help desk.
