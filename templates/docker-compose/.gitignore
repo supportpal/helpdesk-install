@@ -7,3 +7,4 @@
 /ssl/
 *.yml
 /backup/
+Makefile
