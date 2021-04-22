@@ -1,12 +1,9 @@
 name: linux install
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
-    branches:
-      - master
+    paths:
+      - templates/linux/**/*
 
 defaults:
   run:
