@@ -60,7 +60,7 @@ create_volumes:
 
 .PHONY: create_secrets
 create_secrets:
-	$(DOCKER_COMPOSE_BIN) -f docker-compose.secrets.yml up
+	$(DOCKER_COMPOSE_BIN) -f docker-compose.secrets.yml up --force-recreate
 
 .PHONY: configure
 configure:
