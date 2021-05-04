@@ -4,7 +4,6 @@ include .env
 
 DOCKER_BIN=docker
 DOCKER_COMPOSE_BIN=docker-compose
-CONFIGURATOR_VERSION=latest
 COMPOSE_FILES=-f docker-compose.yml -f docker-compose.prod.yml
 
 .DEFAULT_GOAL := help
