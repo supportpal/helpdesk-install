@@ -4,7 +4,6 @@ include .env
 
 DOCKER_BIN=docker
 DOCKER_COMPOSE_BIN=docker-compose
-CONFIGURATOR_VERSION=latest
 COMPOSE_FILES=-f docker-compose.yml -f docker-compose.prod.yml
 
 .DEFAULT_GOAL := help
@@ -60,11 +59,12 @@ create_volumes:
 
 .PHONY: create_secrets
 create_secrets:
-	$(DOCKER_BIN) run -e SECRETS_DIR="$(SECRETS_DIR)" -v "$(SECRETS_DIR):/secrets" "public.ecr.aws/supportpal/helpdesk-configurator:$(CONFIGURATOR_VERSION)" sh "//app//scripts//create_secrets.sh"
+	$(DOCKER_COMPOSE_BIN) -f docker-compose.secrets.yml run --rm -T configurator
 
 .PHONY: configure
 configure:
 	cp -n .env.dist .env || true
+	cp -n docker-compose.secrets.yml.dist docker-compose.secrets.yml || true
 	cp -n docker-compose.yml.dist docker-compose.yml || true
 	cp -n docker-compose.prod.yml.dist docker-compose.prod.yml || true
 	cp -n -R ../../configs/gateway . || true
