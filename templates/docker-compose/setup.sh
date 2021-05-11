@@ -32,6 +32,23 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
+os_type=
+identify_os() {
+  # Check for RHEL/CentOS, Fedora, etc.
+  if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]; then
+    os_type=rhel
+  elif [[ -e /etc/os-release ]]; then
+    . /etc/os-release
+    # Is it Debian?
+    case $ID in
+    debian)
+      os_type=debian ;;
+    ubuntu)
+      os_type=ubuntu ;;
+    esac
+  fi
+}
+
 # usage: check_command <path>
 check_command() {
   local _binary="$1" _full_path
@@ -114,8 +131,13 @@ check_git() {
 check_make() {
   if ! check_command make; then
     printf "error: Install make for your distro.\n"
-    printf "       CentOS / RHEL: sudo yum install make -y\n"
-    printf "       Debian / Ubuntu: sudo apt install make -y\n"
+
+    if [[ $os_type == 'rhel' ]]; then
+      printf "       sudo yum install make -y\n"
+    elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+      printf "       sudo apt install make -y\n"
+    fi
+
     exit 1
   fi
 }
@@ -157,6 +179,7 @@ configure() {
   fi
 }
 
+identify_os
 check_docker
 check_docker_compose
 check_git
