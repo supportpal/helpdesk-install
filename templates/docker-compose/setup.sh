@@ -222,6 +222,6 @@ check_docker
 check_docker_compose
 check_git
 check_make
-
+echo
 configure
 make install
