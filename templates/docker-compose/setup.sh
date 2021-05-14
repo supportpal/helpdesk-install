@@ -1,7 +1,9 @@
 #!/bin/bash
 set -eu -o pipefail
 
-usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-compose/setup.sh | bash
+usage="Usage (Linux): curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-compose/setup.sh | bash
+
+Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-compose/setup.sh)
 
 Options:
     -h,--help                  Display this help and exit.
