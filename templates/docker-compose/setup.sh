@@ -46,6 +46,15 @@ identify_os() {
     ubuntu)
       os_type=ubuntu ;;
     esac
+  elif [[ "$(uname -s)" == MINGW* ]]; then
+    os_type=windows
+  fi
+  
+  if ! [[ $os_type ]]; then
+    printf "error: unsupported operating system.\n"
+    printf "\tFor a list of supported operating systems see https://docs.supportpal.com/current/System+Requirements#OperatingSystems\n"
+    echo
+    exit 1
   fi
 }
 
@@ -70,12 +79,36 @@ check_command() {
 }
 
 # usage: version_ge <installed_version> <minimum_version>
-version_ge()
-{
+version_ge() {
   if ! [ "$(printf '%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]; then
     printf "error: %s is less than minimum required version of %s\n" "$1" "$2"
     exit 1
   fi
+}
+
+check_winpty() {
+  if ! check_command winpty; then
+    printf "error: winpty is missing. Install Git Bash using the default options.\n"
+    exit 1
+  fi
+}
+
+configure_windows() {
+  if [[ "$os_type" != "windows" ]]; then
+    return
+  fi
+
+  check_winpty
+
+  # winpty is required to run docker interactively (create a tty).
+  aliases="alias docker='winpty docker'"
+  if [[ ! -e ~/.bashrc ]] || [[ $(grep -L "${aliases}" ~/.bashrc) ]]; then
+    printf "registering winpty aliases to ... %s %s\n" ~/.bashrc ~/.bash_profile
+    echo "${aliases}" >> ~/.bashrc
+    echo "[ -f ~/.bashrc ] && . ~/.bashrc" >> ~/.bash_profile
+  fi
+  
+  source ~/.bash_profile
 }
 
 check_docker() {
@@ -136,6 +169,8 @@ check_make() {
       printf "       sudo yum install make -y\n"
     elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
       printf "       sudo apt install make -y\n"
+    elif [[ $os_type == 'windows' ]]; then
+      printf "       see https://chocolatey.org/packages/make\n"
     fi
 
     exit 1
@@ -180,6 +215,7 @@ configure() {
 }
 
 identify_os
+configure_windows
 check_docker
 check_docker_compose
 check_git
