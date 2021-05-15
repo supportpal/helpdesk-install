@@ -60,7 +60,7 @@ identify_os() {
   fi
 }
 
-# usage: check_command <path>
+# usage: check_command <bashrc__full_path>
 check_command() {
   local _binary="$1" _full_path
 
@@ -103,14 +103,19 @@ configure_windows() {
   check_winpty
 
   # winpty is required to run docker interactively (create a tty).
-  aliases="alias docker='winpty docker'"
-  if [[ ! -e ~/.bashrc ]] || [[ $(grep -L "${aliases}" ~/.bashrc) ]]; then
-    printf "registering winpty aliases to ... %s %s\n" ~/.bashrc ~/.bash_profile
-    echo "${aliases}" >> ~/.bashrc
-    echo "[ -f ~/.bashrc ] && . ~/.bashrc" >> ~/.bash_profile
+  path="${HOME}/.winpty/supportpal.sh"
+  if [[ ! -e "${path}" ]]; then
+    printf "registering winpty aliases ...\n"
+
+    mkdir -p "${path}"
+    echo "alias docker='winpty docker'" >> "${path}"
+
+    echo "[ -f ${path} ] && . ${path}" >> ~/.bashrc
+    echo "[ -f ${path} ] && . ${path}" >> ~/.bash_profile
   fi
-  
-  source ~/.bash_profile
+
+  # shellcheck disable=SC1090
+  . "${path}"
 }
 
 check_docker() {
