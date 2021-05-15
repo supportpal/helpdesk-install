@@ -107,7 +107,7 @@ configure_windows() {
   if [[ ! -e "${path}" ]]; then
     printf "registering winpty aliases ...\n"
 
-    mkdir -p "${path}"
+    mkdir -p "$(dirname "${path}")"
     echo "alias docker='winpty docker'" >> "${path}"
 
     echo "[ -f ${path} ] && . ${path}" >> ~/.bashrc
