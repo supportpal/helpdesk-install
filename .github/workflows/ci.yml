@@ -9,6 +9,15 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
+            - name: Shellcheck
+              run: |
+                docker run --rm \
+                  -v "${PWD}:/v"  \
+                  -w "/v" \
+                  koalaman/shellcheck \
+                  -e SC1091 -e SC1117 \
+                  setup.sh
+              working-directory: templates/docker-compose
             - name: self-managed
               run: cp templates/docker-compose/.env.dist templates/docker-compose/.env && docker-compose -f templates/docker-compose/docker-compose.yml.dist -f templates/docker-compose/docker-compose.prod.yml.dist -f templates/docker-compose/docker-compose.override.yml.dist config
             - name: Single
