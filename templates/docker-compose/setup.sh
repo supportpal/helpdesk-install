@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 
-usage="Usage (Linux): curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-compose/setup.sh | bash
+usage="Usage (Linux / MacOS): bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-compose/setup.sh)
 
 Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-compose/setup.sh)
 
@@ -48,6 +48,8 @@ identify_os() {
     ubuntu)
       os_type=ubuntu ;;
     esac
+  elif [[ "$(uname -s)" == Darwin ]]; then
+    os_type=macos
   elif [[ "$(uname -s)" == MINGW* ]]; then
     os_type=windows
   fi
@@ -176,6 +178,8 @@ check_make() {
       printf "       sudo yum install make -y\n"
     elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
       printf "       sudo apt install make -y\n"
+    elif [[ $os_type == 'macos' ]]; then
+      printf "       see https://formulae.brew.sh/formula/make\n"
     elif [[ $os_type == 'windows' ]]; then
       printf "       see https://chocolatey.org/packages/make\n"
     fi
@@ -208,15 +212,30 @@ configure() {
   fi
 
   if [[ -n "${email// }" ]]; then
-    sed -i -E "s/^(MAILTO=).*/\1$(escape_re "${email// }")/" .env
+    if [[ $os_type == 'macos' ]]; then
+      sed -i "" -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
+    else
+      sed -i -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
+    fi
+
     printf "wrote 'MAILTO=%s' to .env\n" "${email// }"
   fi
 
   if [[ -n "${host// }" ]]; then
-    sed -i -E "s/^(HOST=).*/\1$(escape_re "${host// }")/" .env
+    if [[ $os_type == 'macos' ]]; then
+      sed -i "" -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env
+    else
+      sed -i -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env
+    fi
+
     printf "wrote 'HOST=%s' to .env\n" "${host// }"
 
-    sed -i -E "s/^(DOMAIN_NAME=).*/\1$(escape_re "${host// }")/" .env
+    if [[ $os_type == 'macos' ]]; then
+      sed -i "" -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
+    else
+      sed -i -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
+    fi
+
     printf "wrote 'DOMAIN_NAME=%s' to .env\n" "${host// }"
   fi
 }
