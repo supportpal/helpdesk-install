@@ -212,15 +212,30 @@ configure() {
   fi
 
   if [[ -n "${email// }" ]]; then
-    sed -i "" -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
+    if [[ $os_type == 'macos' ]]; then
+      sed -i "" -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
+    else
+      sed -i -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
+    fi
+
     printf "wrote 'MAILTO=%s' to .env\n" "${email// }"
   fi
 
   if [[ -n "${host// }" ]]; then
-    sed -i "" -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env
+    if [[ $os_type == 'macos' ]]; then
+      sed -i "" -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env
+    else
+      sed -i -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env
+    fi
+
     printf "wrote 'HOST=%s' to .env\n" "${host// }"
 
-    sed -i "" -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
+    if [[ $os_type == 'macos' ]]; then
+      sed -i "" -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
+    else
+      sed -i -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
+    fi
+
     printf "wrote 'DOMAIN_NAME=%s' to .env\n" "${host// }"
   fi
 }
