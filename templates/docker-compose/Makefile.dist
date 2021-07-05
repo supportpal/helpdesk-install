@@ -15,7 +15,7 @@ help:
 install: configure create_secrets create_volumes ## Install the helpdesk.
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d gateway supportpal db redis
 	$(DOCKER_BIN) exec $(DATABASE_SERVICE_NAME) bash -c "while ! (mysqladmin ping -uroot -p$$(cat secrets/db_root_password.txt) --silent); do sleep 1; done"
-	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c "/usr/local/bin/php artisan app:install --db-host=db --db-user=$$(cat secrets/db_user.txt) --db-pass=$$(cat secrets/db_password.txt) --db-name=supportpal"
+	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c "/usr/local/bin/php artisan app:install --db-host=db --db-user=$$(cat $(SECRETS_DIR)db_user.txt) --db-pass=$$(cat $(SECRETS_DIR)db_password.txt) --db-name=supportpal"
 
 .PHONY: start
 start: ## Start the help desk.
