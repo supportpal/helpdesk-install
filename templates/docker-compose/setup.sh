@@ -212,15 +212,15 @@ configure() {
   fi
 
   if [[ -n "${email// }" ]]; then
-    sed -i -E "s/^(MAILTO=).*/\1$(escape_re "${email// }")/" .env
+    sed -i "" -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
     printf "wrote 'MAILTO=%s' to .env\n" "${email// }"
   fi
 
   if [[ -n "${host// }" ]]; then
-    sed -i -E "s/^(HOST=).*/\1$(escape_re "${host// }")/" .env
+    sed -i "" -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env
     printf "wrote 'HOST=%s' to .env\n" "${host// }"
 
-    sed -i -E "s/^(DOMAIN_NAME=).*/\1$(escape_re "${host// }")/" .env
+    sed -i "" -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
     printf "wrote 'DOMAIN_NAME=%s' to .env\n" "${host// }"
   fi
 }
