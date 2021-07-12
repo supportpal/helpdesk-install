@@ -480,8 +480,9 @@ install_mysql() {
 
 install_supportpal() {
   install jq unzip
-  SP_VERSION=$(curl -s https://licensing.supportpal.com/api/version/latest.json | jq -r ".version")
-  curl "https://www.supportpal.com/manage/downloads/supportpal-$SP_VERSION.zip" -o /tmp/supportpal.zip
+  URLS=$( curl -sL https://licensing.supportpal.com/api/version/available.json | jq -r '.version[].artifacts[].download_url' | tr '\n' ' ')
+  DOWNLOAD_URL=$(echo "$URLS" | grep ".zip" | cut -d' ' -f1)
+  curl "${DOWNLOAD_URL}" -o /tmp/supportpal.zip
   unzip /tmp/supportpal.zip -d "${install_path}"
   rm /tmp/supportpal.zip
 
