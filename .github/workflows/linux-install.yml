@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - templates/linux/**/*
+  schedule:
+    - cron:  '0 0 * * *' # Midnight - every night
 
 defaults:
   run:
