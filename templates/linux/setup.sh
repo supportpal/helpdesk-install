@@ -511,7 +511,7 @@ install_mysql() {
   fi
 
   # Password isn't required for sudo access (since MySQL 5.7).
-  mysql -u"root" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${root_password}';"
+  mysql -u"root" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}';"
   if [[ $os_type == 'rhel' ]]; then
     mysql -u"root" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
   fi
