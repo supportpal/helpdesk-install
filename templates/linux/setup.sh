@@ -146,17 +146,21 @@ detect_supportpal() {
 }
 
 backup() {
-  if [[ -e "$1" ]]; then
+  path=$(realpath -s "$1")
+  if [[ -e "$path" ]]; then
+    new_name="$path.old_"
     i=1
-    while [[ -e "$1.old_$i" || -L "$1.old_$i" ]]; do
+    while [[ -e "${new_name}${i}" || -L "${new_name}${i}" ]]; do
       ((i++))
     done
 
-    msg "info" "Backing up $1 to $1.old_$i ..."
-    cp -R "$1" "$1.old_$i"
+    new_name="${new_name}${i}"
+
+    msg "info" "Backing up $path to $new_name ..."
+    cp -R "$path" "$new_name"
   fi
 
-  rm -rf "$1"
+  rm -rf "$path"
 }
 
 install() {
