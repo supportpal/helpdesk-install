@@ -512,7 +512,9 @@ install_mysql() {
 
   # Password isn't required for sudo access (since MySQL 5.7).
   mysql -u"root" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${root_password}';"
-  mysql -u"root" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
+  if [[ $os_type == 'rhel' ]]; then
+    mysql -u"root" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
+  fi
   mysql -u"root" -e "CREATE DATABASE ${database};"
   mysql -u"root" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
   mysql -u"root" -e "GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost';"
