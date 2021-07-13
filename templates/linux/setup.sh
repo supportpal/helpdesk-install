@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eux -o pipefail
+set -eu -o pipefail
 
 version="0.0.2"
 
@@ -494,9 +494,6 @@ install_mysql() {
     install mysql-community-server
     systemd restart mysqld
 
-    TMP_PASS=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
-    mysql --connect-expired-password -u"root" -p"$TMP_PASS" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$root_password'; UNINSTALL COMPONENT 'file://component_validate_password';"
-
     # Allow SupportPal (httpd) to connect to the DB via 127.0.0.1
     if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
       setsebool -P httpd_can_network_connect 1
@@ -513,7 +510,13 @@ install_mysql() {
     systemd restart mysql
   fi
 
-  mysql -u"root" -p"$root_password" -e "CREATE DATABASE ${database}; CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password'; GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost'; FLUSH PRIVILEGES;"
+  # Password isn't required for sudo access (since MySQL 5.7).
+  mysql -u"root" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${root_password}';"
+  mysql -u"root" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
+  mysql -u"root" -e "CREATE DATABASE ${database};"
+  mysql -u"root" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
+  mysql -u"root" -e "GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost';"
+  mysql -u"root" -e "FLUSH PRIVILEGES;"
 }
 
 install_supportpal() {
