@@ -506,7 +506,7 @@ install_mysql() {
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     if [ "$overwrite" == "1" ]; then
       apt-get remove -y --purge mysql-server && apt-get -y autoremove
-      backup /var/lib/mysql/ /var/log/mysqld.log
+      backup /var/lib/mysql/
     fi
 
     install mysql-server
