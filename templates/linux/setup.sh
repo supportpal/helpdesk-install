@@ -146,21 +146,23 @@ detect_supportpal() {
 }
 
 backup() {
-  path=$(realpath -s "$1")
-  if [[ -e "$path" ]]; then
-    new_name="$path.old_"
-    i=1
-    while [[ -e "${new_name}${i}" || -L "${new_name}${i}" ]]; do
-      ((i++))
-    done
+  for path in "$@"; do
+    path=$(realpath -s "$path")
+    if [[ -e "$path" ]]; then
+      new_name="$path.old_"
+      i=1
+      while [[ -e "${new_name}${i}" || -L "${new_name}${i}" ]]; do
+        ((i++))
+      done
 
-    new_name="${new_name}${i}"
+      new_name="${new_name}${i}"
 
-    msg "info" "Backing up $path to $new_name ..."
-    cp -R "$path" "$new_name"
-  fi
+      msg "info" "Backing up $path to $new_name ..."
+      cp -R "$path" "$new_name"
+    fi
 
-  rm -rf "$path"
+    rm -rf "$path"
+  done
 }
 
 install() {
@@ -486,7 +488,7 @@ install_mysql() {
   if [[ $os_type == 'rhel' ]]; then
     if [ "$overwrite" == "1" ]; then
       remove_rpm mysql-community-server
-      backup /var/lib/mysql/
+      backup /var/lib/mysql/ /var/log/mysqld.log
     fi
 
     install mysql-community-server
@@ -504,7 +506,7 @@ install_mysql() {
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     if [ "$overwrite" == "1" ]; then
       apt-get remove -y --purge mysql-server && apt-get -y autoremove
-      backup /var/lib/mysql/
+      backup /var/lib/mysql/ /var/log/mysqld.log
     fi
 
     install mysql-server
