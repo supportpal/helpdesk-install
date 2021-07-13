@@ -17,9 +17,13 @@ Options:
 
     --version               Output the script version and exit.
 
+    --overwrite             Permanently delete existing configurations, databases, files.
+
     --docker                Use for testing purposes only; replaces systemd to allow testing in docker containers.
 "
 
+# whether to overwrite files, databases, etc.
+overwrite=0
 # whether running in docker container
 is_docker=
 # os_type = ubuntu, debian, rhel, sles
@@ -49,6 +53,7 @@ while [[ "$#" -gt 0 ]]; do
     exit 0
     ;;
   --docker) is_docker=1 ;;
+  --overwrite) overwrite=1 ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -135,7 +140,7 @@ check_root() {
 }
 
 detect_supportpal() {
-  if [ -d "$install_path" ]; then
+  if [ "$overwrite" == "0" ] && [ -d "$install_path" ]; then
     error "Unable to install SupportPal. ${install_path} already exists."
   fi
 }
@@ -153,7 +158,7 @@ backup() {
 
 install() {
   if [[ $os_type == 'rhel' ]]; then
-    yum install -y "$@"
+    install_rpm "$@"
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
@@ -174,6 +179,17 @@ install_rpm() {
   fi
   if ((os_version == 8)); then
     dnf install -y "$@"
+  fi
+  set -e
+}
+
+remove_rpm() {
+  set +e
+  if ((os_version == 7)); then
+    yum remove -y "$@"
+  fi
+  if ((os_version == 8)); then
+    dnf remove -y "$@"
   fi
   set -e
 }
@@ -400,8 +416,12 @@ install_apache_deb() {
   a2enmod rewrite proxy_fcgi
 
   write_vhost /etc/apache2/sites-available/supportpal.conf
-  ln -s /etc/apache2/sites-available/supportpal.conf /etc/apache2/sites-enabled/supportpal.conf
-  unlink /etc/apache2/sites-enabled/000-default.conf
+  ln -sf /etc/apache2/sites-available/supportpal.conf /etc/apache2/sites-enabled/supportpal.conf
+
+  default="/etc/apache2/sites-enabled/000-default.conf"
+  if [ -L "$default" ]; then
+    unlink "$default"
+  fi
 
   systemd restart apache2
 }
@@ -458,6 +478,10 @@ install_mysql() {
   fi
 
   if [[ $os_type == 'rhel' ]]; then
+    if [ "$overwrite" == "1" ]; then
+      remove_rpm mysql-community-server
+    fi
+
     install mysql-community-server
     systemd restart mysqld
 
@@ -471,6 +495,10 @@ install_mysql() {
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    if [ "$overwrite" == "1" ]; then
+      apt-get remove -y --purge mysql-server
+    fi
+
     install mysql-server
     systemd restart mysql
   fi
@@ -483,7 +511,7 @@ install_supportpal() {
   URLS=$( curl -sL https://licensing.supportpal.com/api/version/available.json | jq -r '.version[].artifacts[].download_url' | tr '\n' ' ')
   DOWNLOAD_URL=$(echo "$URLS" | grep ".zip" | cut -d' ' -f1)
   curl "${DOWNLOAD_URL}" -o /tmp/supportpal.zip
-  unzip /tmp/supportpal.zip -d "${install_path}"
+  unzip -o /tmp/supportpal.zip -d "${install_path}"
   rm /tmp/supportpal.zip
 
   if [[ $os_type == 'rhel' ]]; then
