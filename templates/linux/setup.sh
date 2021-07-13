@@ -152,6 +152,7 @@ backup() {
       ((i++))
     done
 
+    msg "info" "Backing up file $1 to $1.old_$i ..."
     cp "$1" "$1.old_$i"
   fi
 
@@ -161,6 +162,7 @@ backup() {
       ((i++))
     done
 
+    msg "info" "Backing up directory $1 to $1.old_$i ..."
     cp -R "$1" "$1.old_$i"
   fi
 
