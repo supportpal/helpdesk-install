@@ -348,7 +348,7 @@ install_ioncube() {
   # Install Ioncube Loaders
   IONCUBE_EXT="zend_extension = "${PHP_EXT_DIR}ioncube_loader_lin_${php_version}.so""
   curl -O http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
-  tar xvfz ioncube_loaders_lin_x86-64.tar.gz
+  tar xfz ioncube_loaders_lin_x86-64.tar.gz
   cp "ioncube/ioncube_loader_lin_${php_version}.so" "${PHP_EXT_DIR}"
 
   if [[ $os_type == 'rhel' ]]; then
