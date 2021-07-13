@@ -152,17 +152,7 @@ backup() {
       ((i++))
     done
 
-    msg "info" "Backing up file $1 to $1.old_$i ..."
-    cp "$1" "$1.old_$i"
-  fi
-
-  if [[ -d "$1" ]]; then
-    i=1
-    while [[ -d "$1.old_$i" ]]; do
-      ((i++))
-    done
-
-    msg "info" "Backing up directory $1 to $1.old_$i ..."
+    msg "info" "Backing up $1 to $1.old_$i ..."
     cp -R "$1" "$1.old_$i"
   fi
 
