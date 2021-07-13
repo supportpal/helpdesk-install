@@ -519,7 +519,7 @@ install_supportpal() {
   URLS=$( curl -sL https://licensing.supportpal.com/api/version/available.json | jq -r '.version[].artifacts[].download_url' | tr '\n' ' ')
   DOWNLOAD_URL=$(echo "$URLS" | grep ".zip" | cut -d' ' -f1)
   curl "${DOWNLOAD_URL}" -o /tmp/supportpal.zip
-  unzip -o /tmp/supportpal.zip -d "${install_path}"
+  unzip -qo /tmp/supportpal.zip -d "${install_path}"
   rm /tmp/supportpal.zip
 
   if [[ $os_type == 'rhel' ]]; then
