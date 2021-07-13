@@ -461,6 +461,7 @@ install_mysql() {
 
   install openssl
   root_password="$(generate_password)"
+  tmp_root=root_password
   user_password="$(generate_password)"
 
   if [[ $os_type == 'rhel' ]]; then
@@ -494,6 +495,8 @@ install_mysql() {
     install mysql-community-server
     systemd restart mysqld
 
+    tmp_root=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
+
     # Allow SupportPal (httpd) to connect to the DB via 127.0.0.1
     if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
       setsebool -P httpd_can_network_connect 1
@@ -510,15 +513,14 @@ install_mysql() {
     systemd restart mysql
   fi
 
-  # Password isn't required for sudo access (since MySQL 5.7).
-  mysql -u"root" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}';"
+  mysql -u"root" -p"${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}';"
   if [[ $os_type == 'rhel' ]]; then
-    mysql -u"root" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
+    mysql -u"root" -p"${tmp_root}" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
   fi
-  mysql -u"root" -e "CREATE DATABASE ${database};"
-  mysql -u"root" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
-  mysql -u"root" -e "GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost';"
-  mysql -u"root" -e "FLUSH PRIVILEGES;"
+  mysql -u"root" -p"${tmp_root}" -e "CREATE DATABASE ${database};"
+  mysql -u"root" -p"${tmp_root}" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
+  mysql -u"root" -p"${tmp_root}" -e "GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost';"
+  mysql -u"root" -p"${tmp_root}" -e "FLUSH PRIVILEGES;"
 }
 
 install_supportpal() {
