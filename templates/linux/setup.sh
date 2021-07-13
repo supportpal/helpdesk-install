@@ -1,14 +1,14 @@
 #!/bin/bash
 set -eu -o pipefail
 
-version="0.0.1"
+version="0.0.2"
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL/CentOS 7 & 8 (rhel)
     * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal)
     * Debian 9 (stretch) & 10 (buster)"
 
-usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash
+usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
 
 $supported
 
@@ -17,9 +17,13 @@ Options:
 
     --version               Output the script version and exit.
 
+    --overwrite             Permanently delete existing configurations, databases, files.
+
     --docker                Use for testing purposes only; replaces systemd to allow testing in docker containers.
 "
 
+# whether to overwrite files, databases, etc.
+overwrite=0
 # whether running in docker container
 is_docker=
 # os_type = ubuntu, debian, rhel, sles
@@ -49,6 +53,7 @@ while [[ "$#" -gt 0 ]]; do
     exit 0
     ;;
   --docker) is_docker=1 ;;
+  --overwrite) overwrite=1 ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -135,25 +140,34 @@ check_root() {
 }
 
 detect_supportpal() {
-  if [ -d "$install_path" ]; then
+  if [ "$overwrite" == "0" ] && [ -d "$install_path" ]; then
     error "Unable to install SupportPal. ${install_path} already exists."
   fi
 }
 
 backup() {
-  if [[ -e "$1" ]]; then
-    i=1
-    while [[ -e "$1.old_$i" || -L "$1.old_$i" ]]; do
-      ((i++))
-    done
+  for path in "$@"; do
+    path=$(realpath -s "$path")
+    if [[ -e "$path" ]]; then
+      new_name="$path.old_"
+      i=1
+      while [[ -e "${new_name}${i}" || -L "${new_name}${i}" ]]; do
+        ((i++))
+      done
 
-    cp "$1" "$1.old_$i"
-  fi
+      new_name="${new_name}${i}"
+
+      msg "info" "Backing up $path to $new_name ..."
+      cp -R "$path" "$new_name"
+    fi
+
+    rm -rf "$path"
+  done
 }
 
 install() {
   if [[ $os_type == 'rhel' ]]; then
-    yum install -y "$@"
+    install_rpm "$@"
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
@@ -174,6 +188,17 @@ install_rpm() {
   fi
   if ((os_version == 8)); then
     dnf install -y "$@"
+  fi
+  set -e
+}
+
+remove_rpm() {
+  set +e
+  if ((os_version == 7)); then
+    yum remove -y "$@"
+  fi
+  if ((os_version == 8)); then
+    dnf remove -y "$@"
   fi
   set -e
 }
@@ -323,7 +348,7 @@ install_ioncube() {
   # Install Ioncube Loaders
   IONCUBE_EXT="zend_extension = "${PHP_EXT_DIR}ioncube_loader_lin_${php_version}.so""
   curl -O http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
-  tar xvfz ioncube_loaders_lin_x86-64.tar.gz
+  tar xfz ioncube_loaders_lin_x86-64.tar.gz
   cp "ioncube/ioncube_loader_lin_${php_version}.so" "${PHP_EXT_DIR}"
 
   if [[ $os_type == 'rhel' ]]; then
@@ -388,7 +413,6 @@ install_apache_rhel() {
   firewall-cmd --add-service=http --permanent && firewall-cmd --reload
 
   backup /etc/httpd/conf.d/welcome.conf
-  rm /etc/httpd/conf.d/welcome.conf
 
   write_vhost /etc/httpd/conf.d/supportpal.conf
 
@@ -400,8 +424,12 @@ install_apache_deb() {
   a2enmod rewrite proxy_fcgi
 
   write_vhost /etc/apache2/sites-available/supportpal.conf
-  ln -s /etc/apache2/sites-available/supportpal.conf /etc/apache2/sites-enabled/supportpal.conf
-  unlink /etc/apache2/sites-enabled/000-default.conf
+  ln -sf /etc/apache2/sites-available/supportpal.conf /etc/apache2/sites-enabled/supportpal.conf
+
+  default="/etc/apache2/sites-enabled/000-default.conf"
+  if [ -L "$default" ]; then
+    unlink "$default"
+  fi
 
   systemd restart apache2
 }
@@ -433,6 +461,7 @@ install_mysql() {
 
   install openssl
   root_password="$(generate_password)"
+  tmp_root=root_password
   user_password="$(generate_password)"
 
   if [[ $os_type == 'rhel' ]]; then
@@ -458,11 +487,15 @@ install_mysql() {
   fi
 
   if [[ $os_type == 'rhel' ]]; then
+    if [ "$overwrite" == "1" ]; then
+      remove_rpm mysql-community-server
+      backup /var/lib/mysql/ /var/log/mysqld.log
+    fi
+
     install mysql-community-server
     systemd restart mysqld
 
-    TMP_PASS=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
-    mysql --connect-expired-password -u"root" -p"$TMP_PASS" -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$root_password'; UNINSTALL COMPONENT 'file://component_validate_password';"
+    tmp_root=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
 
     # Allow SupportPal (httpd) to connect to the DB via 127.0.0.1
     if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
@@ -471,11 +504,23 @@ install_mysql() {
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    if [ "$overwrite" == "1" ]; then
+      apt-get remove -y --purge mysql-server && apt-get -y autoremove
+      backup /var/lib/mysql/
+    fi
+
     install mysql-server
     systemd restart mysql
   fi
 
-  mysql -u"root" -p"$root_password" -e "CREATE DATABASE ${database}; CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password'; GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost'; FLUSH PRIVILEGES;"
+  mysql --connect-expired-password -u"root" -p"${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}'; FLUSH PRIVILEGES;"
+  if [[ $os_type == 'rhel' ]]; then
+    mysql -u"root" -p"${root_password}" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
+  fi
+  mysql -u"root" -p"${root_password}" -e "CREATE DATABASE ${database};"
+  mysql -u"root" -p"${root_password}" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
+  mysql -u"root" -p"${root_password}" -e "GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost';"
+  mysql -u"root" -p"${root_password}" -e "FLUSH PRIVILEGES;"
 }
 
 install_supportpal() {
@@ -483,7 +528,7 @@ install_supportpal() {
   URLS=$( curl -sL https://licensing.supportpal.com/api/version/available.json | jq -r '.version[].artifacts[].download_url' | tr '\n' ' ')
   DOWNLOAD_URL=$(echo "$URLS" | grep ".zip" | cut -d' ' -f1)
   curl "${DOWNLOAD_URL}" -o /tmp/supportpal.zip
-  unzip /tmp/supportpal.zip -d "${install_path}"
+  unzip -qo /tmp/supportpal.zip -d "${install_path}"
   rm /tmp/supportpal.zip
 
   if [[ $os_type == 'rhel' ]]; then
