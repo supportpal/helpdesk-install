@@ -1,14 +1,14 @@
 #!/bin/bash
 set -eu -o pipefail
 
-version="0.0.1"
+version="0.0.2"
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL/CentOS 7 & 8 (rhel)
     * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal)
     * Debian 9 (stretch) & 10 (buster)"
 
-usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash
+usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
 
 $supported
 
@@ -154,6 +154,17 @@ backup() {
 
     cp "$1" "$1.old_$i"
   fi
+
+  if [[ -d "$1" ]]; then
+    i=1
+    while [[ -d "$1.old_$i" ]]; do
+      ((i++))
+    done
+
+    cp -R "$1" "$1.old_$i"
+  fi
+
+  rm -rf "$1"
 }
 
 install() {
@@ -404,7 +415,6 @@ install_apache_rhel() {
   firewall-cmd --add-service=http --permanent && firewall-cmd --reload
 
   backup /etc/httpd/conf.d/welcome.conf
-  rm /etc/httpd/conf.d/welcome.conf
 
   write_vhost /etc/httpd/conf.d/supportpal.conf
 
@@ -480,6 +490,7 @@ install_mysql() {
   if [[ $os_type == 'rhel' ]]; then
     if [ "$overwrite" == "1" ]; then
       remove_rpm mysql-community-server
+      backup /var/lib/mysql/
     fi
 
     install mysql-community-server
@@ -496,7 +507,8 @@ install_mysql() {
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     if [ "$overwrite" == "1" ]; then
-      apt-get remove -y --purge mysql-server
+      apt-get remove -y --purge mysql-server && apt-get -y autoremove
+      backup /var/lib/mysql/
     fi
 
     install mysql-server
