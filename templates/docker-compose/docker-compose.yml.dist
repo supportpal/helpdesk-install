@@ -19,6 +19,7 @@ services:
     supportpal:
         container_name: '${WEB_SERVICE_NAME}'
         image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web-buster'
+        restart: always
         depends_on:
             - db
             - redis

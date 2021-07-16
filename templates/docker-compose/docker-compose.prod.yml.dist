@@ -17,6 +17,7 @@ services:
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
         image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron-buster'
+        restart: always
         depends_on:
             - db
             - redis
