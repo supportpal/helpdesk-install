@@ -27,6 +27,7 @@ services:
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
             - ./customization/:/customization
+            - ./php/custom-config.ini:/usr/local/etc/php/9999-custom-config.ini
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
