@@ -16,6 +16,7 @@ Options:
 "
 
 # Options
+skip_clone=0
 interactive=1
 host=
 email=
@@ -26,6 +27,7 @@ while [[ "$#" -gt 0 ]]; do
   -n) interactive=0 ;;
   -H|--host) host="$2" ; shift ;;
   -e|--email) email="$2" ; shift ;;
+  --skip-clone) skip_clone=1 ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -194,8 +196,10 @@ escape_re() {
 }
 
 configure() {
-  git clone https://github.com/supportpal/helpdesk-install.git
-  cd helpdesk-install/templates/docker-compose
+  if [ "$skip_clone" -eq 0 ]; then
+    git clone https://github.com/supportpal/helpdesk-install.git
+    cd helpdesk-install/templates/docker-compose
+  fi
 
   cp .env.dist .env
   cp Makefile.dist Makefile
