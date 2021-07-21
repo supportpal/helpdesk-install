@@ -1,0 +1,44 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+spawn ./setup.sh
+
+expect "Enter system administrator email address.\r"
+send -- "foo@bar\r"
+
+expect "Enter system domain name. Leave blank to configure later...\r"
+send -- "localhost\r"
+
+# get a shell inside the docker container
+send "sudo nsenter --target \$(docker inspect --format '{{.State.Pid}}' \$(docker ps | grep supportpal.*-web-buster | awk '{print \$1}')) --mount --uts --ipc --net --pid\r"
+
+# app:install
+expect "I Accept and Continue (yes/no)\r"
+send -- "yes\r"
+
+expect "SupportPal requires a valid license to function, please enter one below.\r"
+send -- "${SUPPORTPAL_LICENSE_KEY}\r"
+
+expect "Email\r"
+send -- "operator@my.company\r"
+
+expect "Password\r"
+send -- "test"
+
+expect "First Name\r"
+send -- "Joe"
+
+expect "Last Name\r"
+send -- "Blogs"
+
+expect "Brand Name\r"
+send -- "My Company"
+
+expect "Enter the full web address of your installation, used to generate the URLs that are sent to users.\r"
+send -- "http://localhost"
+
+expect "Enter your main company email address, this will be set up as the default sending email address and the email address on your first department. You will be able to add other email addresses later.\r"
+send -- "support@my.company"
+
+expect eof
