@@ -43,7 +43,7 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-sockets-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
         restart: always
         depends_on:
             - db
