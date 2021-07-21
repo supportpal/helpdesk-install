@@ -43,7 +43,7 @@ if {$force_conservative} {
 
 set timeout -1
 
-spawn ./setup.sh
+spawn ./setup.sh --skip-clone
 
 match_max 100000
 
