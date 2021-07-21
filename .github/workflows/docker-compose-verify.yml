@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - templates/docker-compose/**/*
+      - configs/**/*
 
 defaults:
   run:
