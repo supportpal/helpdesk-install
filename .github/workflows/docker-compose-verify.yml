@@ -34,5 +34,11 @@ jobs:
         run: |
           sudo apt install -y expect
           expect verify-install.exp
+
+          curl -fSL -o /tmp/test.txt http://localhost/
+          if ! grep -q "SupportPal" /tmp/test.txt; then
+            echo "ERROR: SupportPal is not loading via HTTP"
+            exit 3
+          fi
         env:
           SUPPORTPAL_LICENSE_KEY: "${{ secrets.SUPPORTPAL_LICENSE_KEY }}"
