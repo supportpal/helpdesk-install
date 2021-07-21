@@ -1,6 +1,5 @@
 #config files
 /gateway/
-/php/*
 /docker-compose.yml
 /docker-compose.override.yml
 init-letsencrypt.sh
