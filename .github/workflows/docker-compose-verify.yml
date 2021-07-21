@@ -34,3 +34,5 @@ jobs:
         run: |
           sudo apt install -y expect
           expect verify-install.exp
+        env:
+          SUPPORTPAL_LICENSE_KEY: "${{ secrets.SUPPORTPAL_LICENSE_KEY }}"
