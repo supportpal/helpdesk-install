@@ -11,6 +11,8 @@ services:
             WEB_CONTAINER: ${WEB_SERVICE_NAME}
         volumes:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
+            - ./gateway/base.conf:/etc/nginx/conf.d/base.config
+            - ./gateway/custom.conf:/etc/nginx/conf.d/custom.config
             - supportpal_resources:/supportpal/resources:ro
             - supportpal_app:/supportpal/app:ro
         ports:
