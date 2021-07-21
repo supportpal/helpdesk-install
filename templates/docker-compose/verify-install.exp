@@ -17,8 +17,7 @@
 # this in the first place.  The -C flag allows you to define a
 # character to toggle this mode off and on.
 
-set force_conservative 0  ;# set to 1 to force conservative mode even if
-			  ;# script wasn't run conservatively originally
+set force_conservative 0  ;# set to 1 to force conservative mode even if script wasn't run conservatively originally
 if {$force_conservative} {
 	set send_slow {1 .1}
 	proc send {ignore arg} {
@@ -57,28 +56,28 @@ send -- "localhost\r"
 expect "I Accept and Continue (yes/no)*:\r"
 send -- "yes\r"
 
-expect "SupportPal requires a valid license to function, please enter one below.*:*> \r"
+expect "SupportPal requires a valid license to function, please enter one below.*:*"
 send_user "$env(SUPPORTPAL_LICENSE_KEY)\r"
 
-expect "Email*:*> \r"
+expect "Email*:*"
 send -- "operator@my.company\r"
 
-expect "Password*:*> \r"
+expect "Password*:*"
 send -- "test\r"
 
-expect "First Name*:*> \r"
+expect "First Name*:*"
 send -- "Joe\r"
 
-expect "Last Name*:*> \r"
+expect "Last Name*:*"
 send -- "Blogs\r"
 
-expect "Brand Name*:*> \r"
+expect "Brand Name*:*"
 send -- "My Company\r"
 
-expect "Enter the full web address of your installation*:*> \r"
+expect "Enter the full web address of your installation*:*"
 send -- "http://localhost\r"
 
-expect "Enter your main company email address*:*> \r"
+expect "Enter your main company email address*:*"
 send -- "support@my.company\r"
 
 expect eof
