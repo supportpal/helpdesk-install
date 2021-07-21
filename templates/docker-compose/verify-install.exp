@@ -11,31 +11,31 @@ expect "Enter system domain name. Leave blank to configure later...\r"
 send -- "localhost\r"
 
 # app:install
-expect_background "I Accept and Continue (yes/no)\r"
+expect "I Accept and Continue (yes/no)*"
 send -- "yes\r"
 
-expect_background "SupportPal requires a valid license to function, please enter one below.\r"
+expect "SupportPal requires a valid license to function, please enter one below.*"
 send -- "${SUPPORTPAL_LICENSE_KEY}\r"
 
-expect_background "Email\r"
+expect "Email\r"
 send -- "operator@my.company\r"
 
-expect_background "Password\r"
+expect "Password\r"
 send -- "test"
 
-expect_background "First Name\r"
+expect "First Name\r"
 send -- "Joe"
 
-expect_background "Last Name\r"
+expect "Last Name\r"
 send -- "Blogs"
 
-expect_background "Brand Name\r"
+expect "Brand Name\r"
 send -- "My Company"
 
-expect_background "Enter the full web address of your installation, used to generate the URLs that are sent to users.\r"
+expect "Enter the full web address of your installation, used to generate the URLs that are sent to users.\r"
 send -- "http://localhost"
 
-expect_background "Enter your main company email address, this will be set up as the default sending email address and the email address on your first department. You will be able to add other email addresses later.\r"
+expect "Enter your main company email address, this will be set up as the default sending email address and the email address on your first department. You will be able to add other email addresses later.\r"
 send -- "support@my.company"
 
 expect eof
