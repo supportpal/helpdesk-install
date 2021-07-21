@@ -1,0 +1,47 @@
+name: docker-compose install
+
+on:
+  pull_request:
+    paths:
+      - templates/docker-compose/**/*
+
+defaults:
+  run:
+    working-directory: ./templates/docker-compose
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 4
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Shellcheck
+        run: |
+          docker run --rm \
+            -v "${PWD}:/v"  \
+            -w "/v" \
+            koalaman/shellcheck \
+            -e SC1091 -e SC1117 \
+            setup.sh
+
+      - name: docker-compose config test
+        run: |
+          cp .env.dist .env
+          docker-compose -f docker-compose.yml.dist -f docker-compose.prod.yml.dist -f docker-compose.override.yml.dist config
+
+      - name: docker-compose up
+        run: |
+          sudo apt install -y expect
+          expect verify-install.exp
+
+          curl -fSL -o /tmp/test.txt http://localhost/
+          if ! grep -q "SupportPal" /tmp/test.txt; then
+            echo "ERROR: SupportPal is not loading via HTTP"
+            exit 3
+          fi
+        env:
+          SUPPORTPAL_LICENSE_KEY: "${{ secrets.SUPPORTPAL_LICENSE_KEY }}"
