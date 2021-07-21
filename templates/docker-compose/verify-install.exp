@@ -54,31 +54,31 @@ send -- "foo@bar\r"
 expect "Enter system domain name. Leave blank to configure later...\r"
 send -- "localhost\r"
 
-expect "*I Accept and Continue (yes/no)*"
+expect "I Accept and Continue (yes/no)*:\r"
 send -- "yes\r"
 
-expect "*SupportPal requires a valid license to function, please enter one below.*"
+expect "SupportPal requires a valid license to function, please enter one below.*:*> \r"
 send_user "$env(SUPPORTPAL_LICENSE_KEY)\r"
 
-expect "*Email*"
+expect "Email*:*> \r"
 send -- "operator@my.company\r"
 
-expect "*Password*"
+expect "Password*:*> \r"
 send -- "test\r"
 
-expect "First Name*"
+expect "First Name*:*> \r"
 send -- "Joe\r"
 
-expect "*Last Name*"
+expect "Last Name*:*> \r"
 send -- "Blogs\r"
 
-expect "*Brand Name*"
+expect "Brand Name*:*> \r"
 send -- "My Company\r"
 
-expect "*Enter the full web address of your installation*"
+expect "Enter the full web address of your installation*:*> \r"
 send -- "http://localhost\r"
 
-expect "*Enter your main company email address*"
+expect "Enter your main company email address*:*> \r"
 send -- "support@my.company\r"
 
 expect eof
