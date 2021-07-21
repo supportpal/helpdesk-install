@@ -39,7 +39,7 @@ jobs:
           expect verify-install.exp
 
           curl -fSL -o /tmp/test.txt http://localhost/
-          if ! grep -q "broooooooooooken" /tmp/test.txt; then
+          if ! grep -q "SupportPal" /tmp/test.txt; then
             echo "ERROR: SupportPal is not loading via HTTP"
             exit 3
           fi
