@@ -58,7 +58,7 @@ expect "*I Accept and Continue (yes/no)*"
 send -- "yes\r"
 
 expect "*SupportPal requires a valid license to function, please enter one below.*"
-send_user "$env(SUPPORTPAL_LICENSE_KEY)\n"
+send_user "$env(SUPPORTPAL_LICENSE_KEY)\r"
 
 expect "*Email*"
 send -- "operator@my.company\r"
