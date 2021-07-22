@@ -9,6 +9,8 @@ services:
             - supportpal_cron
         volumes:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
+            - ./gateway/base.conf:/etc/nginx/templates/base.config.template
+            - ./gateway/custom.conf:/etc/nginx/templates/custom.config.template
             - supportpal_resources:/supportpal/resources:ro
             - supportpal_app:/supportpal/app:ro
         environment:
