@@ -13,7 +13,6 @@ services:
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
             - ./customization/:/customization
-            - ./php/custom.ini:/usr/local/etc/php/conf.d/9999-custom-config.ini
 
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
@@ -34,7 +33,6 @@ services:
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
             - ./customization/:/customization
-            - ./php/custom.ini:/usr/local/etc/php/conf.d/9999-custom-config.ini
         networks:
             - supportpal_frontend
             - supportpal_backend
