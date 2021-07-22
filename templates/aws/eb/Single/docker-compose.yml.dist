@@ -50,6 +50,7 @@ services:
             - supportpal_app:/supportpal/app
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
+            - ./customization/:/customization
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
