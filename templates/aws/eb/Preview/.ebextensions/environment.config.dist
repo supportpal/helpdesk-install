@@ -8,3 +8,4 @@ option_settings:
         REDIS_PORT: 6379
         HOST: example.com
         GATEWAY_SERVICE_NAME: gateway
+        WS_SERVICE_NAME: supportpal_ws

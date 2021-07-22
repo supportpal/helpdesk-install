@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+    gateway:
+        container_name: '${GATEWAY_SERVICE_NAME}'
+        image: nginx:1.19.6-alpine
+        restart: always
+        depends_on:
+            - supportpal_cron
+        volumes:
+            - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
+            - supportpal_resources:/supportpal/resources:ro
+            - supportpal_app:/supportpal/app:ro
+        environment:
+            WEB_CONTAINER: ${CRON_SERVICE_NAME}
+        ports:
+            - '80:80'
+
+    supportpal_ws:
+        container_name: '${CRON_SERVICE_NAME}'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
+        depends_on:
+            - mailer
+        volumes:
+            - supportpal_resources:/supportpal/resources
+            - supportpal_app:/supportpal/app
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
+            - ./customization/:/customization
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            HOST: ${HOST}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+        command: 'bash -c "php artisan ws:serve & php-fpm"'
+
+volumes:
+    supportpal_resources:
+    supportpal_app:
+    supportpal_config:
+        external: true
+        name: supportpal_config
+    supportpal_storage:
+        external: true
+        name: supportpal_storage
+    supportpal_mailer:
+        external: true
+        name: supportpal_mailer
