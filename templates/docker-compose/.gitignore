@@ -1,6 +1,7 @@
 /.env
 /create-self-signed.sh
 /init-letsencrypt.sh
+/php/
 /postfix/
 /gateway/
 /secrets/

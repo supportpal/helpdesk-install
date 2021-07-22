@@ -1,6 +1,7 @@
 #config files
 /.platform/hooks/postdeploy/*.sh
 /gateway/
+/php/
 /docker-compose.yml
 /docker-compose.override.yml
 init-letsencrypt.sh

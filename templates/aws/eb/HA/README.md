@@ -169,6 +169,27 @@ By default, the software will run on HTTP using port 80. However, we recommend u
 
 ----
 
+# Configuring PHP
+
+The default PHP config can be customised by copying configuration files into the containers.
+
+1. Browse to the `web` directory
+2. Create a `php/custom.ini` file
+3. Add your PHP configuration to the file
+4. Update the `volumes` definition for the `supportpal` container in `docker-compose.yml`:
+   ```
+   - ./php/custom.ini:/usr/local/etc/php/conf.d/9999-custom-config.ini
+   ```
+   You can change the `9999` in the filename to control the priority of the configuration.
+   `9999` means it is loaded last.
+5. If necessary, repeat steps 1 - 4 for the `cron` directory.
+6. Redeploy the application
+   ```bash
+   eb deploy production
+   ```
+
+----
+
 ## Customizing SupportPal
 
 To [customize](https://docs.supportpal.com/current/Customisation) SupportPal:

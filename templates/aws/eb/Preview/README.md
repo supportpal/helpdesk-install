@@ -156,6 +156,27 @@ sudo docker exec -it supportpal su www-data -s /usr/local/bin/php artisan app:in
 
 ----
 
+# Configuring PHP
+
+The default PHP config can be customised by copying configuration files into
+the containers.
+
+1. Create a `php/custom.ini` file within this directory
+2. Add your PHP configuration to the file
+3. Update the `volumes` definition for the `supportpal` and `supportpal_cron`
+   containers in `docker-compose.yml`:
+   ```
+   - ./php/custom.ini:/usr/local/etc/php/conf.d/9999-custom-config.ini
+   ```
+   You can change the `9999` in the filename to control the priority of the configuration.
+   `9999` means it is loaded last.
+4. Redeploy the application
+   ```bash
+   eb deploy production
+   ```
+
+----
+
 ## Customize SupportPal
 
 To [customize](https://docs.supportpal.com/current/Customisation) SupportPal:
