@@ -6,21 +6,24 @@ services:
         image: nginx:1.19.6-alpine
         restart: always
         depends_on:
-            - supportpal_cron
+            - supportpal_ws
         volumes:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
+            - ./gateway/base.conf:/etc/nginx/conf.d/base.config
+            - ./gateway/custom.conf:/etc/nginx/conf.d/custom.config
             - supportpal_resources:/supportpal/resources:ro
             - supportpal_app:/supportpal/app:ro
         environment:
-            WEB_CONTAINER: ${CRON_SERVICE_NAME}
+            WEB_CONTAINER: ${WS_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         ports:
             - '80:80'
+            - '6001:6001'
+
 
     supportpal_ws:
-        container_name: '${CRON_SERVICE_NAME}'
+        container_name: '${WS_SERVICE_NAME}'
         image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
-        depends_on:
-            - mailer
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
@@ -32,7 +35,8 @@ services:
             REDIS_PORT: ${REDIS_PORT}
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
-        command: 'bash -c "php artisan ws:serve & php-fpm"'
+        command: 'bash -c "sh /usr/local/bin/wait-until-ready.sh && php-fpm & php artisan ws:serve"'
+
 
 volumes:
     supportpal_resources:

@@ -7,8 +7,10 @@ services:
         restart: always
         environment:
             WEB_CONTAINER: ${WEB_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         depends_on:
             - supportpal
+            - supportpal_websockets
         volumes:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
             - ./gateway/base.conf:/etc/nginx/templates/base.config.template
@@ -17,6 +19,7 @@ services:
             - supportpal_app:/supportpal/app
         ports:
             - '80:80'
+            - '6001:6001'
         networks:
             - supportpal_frontend
 
@@ -83,10 +86,11 @@ services:
             - ./customization/:/customization
         networks:
             - supportpal_backend
+            - supportpal_frontend
         secrets:
             - db_user
             - db_password
-        command: 'sh /wait-until-ready.sh php artisan ws:serve'
+        command: 'bash -c "sh /usr/local/bin/wait-until-ready.sh && php artisan ws:serve"'
 
     mailer:
         container_name: ${MAILER_SERVICE_NAME}
