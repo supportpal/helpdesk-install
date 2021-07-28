@@ -17,7 +17,7 @@ services:
             - ./gateway/custom.conf:/etc/nginx/templates/custom.config.template
         ports:
             - '${HTTP_REMOTE_PORT}:80'
-            - '${SOCKETS_PORT}:6001'
+            - '${SOCKETS_REMOTE_PORT}:6001'
         networks:
             - supportpal_frontend
 
