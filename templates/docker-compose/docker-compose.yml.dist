@@ -82,7 +82,7 @@ services:
             secrets:
                 - db_user
                 - db_password
-        command: 'bash -c "sh /usr/local/bin/wait-until-ready.sh && php-fpm & php artisan ws:serve"'
+            command: 'bash -c "sh /usr/local/bin/wait-until-ready.sh && php-fpm & php artisan ws:serve"'
 
     redis:
         container_name: '${CACHE_SERVICE_NAME}'
