@@ -19,7 +19,6 @@ services:
             - supportpal_app:/supportpal/app
         ports:
             - '80:80'
-            - '6001:6001'
         networks:
             - supportpal_frontend
 

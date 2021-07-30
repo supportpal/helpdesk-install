@@ -19,7 +19,6 @@ services:
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         ports:
             - '80:80'
-            - '6001:6001'
         networks:
             - supportpal_frontend
 
@@ -70,6 +69,7 @@ services:
         image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
         restart: always
         depends_on:
+            - db
             - redis
             - mailer
         environment:

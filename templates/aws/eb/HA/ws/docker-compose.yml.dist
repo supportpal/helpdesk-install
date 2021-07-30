@@ -18,8 +18,6 @@ services:
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         ports:
             - '80:80'
-            - '6001:6001'
-
 
     supportpal_ws:
         container_name: '${WS_SERVICE_NAME}'
@@ -35,8 +33,9 @@ services:
             REDIS_PORT: ${REDIS_PORT}
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+        ports:
+            - '6001:6001'
         command: 'bash -c "sh /usr/local/bin/wait-until-ready.sh && php-fpm & php artisan ws:serve"'
-
 
 volumes:
     supportpal_resources:
