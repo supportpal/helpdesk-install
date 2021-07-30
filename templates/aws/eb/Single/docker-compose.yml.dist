@@ -69,7 +69,6 @@ services:
         image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
         restart: always
         depends_on:
-            - db
             - redis
             - mailer
         environment:
