@@ -79,9 +79,6 @@ services:
         networks:
             - supportpal_backend
             - supportpal_frontend
-        secrets:
-            - db_user
-            - db_password
         command: 'bash -c "sh /usr/local/bin/wait-until-ready.sh && php artisan ws:serve"'
 
     redis:
