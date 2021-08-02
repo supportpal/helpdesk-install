@@ -70,12 +70,6 @@ services:
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
-        volumes:
-            - supportpal_resources:/supportpal/resources
-            - supportpal_app:/supportpal/app
-            - supportpal_config:/supportpal/config/production
-            - supportpal_storage:/supportpal/storage
-            - ./customization/:/customization
         networks:
             - supportpal_backend
             - supportpal_frontend
