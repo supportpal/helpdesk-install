@@ -15,6 +15,7 @@ services:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
             - ./gateway/base.conf:/etc/nginx/templates/base.config.template
             - ./gateway/custom.conf:/etc/nginx/templates/custom.config.template
+            - ./gateway/http.types:/etc/nginx/conf.d/http.types
         ports:
             - '${HTTP_REMOTE_PORT}:80'
         networks:
