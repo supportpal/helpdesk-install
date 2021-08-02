@@ -64,7 +64,6 @@ services:
         depends_on:
             - db
             - redis
-            - mailer
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
