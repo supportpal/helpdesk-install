@@ -70,7 +70,6 @@ services:
         image: 'kbrahney/test:2c6e613d7190c36b02a948f4201cad7d71d97d5f-ws-buster'
         restart: always
         depends_on:
-            - db
             - redis
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
