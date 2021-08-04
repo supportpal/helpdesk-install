@@ -6,11 +6,12 @@ services:
         image: nginx:1.19.6-alpine
         restart: always
         depends_on:
-            - supportpal_ws
+            - supportpal_websockets
         volumes:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
             - ./gateway/base.conf:/etc/nginx/conf.d/base.config
             - ./gateway/custom.conf:/etc/nginx/conf.d/custom.config
+            - ./gateway/http.types:/etc/nginx/conf.d/http.types
             - supportpal_resources:/supportpal/resources:ro
             - supportpal_app:/supportpal/app:ro
         environment:
@@ -19,21 +20,29 @@ services:
         ports:
             - '80:80'
 
-    supportpal_ws:
+    supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
+        image: 'kbrahney/test:2c6e613d7190c36b02a948f4201cad7d71d97d5f-ws-buster'
+        restart: always
+        depends_on:
+            - db
+            - redis
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            HOST: ${HOST}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
             - ./customization/:/customization
-        environment:
-            REDIS_HOST: ${CACHE_SERVICE_NAME}
-            REDIS_PORT: ${REDIS_PORT}
-            HOST: ${HOST}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
-        command: 'bash -c "sh /usr/local/bin/wait-until-ready.sh && php-fpm & php artisan ws:serve"'
+        networks:
+            - supportpal_backend
+            - supportpal_frontend
+        command: 'gosu www-data bash -c "sh /usr/local/bin/wait-until-r
 
 volumes:
     supportpal_resources:

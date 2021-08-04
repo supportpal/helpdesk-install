@@ -15,6 +15,7 @@ services:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
             - ./gateway/base.conf:/etc/nginx/templates/base.config.template
             - ./gateway/custom.conf:/etc/nginx/templates/custom.config.template
+            - ./gateway/http.types:/etc/nginx/conf.d/http.types
             - supportpal_resources:/supportpal/resources:ro
             - supportpal_app:/supportpal/app
         ports:
@@ -24,7 +25,7 @@ services:
 
     supportpal:
         container_name: '${WEB_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web-buster'
+        image: 'kbrahney/test:2c6e613d7190c36b02a948f4201cad7d71d97d5f-web-buster'
         depends_on:
             - redis
         volumes:
@@ -66,11 +67,11 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
+        image: 'kbrahney/test:2c6e613d7190c36b02a948f4201cad7d71d97d5f-ws-buster'
         restart: always
         depends_on:
+            - db
             - redis
-            - mailer
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
@@ -86,10 +87,7 @@ services:
         networks:
             - supportpal_backend
             - supportpal_frontend
-        secrets:
-            - db_user
-            - db_password
-        command: 'bash -c "sh /usr/local/bin/wait-until-ready.sh && php artisan ws:serve"'
+        command: 'gosu www-data bash -c "sh /usr/local/bin/wait-until-r
 
     mailer:
         container_name: ${MAILER_SERVICE_NAME}
