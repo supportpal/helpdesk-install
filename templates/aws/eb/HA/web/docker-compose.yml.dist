@@ -9,6 +9,7 @@ services:
             - supportpal
         environment:
             WEB_CONTAINER: ${WEB_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WEB_SERVICE_NAME}
         volumes:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
             - ./gateway/base.conf:/etc/nginx/templates/base.config.template

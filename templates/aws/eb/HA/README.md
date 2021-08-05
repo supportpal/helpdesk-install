@@ -8,6 +8,7 @@ Copy nginx configuration files from root repository.
 ```shell
 cp -R ../../../../configs/gateway web/
 cp -R ../../../../configs/gateway cron/
+cp -R ../../../../configs/gateway ws/
 ```
 
 Rename the following files:
@@ -15,6 +16,7 @@ Rename the following files:
 ```shell
 cp web/docker-compose.yml.dist web/docker-compose.yml
 cp cron/docker-compose.yml.dist cron/docker-compose.yml
+cp ws/docker-compose.yml.dist ws/docker-compose.yml
 
 cp .ebextensions/00storage-efs-mountfilesystem.config.dist .ebextensions/00storage-efs-mountfilesystem.config
 cp .ebextensions/01storage-docker-createvolumes.config.dist .ebextensions/01storage-docker-createvolumes.config
@@ -38,7 +40,7 @@ You also need to create the required AWS resource dependencies in the following 
 
 Initiate the environment and choose the desired region:
 ```shell
-$ eb init --modules web cron
+$ eb init --modules web cron ws
 
 Select a default region
 1) us-east-1 : US East (N. Virginia)
@@ -82,7 +84,7 @@ Select a platform branch.
 (default is 1):  1
 ```
 
-Choose the same options for both modules.
+Choose the same options for each module.
 
 ### 3. Configuration
 
@@ -94,7 +96,7 @@ option_settings:
   aws:elasticbeanstalk:application:environment:
     FILE_SYSTEM_ID: fs-XXXXX
 ```
-* Inside your `options.config`, update the `CACHE_SERVICE_NAME` value to the ElasticCache instance URL, and `HOST`.
+* Inside your `options.config`, update the `CACHE_SERVICE_NAME` value to the ElastiCache instance URL, and `HOST`.
 ```yaml
 option_settings:
     aws:elasticbeanstalk:application:environment:
@@ -124,6 +126,7 @@ Subnets: subnet-XXXX, subnet-YYYY, subnet-ZZZZ
 ```yaml
 cp .ebextensions/*.config web/.ebextensions/
 cp .ebextensions/*.config cron/.ebextensions/
+cp .ebextensions/*.config ws/.ebextensions/
 ```
 
 ### 4. Web
@@ -163,7 +166,15 @@ cd ../cron
 eb create cron-production --single
 ```
 
-### 7. Configure HTTPS
+### 7. Web Sockets
+
+Navigate to the `ws` directory and create the environment:
+```shell
+cd ../ws
+eb create ws-production --single
+```
+
+### 8. Configure HTTPS
 
 By default, the software will run on HTTP using port 80. However, we recommend using HTTPS for added security. to enable HTTPS, we suggest that you do so at the level of the load balancer.  To do that please check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html).
 
