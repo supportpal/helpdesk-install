@@ -22,7 +22,7 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'kbrahney/test:2c6e613d7190c36b02a948f4201cad7d71d97d5f-ws-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
         restart: always
         depends_on:
             - redis
@@ -41,7 +41,7 @@ services:
         networks:
             - supportpal_backend
             - supportpal_frontend
-        command: 'gosu www-data bash -c "sh /usr/local/bin/wait-until-ready.sh && php artisan ws:serve"'
+        command: 'gosu www-data bash -c "php artisan ws:serve"'
 
 volumes:
     supportpal_resources:
