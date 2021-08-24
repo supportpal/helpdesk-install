@@ -41,7 +41,7 @@ services:
         networks:
             - supportpal_backend
             - supportpal_frontend
-        command: 'gosu www-data bash -c "php artisan ws:serve"'
+        command: 'gosu www-data bash -c "php-fpm & php artisan ws:serve"'
 
 volumes:
     supportpal_resources:

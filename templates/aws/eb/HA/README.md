@@ -112,7 +112,7 @@ option_settings:
     SecurityGroups: sg-XXXX, g-YYYY, g-ZZZZ
 ```
 
-* Inside your `vpc.config`, add the id of your VPC, and add at least 3 availability zones.
+* Inside your `vpc.config`, add the id of your VPC, and add at least 3 availability zones. Make sure that the last subnet zone is the same of your EFS filesystem.  
 ```yaml
 option_settings:
 aws:ec2:vpc:

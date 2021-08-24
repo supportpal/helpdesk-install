@@ -79,6 +79,20 @@ By default, your AWS account will include a VPC for each zone. Choose your desir
    | ----------- | ------------- | -------------- |
    | All traffic |               | Anywhere       |
 
+7. *Required for HA only:* Create a security group of name 'ElastiCache'
+
+   **Inbound rules**
+
+   | Type         | Port range    | Source         |
+      | ------------ | ------------- | -------------- |
+   | Custom          | 6379               | Custom - select security group of name 'Internal' (created above)       |
+
+   **Outbound rules**
+
+   | Type        | Port range    | Destination    |
+      | ----------- | ------------- | -------------- |
+   | All traffic |               | Anywhere       |
+
 Make note of each security group name / id, we will be using them later.
 
 ### Create MySQL Database
@@ -185,3 +199,47 @@ Make note of each security group name / id, we will be using them later.
    Keep as default
 
 8. Click 'Create'
+
+### Create ElastiCache instance (Required only for HA)
+
+1. Navigate to ElastiCache service
+
+
+2. Click on Redis
+
+   ![Create EFS](../../../images/aws-eb-dependencies-image8.png)
+
+#### Location
+3. Choose Redis as the Cluster engine, and Amazon cloud as location. Keep cluster mode disabled
+
+    ![Create EFS](../../../images/aws-eb-dependencies-image9.png)
+
+#### Redis Settings
+
+4. Enter a descriptive name and description. e.g supportpal-redis-cluster and supportpal in-memory cache
+
+5. Keep Engine version compatibility, Port, and Parameter group settings as default
+
+6. Node Type
+
+   Choose the instance size based on your estimated size and performance requirements
+
+7. Number of replicas
+
+   Increase or decrease the number of replicas based on your estimated durability and availability requirements
+
+8. Multi-AZ
+
+   On production, it is recommended that you use a Multi-AZ deployment
+
+#### Advanced Redis Settings
+
+9. Create a new subnet group, give proper descriptive name and description
+
+10. Select availability zones
+
+#### Security
+
+11. Use the previously created ElastiCache security grup
+
+12. Keep everything else as default
