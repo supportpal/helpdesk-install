@@ -9,7 +9,7 @@ services:
             - supportpal
         environment:
             WEB_CONTAINER: ${WEB_SERVICE_NAME}
-            WS_SERVICE_NAME: ${WEB_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         volumes:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
             - ./gateway/base.conf:/etc/nginx/templates/base.config.template
@@ -22,19 +22,36 @@ services:
 
     supportpal:
         container_name: '${WEB_SERVICE_NAME}'
-        image: '981258733371.dkr.ecr.us-east-1.amazonaws.com/sp-ws:latest'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web-buster'
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
-            - ./customization/:/customization
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         command: 'php-fpm'
+
+    supportpal_websockets:
+        container_name: '${WS_SERVICE_NAME}'
+        image: '981258733371.dkr.ecr.us-east-1.amazonaws.com/sp-ws:latest'
+        working_dir: /supportpal
+        volumes:
+            - supportpal_resources:/supportpal/resources
+            - supportpal_app:/supportpal/app
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            HOST: ${HOST}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+        command: 'gosu www-data bash -c "php artisan ws:serve"'
 
 volumes:
     supportpal_resources:

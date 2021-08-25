@@ -8,7 +8,6 @@ Copy nginx configuration files from root repository.
 ```shell
 cp -R ../../../../configs/gateway web/
 cp -R ../../../../configs/gateway cron/
-cp -R ../../../../configs/gateway ws/
 ```
 
 Rename the following files:
@@ -16,7 +15,6 @@ Rename the following files:
 ```shell
 cp web/docker-compose.yml.dist web/docker-compose.yml
 cp cron/docker-compose.yml.dist cron/docker-compose.yml
-cp ws/docker-compose.yml.dist ws/docker-compose.yml
 
 cp .ebextensions/00storage-efs-mountfilesystem.config.dist .ebextensions/00storage-efs-mountfilesystem.config
 cp .ebextensions/01storage-docker-createvolumes.config.dist .ebextensions/01storage-docker-createvolumes.config
@@ -40,7 +38,7 @@ You also need to create the required AWS resource dependencies in the following 
 
 Initiate the environment and choose the desired region:
 ```shell
-$ eb init --modules web cron ws
+$ eb init --modules web cron
 
 Select a default region
 1) us-east-1 : US East (N. Virginia)
@@ -112,7 +110,7 @@ option_settings:
     SecurityGroups: sg-XXXX, g-YYYY, g-ZZZZ
 ```
 
-* Inside your `vpc.config`, add the id of your VPC, and add at least 3 availability zones. Make sure that the last subnet zone is the same of your EFS filesystem.  
+* Inside your `vpc.config`, add the id of your VPC, and add at least 2 availability zones. Make sure to use the same subnets selected when you created the EFS filesystem
 ```yaml
 option_settings:
 aws:ec2:vpc:
@@ -126,7 +124,6 @@ Subnets: subnet-XXXX, subnet-YYYY, subnet-ZZZZ
 ```yaml
 cp .ebextensions/*.config web/.ebextensions/
 cp .ebextensions/*.config cron/.ebextensions/
-cp .ebextensions/*.config ws/.ebextensions/
 ```
 
 ### 4. Web
@@ -164,14 +161,6 @@ Once you finish setting up your web environment, navigate to the CRON directory 
 ```shell
 cd ../cron
 eb create cron-production --single
-```
-
-### 7. Web Sockets
-
-Navigate to the `ws` directory and create the environment:
-```shell
-cd ../ws
-eb create ws-production --single
 ```
 
 ### 8. Configure HTTPS

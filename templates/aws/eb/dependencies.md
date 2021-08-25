@@ -192,7 +192,8 @@ Make note of each security group name / id, we will be using them later.
     
     2. Mount targets
     
-       Select the EFS security group we created earlier for each mount target.
+       Select the EFS security group we created earlier for each mount target. (keep note of the chosen subnets)
+       For HA deployment, make sure to add at least 2 availability zones.
 
 7. File system policy
 
@@ -240,6 +241,6 @@ Make note of each security group name / id, we will be using them later.
 
 #### Security
 
-11. Use the previously created ElastiCache security grup
+11. Use the previously created ElastiCache security group
 
 12. Keep everything else as default
