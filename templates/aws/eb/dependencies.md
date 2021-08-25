@@ -206,7 +206,7 @@ Make note of each security group name / id, we will be using them later.
 1. Navigate to ElastiCache service
 
 
-2. Click on Redis
+2. Click on Redis and then click the Create button
 
    ![Create EFS](../../../images/aws-eb-dependencies-image8.png)
 
