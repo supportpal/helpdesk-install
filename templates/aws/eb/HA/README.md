@@ -94,7 +94,9 @@ option_settings:
   aws:elasticbeanstalk:application:environment:
     FILE_SYSTEM_ID: fs-XXXXX
 ```
-* Inside your `options.config`, update the `CACHE_SERVICE_NAME` value to the ElastiCache instance URL, and `HOST`.
+* Inside your `options.config`
+  * update the `CACHE_SERVICE_NAME` value to the ElastiCache primary end point URL
+  * update the `HOST` to your domain name.
 ```yaml
 option_settings:
     aws:elasticbeanstalk:application:environment:
