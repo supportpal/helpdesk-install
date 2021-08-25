@@ -24,8 +24,6 @@ services:
         container_name: '${WS_SERVICE_NAME}'
         image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
         restart: always
-        depends_on:
-            - redis
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
@@ -38,9 +36,8 @@ services:
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
             - ./customization/:/customization
-        networks:
-            - supportpal_backend
-            - supportpal_frontend
+        ports:
+            - '6001:6001'
         command: 'gosu www-data bash -c "php-fpm & php artisan ws:serve"'
 
 volumes:

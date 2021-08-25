@@ -1,0 +1,31 @@
+option_settings:
+    aws:elasticbeanstalk:environment:
+        LoadBalancerType: application
+    aws:elbv2:listener:6001:
+        DefaultProcess: websockets
+    aws:elasticbeanstalk:environment:process:websockets:
+      DeregistrationDelay: '20'
+      HealthCheckInterval: '15'
+      HealthCheckPath: /
+      HealthCheckTimeout: '5'
+      HealthyThresholdCount: '3'
+      UnhealthyThresholdCount: '5'
+      Port: '6001'
+      Protocol: HTTP
+      StickinessEnabled: 'true'
+      StickinessLBCookieDuration: '43200'
+    aws:elbv2:listener:80:
+        DefaultProcess: default
+    aws:elasticbeanstalk:environment:process:default:
+      DeregistrationDelay: '20'
+      HealthCheckInterval: '15'
+      HealthCheckPath: /
+      HealthCheckTimeout: '5'
+      HealthyThresholdCount: '3'
+      UnhealthyThresholdCount: '5'
+      Port: '80'
+      Protocol: HTTP
+      StickinessEnabled: 'true'
+      StickinessLBCookieDuration: '43200'
+    aws:elbv2:loadbalancer
+        SecurityGroups: sg-XXXX, sg-YYYY, sg-ZZZZ

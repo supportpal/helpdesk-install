@@ -93,6 +93,20 @@ By default, your AWS account will include a VPC for each zone. Choose your desir
       | ----------- | ------------- | -------------- |
    | All traffic |               | Anywhere       |
 
+8. *Required for HA only:* Create a security group of name 'Websocket'
+
+   **Inbound rules**
+
+   | Type         | Port range    | Source         |
+         | ------------ | ------------- | -------------- |
+   | Custom          | 6001               | Custom - select security group of name 'Internal' (created above)       |
+
+   **Outbound rules**
+
+   | Type        | Port range    | Destination    |
+         | ----------- | ------------- | -------------- |
+   | All traffic |               | Anywhere       |
+
 Make note of each security group name / id, we will be using them later.
 
 ### Create MySQL Database
@@ -240,6 +254,6 @@ Make note of each security group name / id, we will be using them later.
 
 #### Security
 
-11. Use the previously created ElastiCache security grup
+11. Use the previously created ElastiCache security group
 
 12. Keep everything else as default

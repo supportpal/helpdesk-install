@@ -26,6 +26,8 @@ cp .ebextensions/securitygroup.config.dist .ebextensions/securitygroup.config
 cp .ebextensions/vpc.config.dist .ebextensions/vpc.config
 
 cp web/.ebextensions/loadbalancer.config.dist web/.ebextensions/loadbalancer.config
+cp ws/.ebextensions/loadbalancer.config.dist ws/.ebextensions/loadbalancer.config
+
 ```
 
 
@@ -168,10 +170,18 @@ eb create cron-production --single
 
 ### 7. Web Sockets
 
-Navigate to the `ws` directory and create the environment:
+
+Navigate to the `ws` directory and update `.ebextensions/loadbalancer.config` with 
+
+```shell
+    aws:elbv2:loadbalancer
+        SecurityGroups: sg-${websocket-security-group-id}, sg-${internal-security-group-id}
+```
+
+create the environment:
 ```shell
 cd ../ws
-eb create ws-production --single
+eb create ws-production
 ```
 
 ### 8. Configure HTTPS
@@ -193,11 +203,11 @@ The default PHP config can be customised by copying configuration files into the
    ```
    You can change the `9999` in the filename to control the priority of the configuration.
    `9999` means it is loaded last.
-5. If necessary, repeat steps 1 - 4 for the `cron` directory.
+5. If necessary, repeat steps 1 - 4 for the `cron` and `ws` directory.
 6. Redeploy the application
    ```bash
    eb deploy production
-   ```
+   ```Websocket
 
 ----
 
@@ -211,11 +221,13 @@ To [customize](https://docs.supportpal.com/current/Customisation) SupportPal:
 ```bash
 cp -R customization web/
 cp -R customization cron/
+cp -R customization ws/
 ```
 3. Redeploy the application
 ```bash
 eb deploy web-production
 eb deploy cron-production
+eb deploy ws-production
 ```
 
 ----
@@ -237,6 +249,7 @@ APP_VERSION: 3.3.1
 ```bash
 eb deploy web-production
 eb deploy cron-production
+eb deploy ws-production
 ```
 
 ----
@@ -247,4 +260,5 @@ If you have any problems, read the log files:
 ```bash
 eb logs web-production
 eb logs cron-production
+eb logs ws-production
 ```
