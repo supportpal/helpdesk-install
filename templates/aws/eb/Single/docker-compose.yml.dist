@@ -7,14 +7,17 @@ services:
         restart: always
         depends_on:
             - supportpal
+            - supportpal_websockets
         volumes:
             - ./gateway/nginx-http.conf:/etc/nginx/templates/default.conf.template
             - ./gateway/base.conf:/etc/nginx/templates/base.config.template
             - ./gateway/custom.conf:/etc/nginx/templates/custom.config.template
+            - ./gateway/http.types:/etc/nginx/conf.d/http.types
             - supportpal_resources:/supportpal/resources:ro
             - supportpal_app:/supportpal/app
         environment:
             WEB_CONTAINER: ${WEB_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         ports:
             - '80:80'
         networks:
@@ -61,6 +64,29 @@ services:
         networks:
             - supportpal_backend
         command: 'bash -c "service cron start && tail -f /var/log/cron.log"'
+
+    supportpal_websockets:
+        container_name: '${WS_SERVICE_NAME}'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
+        restart: always
+        depends_on:
+            - redis
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            HOST: ${HOST}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+        volumes:
+            - supportpal_resources:/supportpal/resources
+            - supportpal_app:/supportpal/app
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
+            - ./customization/:/customization
+        networks:
+            - supportpal_backend
+            - supportpal_frontend
+        command: 'gosu www-data bash -c "php artisan ws:serve"'
 
     mailer:
         container_name: ${MAILER_SERVICE_NAME}

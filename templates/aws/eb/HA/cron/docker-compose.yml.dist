@@ -15,6 +15,7 @@ services:
             - supportpal_app:/supportpal/app:ro
         environment:
             WEB_CONTAINER: ${CRON_SERVICE_NAME}
+            WS_SERVICE_NAME: ${CRON_SERVICE_NAME}
         ports:
             - '80:80'
 

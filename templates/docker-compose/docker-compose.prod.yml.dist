@@ -14,6 +14,14 @@ services:
             - supportpal_storage:/supportpal/storage
             - ./customization/:/customization
 
+    supportpal_websockets:
+        volumes:
+            - supportpal_resources:/supportpal/resources
+            - supportpal_app:/supportpal/app
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
+            - ./customization/:/customization
+
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
         image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron-buster'
@@ -27,6 +35,7 @@ services:
             REDIS_PORT: ${REDIS_PORT}
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app

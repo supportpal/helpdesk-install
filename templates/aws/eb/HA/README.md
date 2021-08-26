@@ -82,7 +82,7 @@ Select a platform branch.
 (default is 1):  1
 ```
 
-Choose the same options for both modules.
+Choose the same options for each module.
 
 ### 3. Configuration
 
@@ -94,7 +94,9 @@ option_settings:
   aws:elasticbeanstalk:application:environment:
     FILE_SYSTEM_ID: fs-XXXXX
 ```
-* Inside your `options.config`, update the `CACHE_SERVICE_NAME` value to the ElasticCache instance URL, and `HOST`.
+* Inside your `options.config`
+  * update the `CACHE_SERVICE_NAME` value to the ElastiCache primary end point URL
+  * update the `HOST` to your domain name.
 ```yaml
 option_settings:
     aws:elasticbeanstalk:application:environment:
@@ -110,7 +112,7 @@ option_settings:
     SecurityGroups: sg-XXXX, g-YYYY, g-ZZZZ
 ```
 
-* Inside your `vpc.config`, add the id of your VPC, and add at least 3 availability zones.
+* Inside your `vpc.config`, add the id of your VPC, and add at least 2 availability zones. Make sure to use the same subnets selected when you created the EFS filesystem
 ```yaml
 option_settings:
 aws:ec2:vpc:
@@ -163,7 +165,7 @@ cd ../cron
 eb create cron-production --single
 ```
 
-### 7. Configure HTTPS
+### 8. Configure HTTPS
 
 By default, the software will run on HTTP using port 80. However, we recommend using HTTPS for added security. to enable HTTPS, we suggest that you do so at the level of the load balancer.  To do that please check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/create-https-listener.html).
 
