@@ -38,7 +38,7 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: '981258733371.dkr.ecr.us-east-1.amazonaws.com/sp-ws:latest'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
         working_dir: /supportpal
         volumes:
             - supportpal_resources:/supportpal/resources
