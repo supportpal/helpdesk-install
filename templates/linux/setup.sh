@@ -229,6 +229,21 @@ systemd() {
   msg "info" "issued $1 of service: $2"
 }
 
+# pwgen 2.08 is unavailable on debian 9 (stretch).
+install_pwgen()
+{
+  # install dependencies
+  install curl gcc make
+
+  curl -L -O https://kumisystems.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
+  tar -xzf pwgen-2.08.tar.gz
+  cd pwgen-2.08
+  ./configure
+  make && make install
+  cd ..
+  rm -rf pwgen-2.08.tar.gz pwgen-2.08
+}
+
 setup() {
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     export DEBIAN_FRONTEND=noninteractive
@@ -236,6 +251,7 @@ setup() {
 
   update
   install curl
+  install_pwgen
 }
 
 #
@@ -453,7 +469,7 @@ install_apache() {
 #
 
 generate_password() {
-  openssl rand -base64 14
+  pwgen -1 -s -y -n -c -v -r \`\'\" 15
 }
 
 install_mysql() {
