@@ -235,7 +235,7 @@ setup() {
   fi
 
   update
-  install curl
+  install curl pwgen
 }
 
 #
@@ -453,7 +453,7 @@ install_apache() {
 #
 
 generate_password() {
-  openssl rand -base64 14
+  pwgen -1 -s -y -n -c -v 15
 }
 
 install_mysql() {
