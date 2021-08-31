@@ -235,7 +235,7 @@ install_pwgen()
   # install dependencies
   install curl gcc make
 
-  curl -O https://kumisystems.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
+  curl -L -O https://kumisystems.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
   tar -xzf pwgen-2.08.tar.gz
   cd pwgen-2.08
   ./configure
