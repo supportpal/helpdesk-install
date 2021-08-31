@@ -235,6 +235,9 @@ setup() {
   fi
 
   update
+  if [[ $os_type = 'rhel' ]]; then
+    install_rpm epel-release
+  fi
   install curl pwgen
 }
 
