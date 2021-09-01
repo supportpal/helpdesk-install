@@ -469,7 +469,7 @@ install_apache() {
 #
 
 generate_password() {
-  pwgen -1 -s -y -n -c -v -r \`\'\"\$\| 15
+  pwgen -1 -s -y -n -c -v -r \`\'\"\$\|\\ 15
 }
 
 install_mysql() {
