@@ -236,9 +236,6 @@ setup() {
 #
 
 configure_php_fpm() {
-  mkdir -p "$(dirname "${socket_path}")"
-  touch "${socket_path}"
-
   echo "[supportpal]
 
 listen = ${socket_path}
@@ -270,6 +267,10 @@ install_php_rhel() {
   install_rpm https://rpms.remirepo.net/enterprise/remi-release-8.rpm
   dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
   dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
+
+  if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
+    semanage fcontext -a -t httpd_var_run_t "/var/run/supportpal.sock"
+  fi
 
   configure_php_fpm apache /etc/php-fpm.d/supportpal.conf
 
