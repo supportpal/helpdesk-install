@@ -1,10 +1,10 @@
 #!/bin/bash
 set -eu -o pipefail
 
-version="0.0.2"
+version="0.1.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
-    * RHEL/CentOS 7 & 8 (rhel)
+    * RHEL/CentOS 8 (rhel)
     * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal)
     * Debian 9 (stretch) & 10 (buster)"
 
@@ -80,15 +80,6 @@ identify_os() {
     os_type=rhel
     el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
-    5*)
-      os_version=5
-      error "RHEL/CentOS 5 is no longer supported" "$supported"
-      ;;
-    6*)
-      os_version=6
-      error "RHEL/CentOS 6 is no longer supported" "$supported"
-      ;;
-    7*) os_version=7 ;;
     8*) os_version=8 ;;
     *) error "Detected RHEL or compatible but version ($el_version) is not supported." "$supported" ;;
     esac
@@ -182,25 +173,11 @@ update() {
 }
 
 install_rpm() {
-  set +e
-  if ((os_version == 7)); then
-    yum install -y "$@"
-  fi
-  if ((os_version == 8)); then
-    dnf install -y "$@"
-  fi
-  set -e
+  dnf install -y "$@"
 }
 
 remove_rpm() {
-  set +e
-  if ((os_version == 7)); then
-    yum remove -y "$@"
-  fi
-  if ((os_version == 8)); then
-    dnf remove -y "$@"
-  fi
-  set -e
+  dnf remove -y "$@"
 }
 
 systemd() {
@@ -289,21 +266,10 @@ install_php_rhel() {
   # Remove . from php_version
   local stripped_version=${php_version//\./}
 
-  if ((os_version == 7)); then
-    install_rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-    install_rpm https://rpms.remirepo.net/enterprise/remi-release-7.rpm
-    yum -y install yum-utils
-    yum-config-manager --disable 'remi-php*' && yum-config-manager --enable "remi-php${stripped_version}"
-    yum-config-manager --enable "remi-php${stripped_version}"
-    yum -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
-  fi
-
-  if ((os_version == 8)); then
-    install_rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-    install_rpm https://rpms.remirepo.net/enterprise/remi-release-8.rpm
-    dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
-    dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
-  fi
+  install_rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+  install_rpm https://rpms.remirepo.net/enterprise/remi-release-8.rpm
+  dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
+  dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
 
   configure_php_fpm apache /etc/php-fpm.d/supportpal.conf
 
@@ -494,14 +460,8 @@ install_mysql() {
   user_password="$(generate_password)"
 
   if [[ $os_type == 'rhel' ]]; then
-    if ((os_version == 7)); then
-      install_rpm https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
-    fi
-
-    if ((os_version == 8)); then
-      install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
-      yum -y module disable mysql
-    fi
+    install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
+    dnf -y module disable mysql
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
