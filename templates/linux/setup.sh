@@ -529,6 +529,11 @@ install_mysql() {
     systemd restart mysql
   fi
 
+  while ! mysqladmin ping --silent; do
+    echo "mysql-server is unavailable. retrying in 1s..."
+    sleep 1
+  done
+
   mysql --connect-expired-password --user='root' --password="${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}'; FLUSH PRIVILEGES;"
   if [[ $os_type == 'rhel' ]]; then
     mysql --user="root" --password="${root_password}" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
