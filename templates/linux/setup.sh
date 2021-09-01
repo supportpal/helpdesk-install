@@ -535,7 +535,7 @@ install_mysql() {
   fi
   mysql --user="root" --password="${root_password}" -e "CREATE DATABASE \`${database}\`;"
   mysql --user="root" --password="${root_password}" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
-  mysql --user="root" --password="${root_password}" -e "GRANT ALL PRIVILEGES ON \`${database}.*\` TO '${username}'@'localhost';"
+  mysql --user="root" --password="${root_password}" -e "GRANT ALL PRIVILEGES ON \`${database}\`.* TO '${username}'@'localhost';"
   mysql --user="root" --password="${root_password}" -e "FLUSH PRIVILEGES;"
 }
 
