@@ -40,7 +40,7 @@ user_password=
 # php-fpm
 install_path='/var/www/supportpal'
 log_path='/var/log/supportpal'
-socket_path='/var/run/supportpal.sock'
+socket_path='/run/php/supportpal.sock'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -236,6 +236,9 @@ setup() {
 #
 
 configure_php_fpm() {
+  mkdir -p "$(dirname "${socket_path}")"
+  touch "${socket_path}"
+
   echo "[supportpal]
 
 listen = ${socket_path}
