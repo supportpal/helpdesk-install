@@ -369,12 +369,12 @@ write_vhost() {
     ErrorLog ${log_path}/error.log
     CustomLog ${log_path}/access.log combined
 
-    <Proxy \"unix:${socket_path}\">
+    <Proxy \"unix://${socket_path}\">
         ProxySet disablereuse=off
     </Proxy>
 
     <FilesMatch \.php$>
-        SetHandler proxy:unix:${socket_path}
+        SetHandler proxy:unix://${socket_path}
     </FilesMatch>
 </VirtualHost>
 " >"$1"
