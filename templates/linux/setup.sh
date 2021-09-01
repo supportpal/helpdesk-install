@@ -40,7 +40,7 @@ user_password=
 # php-fpm
 install_path='/var/www/supportpal'
 log_path='/var/log/supportpal'
-socket_path='/run/php/supportpal.sock'
+socket_path='/var/run/supportpal.sock'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
