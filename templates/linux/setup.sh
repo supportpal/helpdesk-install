@@ -269,7 +269,7 @@ install_php_rhel() {
   dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
 
   if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
-    semanage fcontext -a -t httpd_var_run_t "/var/run/supportpal.sock"
+    semanage fcontext -a -t httpd_var_run_t "${socket_path}"
   fi
 
   configure_php_fpm apache /etc/php-fpm.d/supportpal.conf
