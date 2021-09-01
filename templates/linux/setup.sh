@@ -469,7 +469,9 @@ install_apache() {
 #
 
 generate_password() {
-  pwgen -1 -s -y -n -c -v -r \`\'\"\$\|\\ 15
+  # sudo only provides access to /sbin:/bin:/usr/sbin:/usr/bin
+  # commands in /usr/local/bin cannot be found (https://unix.stackexchange.com/a/8652).
+  /usr/local/bin/pwgen -1 -s -y -n -c -v -r \`\'\"\$\|\\ 15
 }
 
 install_mysql() {
