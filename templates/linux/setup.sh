@@ -469,7 +469,7 @@ install_apache() {
 #
 
 generate_password() {
-  pwgen -1 -s -y -n -c -v -r \`\'\" 15
+  pwgen -1 -s -y -n -c -v -r \`\'\"\$\|\\ 15
 }
 
 install_mysql() {
@@ -529,14 +529,19 @@ install_mysql() {
     systemd restart mysql
   fi
 
-  mysql --connect-expired-password -u"root" -p"${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}'; FLUSH PRIVILEGES;"
+  while ! mysqladmin ping --silent; do
+    echo "mysql-server is unavailable. retrying in 1s..."
+    sleep 1
+  done
+
+  mysql --connect-expired-password --user='root' --password="${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}'; FLUSH PRIVILEGES;"
   if [[ $os_type == 'rhel' ]]; then
-    mysql -u"root" -p"${root_password}" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
+    mysql --user="root" --password="${root_password}" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
   fi
-  mysql -u"root" -p"${root_password}" -e "CREATE DATABASE ${database};"
-  mysql -u"root" -p"${root_password}" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
-  mysql -u"root" -p"${root_password}" -e "GRANT ALL PRIVILEGES ON ${username}.* TO '${database}'@'localhost';"
-  mysql -u"root" -p"${root_password}" -e "FLUSH PRIVILEGES;"
+  mysql --user="root" --password="${root_password}" -e "CREATE DATABASE \`${database}\`;"
+  mysql --user="root" --password="${root_password}" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
+  mysql --user="root" --password="${root_password}" -e "GRANT ALL PRIVILEGES ON \`${database}\`.* TO '${username}'@'localhost';"
+  mysql --user="root" --password="${root_password}" -e "FLUSH PRIVILEGES;"
 }
 
 install_supportpal() {
