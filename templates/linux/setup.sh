@@ -263,9 +263,6 @@ php_admin_value[log_errors] = on
 }
 
 install_php_rhel() {
-  # Remove . from php_version
-  local stripped_version=${php_version//\./}
-
   install_rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
   install_rpm https://rpms.remirepo.net/enterprise/remi-release-8.rpm
   dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
@@ -334,9 +331,6 @@ install_ioncube() {
   cp "ioncube/ioncube_loader_lin_${php_version}.so" "${PHP_EXT_DIR}"
 
   if [[ $os_type == 'rhel' ]]; then
-    # Remove . from php_version
-    local stripped_version=${php_version//\./}
-
     INI_PATH="/etc/php.d/00-ioncube.ini"
     backup "$INI_PATH"
     echo "$IONCUBE_EXT" >"$INI_PATH"
