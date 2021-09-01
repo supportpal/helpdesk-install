@@ -40,7 +40,7 @@ user_password=
 # php-fpm
 install_path='/var/www/supportpal'
 log_path='/var/log/supportpal'
-socket_path='/run/php/supportpal.sock'
+socket_path='/var/run/supportpal.sock'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -247,13 +247,15 @@ listen.mode = 0666
 user = $1
 group = $1
 
-pm = ondemand
+pm = dynamic
 pm.max_children = 50
 pm.start_servers = 5
 pm.min_spare_servers = 5
 pm.max_spare_servers = 35
 pm.process_idle_timeout = 10s
 pm.max_requests = 500
+
+slowlog = ${log_path}/php-fpm-slow.log
 
 php_admin_value[error_log] = ${log_path}/php-fpm-error.log
 php_admin_value[log_errors] = on
@@ -367,12 +369,12 @@ write_vhost() {
     ErrorLog ${log_path}/error.log
     CustomLog ${log_path}/access.log combined
 
-    <Proxy \"unix:${socket_path}|fcgi://php-fpm\">
+    <Proxy \"unix:${socket_path}\">
         ProxySet disablereuse=off
     </Proxy>
 
     <FilesMatch \.php$>
-        SetHandler proxy:fcgi://php-fpm
+        SetHandler proxy:unix:${socket_path}
     </FilesMatch>
 </VirtualHost>
 " >"$1"
