@@ -236,8 +236,6 @@ setup() {
 #
 
 configure_php_fpm() {
-  mkdir -p "$(dirname "$socket_path")"
-
   echo "[supportpal]
 
 listen = ${socket_path}
@@ -309,9 +307,6 @@ install_php() {
     "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
 
     configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
-
-    FPM_PATH='/run/php/php7.4-fpm.sock'
-    mkdir -p "$(dirname "$FPM_PATH")" && touch "$FPM_PATH"
 
     systemd start "php${php_version}-fpm"
   fi
