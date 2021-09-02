@@ -393,7 +393,7 @@ install_apache_rhel() {
   install httpd firewalld
   systemd restart httpd && systemd enable httpd
   systemd restart firewalld && systemd enable firewalld
-  firewall-cmd --add-service=http --permanent && firewall-cmd --reload
+  firewall-cmd --add-service=http --add-service=https --permanent && firewall-cmd --reload
 
   backup /etc/httpd/conf.d/welcome.conf
 
