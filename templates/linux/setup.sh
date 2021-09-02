@@ -40,7 +40,7 @@ user_password=
 # php-fpm
 install_path='/var/www/supportpal'
 log_path='/var/log/supportpal'
-socket_path='/var/run/php-fpm/supportpal.sock'
+socket_path='/var/run/supportpal.sock'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -236,7 +236,10 @@ setup() {
 #
 
 configure_php_fpm() {
-  mkdir -p "$(dirname "$socket_path")"
+  # /var/run and /run are tmpfs so are emptied on reboot
+  # /etc/systemd/system/multi-user.target.wants/php7.4-fpm.service tries to create files in /run/php
+  # unable to bind listening socket for address '/run/php/php7.4-fpm.sock': No such file or directory
+  mkdir -p /run/php "$(dirname "${socket_path}")"
 
   echo "[supportpal]
 
@@ -249,13 +252,15 @@ listen.mode = 0666
 user = $1
 group = $1
 
-pm = ondemand
+pm = dynamic
 pm.max_children = 50
 pm.start_servers = 5
 pm.min_spare_servers = 5
 pm.max_spare_servers = 35
 pm.process_idle_timeout = 10s
 pm.max_requests = 500
+
+slowlog = ${log_path}/php-fpm-slow.log
 
 php_admin_value[error_log] = ${log_path}/php-fpm-error.log
 php_admin_value[log_errors] = on
@@ -267,6 +272,10 @@ install_php_rhel() {
   install_rpm https://rpms.remirepo.net/enterprise/remi-release-8.rpm
   dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
   dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
+
+  if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
+    semanage fcontext -a -t httpd_var_run_t "${socket_path}"
+  fi
 
   configure_php_fpm apache /etc/php-fpm.d/supportpal.conf
 
@@ -309,9 +318,6 @@ install_php() {
     "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
 
     configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
-
-    FPM_PATH='/run/php/php7.4-fpm.sock'
-    mkdir -p "$(dirname "$FPM_PATH")" && touch "$FPM_PATH"
 
     systemd start "php${php_version}-fpm"
   fi
@@ -386,6 +392,7 @@ write_vhost() {
 install_apache_rhel() {
   install httpd firewalld
   systemd restart httpd && systemd enable httpd
+  systemd restart firewalld && systemd enable firewalld
   firewall-cmd --add-service=http --permanent && firewall-cmd --reload
 
   backup /etc/httpd/conf.d/welcome.conf
