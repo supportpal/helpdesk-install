@@ -236,6 +236,11 @@ setup() {
 #
 
 configure_php_fpm() {
+  # /var/run and /run are tmpfs so are emptied on reboot
+  # /etc/systemd/system/multi-user.target.wants/php7.4-fpm.service tries to create files in /run/php
+  # unable to bind listening socket for address '/run/php/php7.4-fpm.sock': No such file or directory
+  mkdir -p /run/php "$(dirname "${socket_path}")"
+
   echo "[supportpal]
 
 listen = ${socket_path}
