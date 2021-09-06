@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 
-VOLUMES=("supportpal_db" "supportpal_config" "redis_data" )
+VOLUMES=("supportpal_db" "supportpal_config" "supportpal_redis" )
 
 # usage: check_command <bashrc__full_path>
 check_command() {
@@ -83,14 +83,13 @@ setup_mysql() {
   -e MYSQL_ROOT_PASSWORD="${root_password}" \
   -e MYSQL_USER="${username}" \
   -e MYSQL_PASSWORD="${user_password}" \
-  -d \
   --rm sp-mysql > /dev/null;
 }
 
 check_volumes() {
     for volume in "${VOLUMES[@]}"
     do
-      if docker volume ls | grep -q -E "${volume}"; then
+      if docker volume ls | grep -q "${volume}"; then
           echo "Helpdesk is already installed."
           exit 1
       fi

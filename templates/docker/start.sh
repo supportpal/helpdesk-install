@@ -1,13 +1,13 @@
 #!/bin/bash
 set -eu -o pipefail
 
-VOLUMES=("supportpal_db" "supportpal_config" "redis_data" )
+VOLUMES=("supportpal_db" "supportpal_config" "supportpal_redis" )
 CONTAINER_NAME="supportpal"
 
 check_volumes() {
     for volume in "${VOLUMES[@]}"
     do
-        if ! docker volume ls | grep -q -E "${volume}"; then
+        if ! docker volume ls | grep -q "${volume}"; then
             echo "Helpdesk is not initialized."
             exit 1
         fi
