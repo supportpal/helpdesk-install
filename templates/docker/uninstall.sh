@@ -15,7 +15,7 @@ echo "Cleaning up containers"
 docker rm -f supportpal 2> /dev/null
 
 echo "Cleaning up volumes"
-VOLUMES=("supportpal_db" "supportpal_config" "redis_data" )
+VOLUMES=("supportpal_db" "supportpal_config" "supportpal_redis" "supportpal_storage")
 for volume in "${VOLUMES[@]}"
 do
   docker volume remove "${volume}" 2> /dev/null

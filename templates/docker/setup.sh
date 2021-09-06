@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 
-VOLUMES=("supportpal_db" "supportpal_config" "supportpal_redis" )
+VOLUMES=("supportpal_db" "supportpal_config" "supportpal_redis" "supportpal_storage")
 
 # usage: check_command <bashrc__full_path>
 check_command() {
