@@ -271,7 +271,7 @@ install_php_rhel() {
   install_rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
   install_rpm https://rpms.remirepo.net/enterprise/remi-release-8.rpm
   dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
-  dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap
+  dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap php-zip
 
   if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
     semanage fcontext -a -t httpd_var_run_t "${socket_path}"
@@ -315,7 +315,8 @@ install_php() {
 
     apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
     "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
-    "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap"
+    "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap" \
+    "php${php_version}-zip"
 
     configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
 
@@ -332,7 +333,7 @@ install_ioncube() {
 
   # Install Ioncube Loaders
   IONCUBE_EXT="zend_extension = "${PHP_EXT_DIR}ioncube_loader_lin_${php_version}.so""
-  curl -O http://downloads3.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
+  curl --fail -o ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz
   tar xfz ioncube_loaders_lin_x86-64.tar.gz
   cp "ioncube/ioncube_loader_lin_${php_version}.so" "${PHP_EXT_DIR}"
 
