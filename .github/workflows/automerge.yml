@@ -22,9 +22,10 @@ on:
 jobs:
   automerge:
     runs-on: ubuntu-latest
+    if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - name: automerge
-        uses: "pascalgn/automerge-action@v0.14.2"
+        uses: "pascalgn/automerge-action@v0.14.3"
         env:
           GITHUB_TOKEN: "${{ secrets.GH_TOKEN }}"
           MERGE_METHOD: "squash"
