@@ -166,6 +166,11 @@ create_volume() {
 configure() {
   # download docker-compose.yml example
   printf "generating docker-compose.yml ... "
+  if [[ -f "docker-compose.yml" ]]; then
+    echo
+    echo "error: $(pwd)/docker-compose.yml already exists. Delete the file and try again."
+    exit 1
+  fi
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
 
   # guess the hostname
