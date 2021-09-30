@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  supportpal:
+    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:${APP_VERSION}'
+    restart: always
+    hostname: 'supportpal.example.com'
+    ports:
+      - '80:8080'
+    environment:
+      APP_VERSION: 3.6.2
+    volumes:
+      - supportpal_db:/var/lib/mysql
+      - supportpal_config:/var/www/supportpal/config/production
+      - supportpal_redis:/redis-data
+      - supportpal_storage:/var/www/supportpal/storage
+      - supportpal_logs:/var/log
+
+volumes:
+  supportpal_db:
+    external: true
+    name: supportpal_db
+  supportpal_config:
+    external: true
+    name: supportpal_config
+  supportpal_redis:
+    external: true
+    name: supportpal_redis
+  supportpal_storage:
+    external: true
+    name: supportpal_storage
+  supportpal_logs:
+    external: true
+    name: supportpal_logs
