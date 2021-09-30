@@ -166,7 +166,7 @@ create_volume() {
 configure() {
   # download docker-compose.yml example
   printf "generating docker-compose.yml ... "
-#  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
 
   # guess the hostname
   hostname="$(hostname)"
