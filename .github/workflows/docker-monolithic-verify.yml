@@ -1,0 +1,33 @@
+name: docker monolithic install
+
+on:
+  pull_request:
+    paths:
+      - templates/docker-monolithic/**/*
+
+defaults:
+  run:
+    working-directory: ./templates/docker-monolithic
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 4
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Shellcheck
+        run: |
+          docker run --rm \
+            -v "${PWD}:/v"  \
+            -w "/v" \
+            koalaman/shellcheck \
+            -e SC1091 -e SC1117 \
+            setup.sh
+
+      - name: docker-compose config test
+        run: |
+          docker-compose -f docker-compose.yml config
