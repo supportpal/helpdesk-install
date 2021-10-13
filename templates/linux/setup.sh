@@ -162,7 +162,7 @@ install() {
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    apt-get install -y "$@"
+    DEBIAN_FRONTEND=noninteractive apt-get install -y "$@"
   fi
 }
 
