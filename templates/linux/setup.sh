@@ -469,10 +469,10 @@ install_mysql() {
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     install wget debconf-utils lsb-release gnupg2
     debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-product select Ok"
-    debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
-    debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
+    debconf-set-selections <<< "mysql-community-server mysql-community-server/root-pass password ${root_password}"
+    debconf-set-selections <<< "mysql-community-server mysql-community-server/re-root-pass password ${root_password}"
 
-    wget -O mysql-apt-config.deb https://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb
+    wget -O mysql-apt-config.deb https://repo.mysql.com/mysql-apt-config_0.8.19-1_all.deb
     dpkg -i mysql-apt-config.deb && apt-get update
     rm mysql-apt-config.deb
   fi
