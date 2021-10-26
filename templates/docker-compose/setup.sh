@@ -92,6 +92,17 @@ version_ge() {
   fi
 }
 
+version_lt() {
+  if [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" = "$2" ]; then
+    printf "error: version %s is not supported\n" "$2"
+    if [ "$3" ]; then
+      printf "       %s\n" "$3"
+    fi
+
+    exit 1
+  fi
+}
+
 check_winpty() {
   if ! check_command winpty; then
     printf "error: winpty is missing. Install Git Bash using the default options.\n"
@@ -158,11 +169,14 @@ check_docker_compose() {
     exit 1
   fi
 
-  local min="1.24.0" version
+  local min="1.24.0" version max="2.0.0"
 
   version="$(docker-compose version --short)"
   printf "checking docker-compose version %s >= %s ...\n" "$version" "$min"
   version_ge "$version" "$min"
+
+  printf "checking docker-compose version %s < %s ...\n" "$version" "$max"
+  version_lt "$version" "$max" "to disable docker compose v2 run: docker-compose disable-v2"
 }
 
 check_git() {
