@@ -55,7 +55,7 @@ identify_os() {
   elif [[ "$(uname -s)" == MINGW* ]]; then
     os_type=windows
   fi
-  
+
   if ! [[ $os_type ]]; then
     printf "error: unsupported operating system.\n"
     printf "\tFor a list of supported operating systems see https://docs.supportpal.com/current/System+Requirements#OperatingSystems\n"
@@ -214,9 +214,6 @@ configure() {
     git clone https://github.com/supportpal/helpdesk-install.git
     cd helpdesk-install/templates/docker-compose
   fi
-
-  cp .env.dist .env
-  cp Makefile.dist Makefile
 
   if [ "$interactive" -eq 1 ]; then
     echo

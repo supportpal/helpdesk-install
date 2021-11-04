@@ -1,4 +1,3 @@
-/.env
 /create-self-signed.sh
 /init-letsencrypt.sh
 /php/
@@ -6,6 +5,5 @@
 /gateway/
 /secrets/
 /ssl/
-*.yml
 /backup/
 Makefile

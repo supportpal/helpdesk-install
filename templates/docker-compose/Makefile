@@ -4,6 +4,7 @@ include .env
 
 DOCKER_BIN=docker
 DOCKER_COMPOSE_BIN=docker-compose
+GIT_BIN=git
 COMPOSE_FILES=-f docker-compose.yml -f docker-compose.prod.yml
 
 .DEFAULT_GOAL := help
@@ -62,10 +63,6 @@ create_secrets:
 
 .PHONY: configure
 configure:
-	cp -n .env.dist .env || true
-	cp -n docker-compose.secrets.yml.dist docker-compose.secrets.yml || true
-	cp -n docker-compose.yml.dist docker-compose.yml || true
-	cp -n docker-compose.prod.yml.dist docker-compose.prod.yml || true
 	cp -n -R ../../configs/gateway . || true
 
 .PHONY: upgrade
@@ -80,6 +77,7 @@ upgrade: ## Upgrade SupportPal to a later version.
 	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 10 seconds...\033[0m\n"
 	@sleep 10
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
+	$(GIT_BIN) pull
 	$(MAKE) start
 	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:upgrade --confirm-backup'
 
