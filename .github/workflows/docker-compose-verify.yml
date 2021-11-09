@@ -31,8 +31,7 @@ jobs:
 
       - name: docker-compose config test
         run: |
-          cp .env.dist .env
-          docker-compose -f docker-compose.yml.dist -f docker-compose.prod.yml.dist -f docker-compose.override.yml.dist config
+          docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.override.yml config
 
       - name: docker-compose up
         run: |
