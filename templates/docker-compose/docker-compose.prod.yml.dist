@@ -50,10 +50,10 @@ services:
             - db_password
         command: 'bash -c "service cron start && tail -f /var/log/cron.log"'
 
-    supportpal_horizon:
-        container_name: '${HORIZON_SERVICE_NAME}'
+    supportpal_mq:
+        container_name: '${MQ_SERVICE_NAME}'
         user: www-data
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq-buster'
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
@@ -72,7 +72,7 @@ services:
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
         networks:
             - supportpal_backend
-        command: 'php artisan sp-horizon:start'
+        command: 'php artisan mq:start'
 
     mailer:
         volumes:
