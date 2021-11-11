@@ -73,6 +73,7 @@ services:
         networks:
             - supportpal_backend
         command: 'php artisan mq:start'
+        stop_grace_period: 60s
 
     mailer:
         volumes:
