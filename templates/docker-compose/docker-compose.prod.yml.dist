@@ -36,6 +36,7 @@ services:
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+            MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
@@ -70,6 +71,7 @@ services:
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+            MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
         networks:
             - supportpal_backend
         command: 'php artisan mq:start'
