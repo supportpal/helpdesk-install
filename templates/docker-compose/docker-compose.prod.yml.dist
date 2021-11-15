@@ -36,6 +36,7 @@ services:
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+            MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
@@ -49,6 +50,32 @@ services:
             - db_user
             - db_password
         command: 'bash -c "service cron start && tail -f /var/log/cron.log"'
+
+    supportpal_mq:
+        container_name: '${MQ_SERVICE_NAME}'
+        user: www-data
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq-buster'
+        volumes:
+            - supportpal_resources:/supportpal/resources
+            - supportpal_app:/supportpal/app
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
+            - ./customization/:/customization
+        restart: always
+        depends_on:
+            - db
+            - redis
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            HOST: ${HOST}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+            MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+        networks:
+            - supportpal_backend
+        command: 'php artisan mq:start'
+        stop_grace_period: 60s
 
     mailer:
         volumes:
