@@ -2,13 +2,11 @@ version: '3.8'
 
 services:
   supportpal:
-    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:${APP_VERSION}'
+    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:3.7.0'
     restart: always
     hostname: 'supportpal.example.com'
     ports:
       - '80:8080'
-    environment:
-      APP_VERSION: 3.7.0
     volumes:
       - supportpal_db:/var/lib/mysql
       - supportpal_config:/var/www/supportpal/config/production
