@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   supportpal:
-    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:3.7.0'
+    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:3.7.1'
     restart: always
     hostname: 'supportpal.example.com'
     ports:
