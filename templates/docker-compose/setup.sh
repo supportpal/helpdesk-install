@@ -169,7 +169,7 @@ check_docker_compose() {
     exit 1
   fi
 
-  local min="1.24.0" version max="2.0.0"
+  local min="1.25.5" version max="2.0.0"
 
   version="$(docker-compose version --short | sed 's/^v//')"
   printf "checking docker-compose version %s >= %s ...\n" "$version" "$min"
