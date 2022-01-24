@@ -93,6 +93,7 @@ identify_os() {
       case $debian_version in
       9*) error 'Debian version 9 (stretch) has reached End of Life and is no longer supported.' ;;
       10*) os_version=buster ;;
+      11*) os_version=bullseye ;;
       *) error "Detected Debian but version ($debian_version) is not supported." "$supported" ;;
       esac
       ;;
