@@ -462,7 +462,7 @@ install_mysql() {
   user_password="$(generate_password)"
 
   if [[ $os_type == 'rhel' ]]; then
-    install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-1.noarch.rpm
+    install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-3.noarch.rpm
     dnf -y module disable mysql
   fi
 
