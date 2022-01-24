@@ -6,7 +6,7 @@ version="0.1.0"
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL/CentOS 8 (rhel)
     * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal)
-    * Debian 9 (stretch) & 10 (buster)"
+    * Debian 10 (buster), & 11 (bullseye)"
 
 usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
 
@@ -91,7 +91,7 @@ identify_os() {
       os_type=debian
       debian_version=$(</etc/debian_version)
       case $debian_version in
-      9*) os_version=stretch ;;
+      9*) error 'Debian version 9 (stretch) has reached End of Life and is no longer supported.' ;;
       10*) os_version=buster ;;
       *) error "Detected Debian but version ($debian_version) is not supported." "$supported" ;;
       esac
