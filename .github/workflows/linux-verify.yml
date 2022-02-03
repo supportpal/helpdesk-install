@@ -3,6 +3,7 @@ name: linux install
 on:
   pull_request:
     paths:
+      - .github/workflows/linux-verify.yml
       - templates/linux/**/*
   schedule:
     - cron:  '0 0 * * *' # Midnight - every night
@@ -18,7 +19,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - centos:8
+          - quay.io/centos/centos:stream8
           - ubuntu:18.04
           - ubuntu:20.04
           - debian:10
