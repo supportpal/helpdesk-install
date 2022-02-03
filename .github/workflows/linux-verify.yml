@@ -3,6 +3,7 @@ name: linux install
 on:
   pull_request:
     paths:
+      - .github/workflows/linux-verify.yml
       - templates/linux/**/*
   schedule:
     - cron:  '0 0 * * *' # Midnight - every night
