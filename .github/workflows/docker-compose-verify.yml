@@ -31,6 +31,7 @@ jobs:
 
       - name: docker-compose config test
         run: |
+          cp ../../configs/templates/.env.custom .env.custom
           docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml -f docker-compose.php.yml config
 
       - name: docker-compose up

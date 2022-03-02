@@ -28,7 +28,7 @@ while [[ "$#" -gt 0 ]]; do
   -n) interactive=0 ;;
   -H|--host) host="$2" ; shift ;;
   -e|--email) email="$2" ; shift ;;
-  -m|--migrate) mode="configure" ; shift ;;
+  -m|--migrate) mode="configure" ;;
   --skip-clone) skip_clone=1 ;;
   *)
     echo "Unknown parameter passed: $1"
@@ -214,6 +214,7 @@ escape_re() {
 configure() {
   if [ "$skip_clone" -eq 0 ]; then
     git clone https://github.com/supportpal/helpdesk-install.git
+    cp helpdesk-install/configs/templates/.env.custom helpdesk-install/templates/docker-compose/.env.custom
     cd helpdesk-install/templates/docker-compose
   fi
 
