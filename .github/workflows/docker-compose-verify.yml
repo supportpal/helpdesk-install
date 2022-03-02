@@ -31,7 +31,7 @@ jobs:
 
       - name: docker-compose config test
         run: |
-          docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.override.yml config
+          docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml -f docker-compose.php.yml config
 
       - name: docker-compose up
         run: |
