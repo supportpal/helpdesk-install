@@ -23,7 +23,7 @@ services:
 
     supportpal:
         container_name: '${WEB_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web'
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
@@ -41,7 +41,7 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws'
         working_dir: /supportpal
         volumes:
             - supportpal_resources:/supportpal/resources
