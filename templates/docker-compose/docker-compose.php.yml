@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+    supportpal:
+        volumes:
+            - ./php/custom.ini:/usr/local/etc/php/conf.d/10-custom.ini
+
+    supportpal_websockets:
+        volumes:
+            - ./php/custom.ini:/usr/local/etc/php/conf.d/10-custom.ini
+
+    supportpal_mq:
+        volumes:
+            - ./php/custom.ini:/usr/local/etc/php/conf.d/10-custom.ini
+
+    supportpal_cron:
+        volumes:
+            - ./php/custom.ini:/usr/local/etc/php/conf.d/10-custom.ini

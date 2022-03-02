@@ -20,6 +20,7 @@ skip_clone=0
 interactive=1
 host=
 email=
+mode="install"
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -27,6 +28,7 @@ while [[ "$#" -gt 0 ]]; do
   -n) interactive=0 ;;
   -H|--host) host="$2" ; shift ;;
   -e|--email) email="$2" ; shift ;;
+  -m|--migrate) mode="configure" ; shift ;;
   --skip-clone) skip_clone=1 ;;
   *)
     echo "Unknown parameter passed: $1"
@@ -228,30 +230,30 @@ configure() {
 
   if [[ -n "${email// }" ]]; then
     if [[ $os_type == 'macos' ]]; then
-      sed -i "" -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
+      sed -i "" -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env.custom
     else
-      sed -i -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
+      sed -i -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env.custom
     fi
 
-    printf "wrote 'MAILTO=%s' to .env\n" "${email// }"
+    printf "wrote 'MAILTO=%s' to .env.custom\n" "${email// }"
   fi
 
   if [[ -n "${host// }" ]]; then
     if [[ $os_type == 'macos' ]]; then
-      sed -i "" -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env
+      sed -i "" -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env.custom
     else
-      sed -i -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env
+      sed -i -e "s/^\(HOST=\).*/\1$(escape_re "${host// }")/" .env.custom
     fi
 
-    printf "wrote 'HOST=%s' to .env\n" "${host// }"
+    printf "wrote 'HOST=%s' to .env.custom\n" "${host// }"
 
     if [[ $os_type == 'macos' ]]; then
-      sed -i "" -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
+      sed -i "" -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env.custom
     else
-      sed -i -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
+      sed -i -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env.custom
     fi
 
-    printf "wrote 'DOMAIN_NAME=%s' to .env\n" "${host// }"
+    printf "wrote 'DOMAIN_NAME=%s' to .env.custom\n" "${host// }"
   fi
 }
 
@@ -263,4 +265,4 @@ check_git
 check_make
 echo
 configure
-make install
+make -f Makefile.dist ${mode}

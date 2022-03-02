@@ -6,3 +6,5 @@
 /secrets/
 /ssl/
 /backup/
+.env.custom
+docker-compose.override.yml

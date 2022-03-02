@@ -2,9 +2,9 @@ version: '3.8'
 
 services:
   supportpal:
+    container_name: supportpal
     image: 'public.ecr.aws/supportpal/helpdesk-monolithic:3.7.1'
     restart: always
-    hostname: 'supportpal.example.com'
     ports:
       - '80:8080'
     volumes:
