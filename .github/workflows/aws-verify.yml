@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Single
         run: docker-compose -f Single/docker-compose.yml.dist -f Single/docker-compose.override.yml.dist config
