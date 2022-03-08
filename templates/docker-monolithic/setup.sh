@@ -172,6 +172,15 @@ configure() {
     exit 1
   fi
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
+
+    # guess the hostname
+    hostname="$(hostname)"
+    if [[ $os_type == 'macos' ]]; then
+      sed -i "" -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.yml
+    else
+      sed -i -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.yml
+    fi
 
   printf "✔\n"
 
@@ -200,6 +209,6 @@ check_docker_compose
 configure
 
 echo
-echo "To complete the installation update the auto-generated $(pwd)/docker-compose.yml file."
+echo "To complete the installation update the auto-generated $(pwd)/docker-compose.override.yml file."
 echo "Refer back to https://docs.supportpal.com/current/Deploy+on+Docker for suggested changes."
 echo
