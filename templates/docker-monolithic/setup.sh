@@ -174,13 +174,13 @@ configure() {
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
 
-    # guess the hostname
-    hostname="$(hostname)"
-    if [[ $os_type == 'macos' ]]; then
-      sed -i "" -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.yml
-    else
-      sed -i -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.yml
-    fi
+  # guess the hostname
+  hostname="$(hostname)"
+  if [[ $os_type == 'macos' ]]; then
+    sed -i "" -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.override.yml
+  else
+    sed -i -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.override.yml
+  fi
 
   printf "✔\n"
 
