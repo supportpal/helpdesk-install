@@ -178,7 +178,7 @@ check_docker_compose() {
     exit 1
   fi
 
-  version="$(echo "$version" | sed 's/^v//')"
+  version="$(echo "${version#v}")"
   printf "checking docker compose version %s >= %s ... " "$version" "$min"
   version_ge "$version" "$min"
   printf "✔\n"
