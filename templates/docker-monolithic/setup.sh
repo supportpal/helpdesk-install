@@ -138,15 +138,20 @@ check_docker() {
 }
 
 check_docker_compose() {
-  if ! check_command docker-compose; then
-    printf "error: Install docker-compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
+  local min="2.2.1" version command_status
+
+  set +e
+  version="$(docker compose version --short 2>&1)"
+  command_status="$?"
+  set -e
+
+  if [ $command_status -ne 0 ]; then
+    printf "error: Install docker compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
     exit 1
   fi
 
-  local min="1.24.0" version
-
-  version="$(docker-compose version --short)"
-  printf "checking docker-compose version %s >= %s ... " "$version" "$min"
+  version="$(echo "$version" | sed 's/^v//')"
+  printf "checking docker compose version %s >= %s ... " "$version" "$min"
   version_ge "$version" "$min"
   printf "✔\n"
 }
