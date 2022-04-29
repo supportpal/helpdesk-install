@@ -3,7 +3,7 @@ SELF_FILENAME := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
 include .env
 
 DOCKER_BIN=docker
-DOCKER_COMPOSE_BIN=docker-compose
+DOCKER_COMPOSE_BIN=docker compose
 GIT_BIN=git
 COMPOSE_FILES=-f docker-compose.yml -f docker-compose.prod.yml
 
