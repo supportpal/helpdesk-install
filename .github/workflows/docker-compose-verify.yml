@@ -37,6 +37,8 @@ jobs:
       - name: docker compose up
         run: |
           sudo apt install -y expect
+          cp ../../configs/templates/.env.custom .env.custom
+          cp ../../configs/templates/Makefile Makefile
           expect verify-install.exp
 
           curl -fSL -o /tmp/test.txt http://localhost/
