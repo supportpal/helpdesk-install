@@ -380,6 +380,14 @@ write_vhost() {
     ErrorLog ${log_path}/error.log
     CustomLog ${log_path}/access.log combined
 
+    <IfModule mod_headers.c>
+      Header set X-Frame-Options \"SAMEORIGIN\"
+      Header set X-Content-Type-Options \"nosniff\"
+      Header set X-XSS-Protection \"1; mode=block\"
+      Header set Referrer-Policy \"strict-origin-when-cross-origin\"
+      Header set Strict-Transport-Security: \"max-age=31536000\"
+    </IfModule>
+
     <Proxy \"unix:${socket_path}|fcgi://php-fpm\">
         ProxySet disablereuse=off
     </Proxy>
