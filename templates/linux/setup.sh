@@ -414,7 +414,7 @@ install_apache_rhel() {
 
 install_apache_deb() {
   install apache2
-  a2enmod rewrite proxy_fcgi
+  a2enmod rewrite proxy_fcgi headers
 
   write_vhost /etc/apache2/sites-available/supportpal.conf
   ln -sf /etc/apache2/sites-available/supportpal.conf /etc/apache2/sites-enabled/supportpal.conf
