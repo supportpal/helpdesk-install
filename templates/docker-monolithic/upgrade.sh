@@ -25,6 +25,8 @@ upgrade() {
     docker compose down -v
     time_now=$(date +"%d-%m-%Y-%H:%M:%S")
     cp -n docker-compose.yml "docker-compose.backup-${time_now}.yml"
+    # create volumes
+    bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
     curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
     docker compose up -d
     echo

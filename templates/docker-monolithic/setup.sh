@@ -190,11 +190,7 @@ configure() {
   printf "✔\n"
 
   # create volumes
-  create_volume supportpal_db
-  create_volume supportpal_config
-  create_volume supportpal_redis
-  create_volume supportpal_storage
-  create_volume supportpal_logs
+  bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
 }
 
 cat << "EOF"

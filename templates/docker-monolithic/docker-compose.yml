@@ -13,6 +13,7 @@ services:
       - supportpal_redis:/redis-data
       - supportpal_storage:/var/www/supportpal/storage
       - supportpal_logs:/var/log
+      - supportpal_addons:/var/www/supportpal/addons
 
 volumes:
   supportpal_db:
@@ -30,3 +31,6 @@ volumes:
   supportpal_logs:
     external: true
     name: supportpal_logs
+  supportpal_addons:
+    external: true
+    name: supportpal_addons
