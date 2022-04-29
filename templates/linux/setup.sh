@@ -107,6 +107,7 @@ identify_os() {
       xenial) ;;
       bionic) ;;
       focal) ;;
+      jammy) ;;
       *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
       esac
       if [[ $arch == aarch64 ]]; then
@@ -114,7 +115,8 @@ identify_os() {
         xenial) ;;
         bionic) ;;
         focal) ;;
-        *) error "Only Ubuntu 16/xenial, 18/bionic, and 20/focal are supported for ARM64. Detected version: '$os_version'" ;;
+        jammy) ;;
+        *) error "Only Ubuntu 16/xenial, 18/bionic, 20/focal, 22/jammy are supported for ARM64. Detected version: '$os_version'" ;;
         esac
       fi
       ;;
