@@ -41,6 +41,7 @@ jobs:
           cp ../../configs/templates/Makefile Makefile
           expect verify-install.exp
 
+          sleep 5 
           curl -fSL -o /tmp/test.txt http://localhost/
           if ! grep -q "SupportPal" /tmp/test.txt; then
             echo "ERROR: SupportPal is not loading via HTTP"
