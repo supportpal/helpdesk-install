@@ -22,6 +22,7 @@ jobs:
           - quay.io/centos/centos:stream8
           - ubuntu:18.04
           - ubuntu:20.04
+          - ubuntu:22.04
           - debian:10
           - debian:11
 

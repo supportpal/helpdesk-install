@@ -5,7 +5,7 @@ version="0.1.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL/CentOS 8 (rhel)
-    * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal)
+    * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal), & 22.04 LTS (jammy)
     * Debian 10 (buster), & 11 (bullseye)"
 
 usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
