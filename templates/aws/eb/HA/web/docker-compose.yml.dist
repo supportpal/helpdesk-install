@@ -36,6 +36,7 @@ services:
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+            MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
         command: 'php-fpm'
 
     supportpal_websockets:
@@ -54,6 +55,7 @@ services:
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+            MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
         command: 'gosu www-data bash -c "php artisan ws:serve"'
 
 volumes:

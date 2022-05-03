@@ -195,7 +195,7 @@ systemd() {
 
     install python3
     SYSTEMCTL=$(which systemctl || echo '/bin/systemctl')
-    curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/master/files/docker/systemctl3.py
+    curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/develop/files/docker/systemctl3.py
     chmod +x "$SYSTEMCTL"
     systemctl "$1" "$2"
   elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
@@ -380,6 +380,14 @@ write_vhost() {
     ErrorLog ${log_path}/error.log
     CustomLog ${log_path}/access.log combined
 
+    <IfModule mod_headers.c>
+      Header set X-Frame-Options \"SAMEORIGIN\"
+      Header set X-Content-Type-Options \"nosniff\"
+      Header set X-XSS-Protection \"1; mode=block\"
+      Header set Referrer-Policy \"strict-origin-when-cross-origin\"
+      Header set Strict-Transport-Security: \"max-age=31536000\"
+    </IfModule>
+
     <Proxy \"unix:${socket_path}|fcgi://php-fpm\">
         ProxySet disablereuse=off
     </Proxy>
@@ -406,7 +414,7 @@ install_apache_rhel() {
 
 install_apache_deb() {
   install apache2
-  a2enmod rewrite proxy_fcgi
+  a2enmod rewrite proxy_fcgi headers
 
   write_vhost /etc/apache2/sites-available/supportpal.conf
   ln -sf /etc/apache2/sites-available/supportpal.conf /etc/apache2/sites-enabled/supportpal.conf
