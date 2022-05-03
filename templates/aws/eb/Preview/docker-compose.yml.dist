@@ -92,22 +92,22 @@ services:
         command: 'gosu www-data bash -c "php artisan ws:serve"'
 
     supportpal_mq:
-            container_name: '${MQ_SERVICE_NAME}'
-            image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq-buster'
-            volumes:
-                - supportpal_resources:/supportpal/resources
-                - supportpal_app:/supportpal/app
-                - supportpal_config:/supportpal/config/production
-                - supportpal_storage:/supportpal/storage
-                - ./customization/:/customization
-            environment:
-                REDIS_HOST: ${CACHE_SERVICE_NAME}
-                REDIS_PORT: ${REDIS_PORT}
-                HOST: ${HOST}
-                MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
-                MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
-            command: 'php artisan mq:start'
-            stop_grace_period: 60s
+        container_name: '${MQ_SERVICE_NAME}'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq-buster'
+        volumes:
+            - supportpal_resources:/supportpal/resources
+            - supportpal_app:/supportpal/app
+            - supportpal_config:/supportpal/config/production
+            - supportpal_storage:/supportpal/storage
+            - ./customization/:/customization
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            HOST: ${HOST}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+        command: 'php artisan mq:start'
+        stop_grace_period: 60s
 
     mailer:
         container_name: ${MAILER_SERVICE_NAME}
