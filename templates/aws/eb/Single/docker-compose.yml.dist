@@ -105,7 +105,6 @@ services:
             REDIS_PORT: ${REDIS_PORT}
             HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
-            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
         command: 'php artisan mq:start'
         stop_grace_period: 60s
