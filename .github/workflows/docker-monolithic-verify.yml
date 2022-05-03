@@ -28,6 +28,6 @@ jobs:
             -e SC1091 -e SC1117 \
             setup.sh
 
-      - name: docker-compose config test
+      - name: docker compose config test
         run: |
-          docker-compose -f docker-compose.yml config
+          docker compose -f docker-compose.yml config

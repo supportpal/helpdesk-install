@@ -36,8 +36,13 @@ if [ "${#domains[@]}" -lt "1" ]; then
   exit 1
 fi
 
-if ! [ -x "$(command -v docker-compose)" ]; then
-  echo 'Error: docker-compose is not installed.' >&2
+set +e
+version="$(docker compose version --short 2>&1)"
+command_status="$?"
+set -e
+
+if [ $command_status -ne 0 ]; then
+  echo 'Error: docker compose (v2) is not installed. For installation instructions see https://docs.docker.com/compose/install/' >&2
   exit 1
 fi
 
@@ -57,7 +62,7 @@ fi
 echo "### Creating dummy certificate for $domains ..."
 path="/etc/letsencrypt/live/$domains"
 mkdir -p "$data_path/conf/live/$domains"
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml run --rm --entrypoint "\
+docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml run --rm --entrypoint "\
   openssl req -x509 -nodes -newkey rsa:$rsa_key_size -days 1\
     -keyout '$path/privkey.pem' \
     -out '$path/fullchain.pem' \
@@ -66,11 +71,11 @@ echo
 
 
 echo "### Starting nginx ..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml up --force-recreate -d gateway
+docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml up --force-recreate -d gateway
 echo
 
 echo "### Deleting dummy certificate for $domains ..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml run --rm --entrypoint "\
+docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml run --rm --entrypoint "\
   rm -Rf /etc/letsencrypt/live/$domains && \
   rm -Rf /etc/letsencrypt/archive/$domains && \
   rm -Rf /etc/letsencrypt/renewal/$domains.conf" certbot
@@ -93,7 +98,7 @@ esac
 # Enable staging mode if needed
 if [ $staging != "0" ]; then staging_arg="--staging"; else staging_arg=""; fi
 
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml run --rm --entrypoint "\
+docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml run --rm --entrypoint "\
   certbot certonly --webroot -w /var/www/certbot \
     $staging_arg \
     $email_arg \
@@ -105,4 +110,4 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compos
 echo
 
 echo "### Reloading nginx ..."
-docker-compose exec -T gateway nginx -s reload
+docker compose exec -T gateway nginx -s reload
