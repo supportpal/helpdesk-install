@@ -97,7 +97,7 @@ services:
 
     supportpal_mq:
         container_name: '${MQ_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq'
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
