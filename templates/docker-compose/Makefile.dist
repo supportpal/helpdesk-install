@@ -47,6 +47,7 @@ uninstall: ## Irreversibly uninstall the help desk and all associated data.
 	$(DOCKER_BIN) volume remove $(STORAGE_VOLUME)
 	$(DOCKER_BIN) volume remove $(CACHE_VOLUME)
 	$(DOCKER_BIN) volume remove $(MAILER_VOLUME)
+	$(DOCKER_BIN) volume remove $(ADDONS_VOLUME)
 	rm -rf secrets
 
 .PHONY: create_volumes
@@ -56,6 +57,7 @@ create_volumes:
 	$(DOCKER_BIN) volume create --name $(STORAGE_VOLUME)
 	$(DOCKER_BIN) volume create --name $(CACHE_VOLUME)
 	$(DOCKER_BIN) volume create --name $(MAILER_VOLUME)
+	$(DOCKER_BIN) volume create --name $(ADDONS_VOLUME)
 
 .PHONY: create_secrets
 create_secrets:
@@ -80,6 +82,7 @@ upgrade: ## Upgrade SupportPal to a later version.
 	@sleep 10
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(GIT_BIN) pull
+	$(MAKE) create_volumes
 	$(MAKE) start
 	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:upgrade --confirm-backup'
 

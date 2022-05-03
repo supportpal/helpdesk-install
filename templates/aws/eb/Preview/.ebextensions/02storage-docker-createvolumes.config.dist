@@ -7,3 +7,5 @@ commands:
     command: "mkdir -p /supportpal/cache && docker volume create -d local -o o=bind -o device=/supportpal/cache --name supportpal_cache --opt type=none"
   04_mailer_vol:
     command: "mkdir -p /supportpal/mailer && docker volume create -d local -o o=bind -o device=/supportpal/mailer --name supportpal_mailer --opt type=none"
+  05_addons_vol:
+    command: "mkdir -p /supportpal/addons && docker volume create -d local -o o=bind -o device=/supportpal/addons --name supportpal_addons --opt type=none"
