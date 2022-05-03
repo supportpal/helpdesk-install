@@ -9,3 +9,4 @@ option_settings:
         HOST: example.com
         GATEWAY_SERVICE_NAME: gateway
         WS_SERVICE_NAME: supportpal_ws
+        MQ_SERVICE_NAME: supportpal_mq
