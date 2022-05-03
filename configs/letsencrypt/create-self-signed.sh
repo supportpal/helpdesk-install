@@ -25,8 +25,13 @@ if [ "${#domains[@]}" -lt "1" ]; then
   exit 1
 fi
 
-if ! [ -x "$(command -v docker compose)" ]; then
-  echo 'Error: docker compose is not installed.' >&2
+set +e
+version="$(docker compose version --short 2>&1)"
+command_status="$?"
+set -e
+
+if [ $command_status -ne 0 ]; then
+  echo 'Error: docker compose (v2) is not installed. For installation instructions see https://docs.docker.com/compose/install/' >&2
   exit 1
 fi
 
