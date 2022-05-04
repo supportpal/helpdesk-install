@@ -17,6 +17,7 @@ services:
             - supportpal_storage:/supportpal/storage
             - supportpal_addons:/supportpal/addons
             - ./customization/:/customization
+            - ./php/:/usr/local/etc/php/conf.d/custom/
         env_file:
             - .env.custom
 
@@ -28,6 +29,7 @@ services:
             - supportpal_storage:/supportpal/storage
             - supportpal_addons:/supportpal/addons
             - ./customization/:/customization
+            - ./php/:/usr/local/etc/php/conf.d/custom/
         env_file:
             - .env.custom
 
@@ -39,6 +41,7 @@ services:
             - supportpal_storage:/supportpal/storage
             - supportpal_addons:/supportpal/addons
             - ./customization/:/customization
+            - ./php/:/usr/local/etc/php/conf.d/custom/
         env_file:
             - .env.custom
 
@@ -63,6 +66,7 @@ services:
             - supportpal_storage:/supportpal/storage
             - supportpal_addons:/supportpal/addons
             - ./customization/:/customization
+            - ./php/:/usr/local/etc/php/conf.d/custom/
         networks:
             - supportpal_frontend
             - supportpal_backend
