@@ -20,6 +20,32 @@ while [[ "$#" -gt 0 ]]; do
   shift
 done
 
+# usage: version_ge <installed_version> <minimum_version>
+version_ge() {
+  if ! [ "$(printf '%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]; then
+    printf "error: %s is less than minimum required version of %s\n" "$1" "$2"
+    exit 1
+  fi
+}
+
+check_docker_compose() {
+  local min="2.2.1" version command_status
+
+  set +e
+  version="$(docker compose version --short 2>&1)"
+  command_status="$?"
+  set -e
+
+  if [ $command_status -ne 0 ]; then
+    printf "error: Install docker compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
+    exit 1
+  fi
+
+  version="${version#v}"
+  printf "checking docker compose version %s >= %s ... " "$version" "$min"
+  version_ge "$version" "$min"
+  printf "✔\n"
+}
 
 upgrade() {
     docker compose down -v
@@ -33,4 +59,5 @@ upgrade() {
     echo "Upgrade complete!"
 }
 
+check_docker_compose
 upgrade
