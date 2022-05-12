@@ -23,7 +23,7 @@ services:
 
     supportpal:
         container_name: '${WEB_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web'
         restart: always
         depends_on:
             - db
@@ -31,7 +31,6 @@ services:
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
@@ -60,7 +59,7 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws'
         restart: always
         depends_on:
             - db
@@ -68,7 +67,6 @@ services:
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            HOST: ${HOST}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
@@ -76,6 +74,25 @@ services:
             - supportpal_backend
             - supportpal_frontend
         command: 'gosu www-data bash -c "php artisan ws:serve"'
+
+    supportpal_mq:
+        container_name: '${MQ_SERVICE_NAME}'
+        user: www-data
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq'
+        restart: always
+        depends_on:
+            - db
+            - redis
+        environment:
+            REDIS_HOST: ${CACHE_SERVICE_NAME}
+            REDIS_PORT: ${REDIS_PORT}
+            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            WS_SERVICE_NAME: ${WS_SERVICE_NAME}
+            MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+        networks:
+            - supportpal_backend
+        command: 'php artisan mq:start'
+        stop_grace_period: 60s
 
     redis:
         container_name: '${CACHE_SERVICE_NAME}'

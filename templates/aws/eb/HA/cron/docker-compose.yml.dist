@@ -13,6 +13,7 @@ services:
             - ./gateway/custom.conf:/etc/nginx/templates/custom.config.template
             - supportpal_resources:/supportpal/resources:ro
             - supportpal_app:/supportpal/app:ro
+            - supportpal_addons:/supportpal/addons:ro
         environment:
             WEB_CONTAINER: ${CRON_SERVICE_NAME}
             WS_SERVICE_NAME: ${CRON_SERVICE_NAME}
@@ -21,7 +22,7 @@ services:
 
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron'
         depends_on:
             - mailer
         volumes:
@@ -30,6 +31,7 @@ services:
             - supportpal_config:/supportpal/config/production
             - supportpal_storage:/supportpal/storage
             - ./customization/:/customization
+            - supportpal_addons:/supportpal/addons
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
@@ -40,7 +42,7 @@ services:
 
     supportpal_mq:
         container_name: '${MQ_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq'
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
@@ -75,3 +77,6 @@ volumes:
     supportpal_mailer:
         external: true
         name: supportpal_mailer
+    supportpal_addons:
+        external: true
+        name: supportpal_addons

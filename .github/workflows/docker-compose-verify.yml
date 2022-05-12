@@ -29,16 +29,19 @@ jobs:
             -e SC1091 -e SC1117 \
             setup.sh
 
-      - name: docker-compose config test
+      - name: docker compose config test
         run: |
-          cp .env.dist .env
-          docker-compose -f docker-compose.yml.dist -f docker-compose.prod.yml.dist -f docker-compose.override.yml.dist config
+          cp ../../configs/templates/.env.custom .env.custom
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.https.yml config
 
-      - name: docker-compose up
+      - name: docker compose up
         run: |
           sudo apt install -y expect
+          cp ../../configs/templates/.env.custom .env.custom
+          cp ../../configs/templates/Makefile Makefile
           expect verify-install.exp
 
+          sleep 5 
           curl -fSL -o /tmp/test.txt http://localhost/
           if ! grep -q "SupportPal" /tmp/test.txt; then
             echo "ERROR: SupportPal is not loading via HTTP"

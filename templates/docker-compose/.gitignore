@@ -1,11 +1,9 @@
-/.env
 /create-self-signed.sh
 /init-letsencrypt.sh
-/php/
 /postfix/
 /gateway/
 /secrets/
 /ssl/
-*.yml
 /backup/
-Makefile
+.env.custom
+docker-compose.override.yml

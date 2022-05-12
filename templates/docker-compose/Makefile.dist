@@ -3,7 +3,8 @@ SELF_FILENAME := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
 include .env
 
 DOCKER_BIN=docker
-DOCKER_COMPOSE_BIN=docker-compose
+DOCKER_COMPOSE_BIN=docker compose
+GIT_BIN=git
 COMPOSE_FILES=-f docker-compose.yml -f docker-compose.prod.yml
 
 .DEFAULT_GOAL := help
@@ -13,7 +14,7 @@ help:
 
 .PHONY: install
 install: configure create_secrets create_volumes ## Install the helpdesk.
-	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d gateway supportpal db redis
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d supportpal
 	$(DOCKER_BIN) exec $(WEB_SERVICE_NAME) bash -c "while ! (mysqladmin ping -h db -uroot -p$$(cat secrets/db_root_password.txt) --silent); do sleep 1; done"
 	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c "/usr/local/bin/php artisan app:install --db-host=db --db-user=$$(cat $(SECRETS_DIR)db_user.txt) --db-pass=$$(cat $(SECRETS_DIR)db_password.txt) --db-name=supportpal"
 	$(MAKE) restart
@@ -46,6 +47,7 @@ uninstall: ## Irreversibly uninstall the help desk and all associated data.
 	$(DOCKER_BIN) volume remove $(STORAGE_VOLUME)
 	$(DOCKER_BIN) volume remove $(CACHE_VOLUME)
 	$(DOCKER_BIN) volume remove $(MAILER_VOLUME)
+	$(DOCKER_BIN) volume remove $(ADDONS_VOLUME)
 	rm -rf secrets
 
 .PHONY: create_volumes
@@ -55,6 +57,7 @@ create_volumes:
 	$(DOCKER_BIN) volume create --name $(STORAGE_VOLUME)
 	$(DOCKER_BIN) volume create --name $(CACHE_VOLUME)
 	$(DOCKER_BIN) volume create --name $(MAILER_VOLUME)
+	$(DOCKER_BIN) volume create --name $(ADDONS_VOLUME)
 
 .PHONY: create_secrets
 create_secrets:
@@ -62,11 +65,9 @@ create_secrets:
 
 .PHONY: configure
 configure:
-	cp -n .env.dist .env || true
-	cp -n docker-compose.secrets.yml.dist docker-compose.secrets.yml || true
-	cp -n docker-compose.yml.dist docker-compose.yml || true
-	cp -n docker-compose.prod.yml.dist docker-compose.prod.yml || true
 	cp -n -R ../../configs/gateway . || true
+	cp -n -R ../../configs/templates/Makefile . || true
+	@echo '' >> .env.custom
 
 .PHONY: upgrade
 upgrade: ## Upgrade SupportPal to a later version.
@@ -74,12 +75,14 @@ upgrade: ## Upgrade SupportPal to a later version.
 	@printf "\033[0;33m|       NOTICE        |\033[0m\n"
 	@printf "\033[0;33m|---------------------|\033[0m\n"
 	@echo
-	@printf "\033[0;33mThis action will upgrade your system to the specified APP_VERSION. We recommend that you only proceed if you've taken a recent full system backup.\033[0m\n"
+	@printf "\033[0;33mThis action will upgrade your system to the latest version. We recommend that you only proceed if you've taken a recent full system backup.\033[0m\n"
 	@printf "\033[0;33mYou can take a backup of your system by executing: make backup\033[0m\n"
 	@echo
 	@printf "\033[0;33mPress CTRL + C to cancel this operation. Waiting 10 seconds...\033[0m\n"
 	@sleep 10
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
+	$(GIT_BIN) pull
+	$(MAKE) create_volumes
 	$(MAKE) start
 	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:upgrade --confirm-backup'
 

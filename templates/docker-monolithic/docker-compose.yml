@@ -2,9 +2,9 @@ version: '3.8'
 
 services:
   supportpal:
+    container_name: supportpal
     image: 'public.ecr.aws/supportpal/helpdesk-monolithic:4.0.0'
     restart: always
-    hostname: 'supportpal.example.com'
     ports:
       - '80:8080'
     volumes:
@@ -13,6 +13,7 @@ services:
       - supportpal_redis:/redis-data
       - supportpal_storage:/var/www/supportpal/storage
       - supportpal_logs:/var/log
+      - supportpal_addons:/var/www/supportpal/addons
 
 volumes:
   supportpal_db:
@@ -30,3 +31,6 @@ volumes:
   supportpal_logs:
     external: true
     name: supportpal_logs
+  supportpal_addons:
+    external: true
+    name: supportpal_addons

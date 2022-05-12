@@ -39,7 +39,7 @@ identify_os() {
   elif [[ "$(uname -s)" == MINGW* ]]; then
     os_type=windows
   fi
-  
+
   if ! [[ $os_type ]]; then
     printf "error: unsupported operating system.\n"
     printf "\tFor a list of supported operating systems see https://docs.supportpal.com/current/System+Requirements#OperatingSystems\n"
@@ -138,15 +138,20 @@ check_docker() {
 }
 
 check_docker_compose() {
-  if ! check_command docker-compose; then
-    printf "error: Install docker-compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
+  local min="2.2.1" version command_status
+
+  set +e
+  version="$(docker compose version --short 2>&1)"
+  command_status="$?"
+  set -e
+
+  if [ $command_status -ne 0 ]; then
+    printf "error: Install docker compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
     exit 1
   fi
 
-  local min="1.24.0" version
-
-  version="$(docker-compose version --short)"
-  printf "checking docker-compose version %s >= %s ... " "$version" "$min"
+  version="${version#v}"
+  printf "checking docker compose version %s >= %s ... " "$version" "$min"
   version_ge "$version" "$min"
   printf "✔\n"
 }
@@ -172,23 +177,20 @@ configure() {
     exit 1
   fi
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
 
   # guess the hostname
   hostname="$(hostname)"
   if [[ $os_type == 'macos' ]]; then
-    sed -i "" -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.yml
+    sed -i "" -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.override.yml
   else
-    sed -i -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.yml
+    sed -i -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.override.yml
   fi
 
   printf "✔\n"
 
   # create volumes
-  create_volume supportpal_db
-  create_volume supportpal_config
-  create_volume supportpal_redis
-  create_volume supportpal_storage
-  create_volume supportpal_logs
+  bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
 }
 
 cat << "EOF"
@@ -208,6 +210,6 @@ check_docker_compose
 configure
 
 echo
-echo "To complete the installation update the auto-generated $(pwd)/docker-compose.yml file."
+echo "To complete the installation update the auto-generated $(pwd)/docker-compose.override.yml file."
 echo "Refer back to https://docs.supportpal.com/current/Deploy+on+Docker for suggested changes."
 echo
