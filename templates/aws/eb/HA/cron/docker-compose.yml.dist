@@ -22,7 +22,7 @@ services:
 
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron'
         depends_on:
             - mailer
         volumes:
@@ -42,7 +42,7 @@ services:
 
     supportpal_mq:
         container_name: '${MQ_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq'
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app

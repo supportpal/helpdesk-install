@@ -26,7 +26,7 @@ services:
 
     supportpal:
         container_name: '${WEB_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web'
         depends_on:
             - redis
         volumes:
@@ -49,7 +49,7 @@ services:
 
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron'
         depends_on:
             - redis
             - mailer
@@ -72,7 +72,7 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws'
         restart: always
         depends_on:
             - redis
@@ -97,7 +97,7 @@ services:
 
     supportpal_mq:
         container_name: '${MQ_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq-buster'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq'
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
