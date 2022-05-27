@@ -14,3 +14,4 @@ create_volume supportpal_redis
 create_volume supportpal_storage
 create_volume supportpal_logs
 create_volume supportpal_addons
+create_volume supportpal_caddy

@@ -14,6 +14,7 @@ services:
       - supportpal_storage:/var/www/supportpal/storage
       - supportpal_logs:/var/log
       - supportpal_addons:/var/www/supportpal/addons
+      - supportpal_caddy:/caddy
 
 volumes:
   supportpal_db:
@@ -34,3 +35,6 @@ volumes:
   supportpal_addons:
     external: true
     name: supportpal_addons
+  supportpal_caddy:
+    external: true
+    name: supportpal_caddy
