@@ -47,13 +47,34 @@ check_docker_compose() {
   printf "✔\n"
 }
 
-upgrade() {
-    docker compose down -v
+backup_config() {
     time_now=$(date +"%d-%m-%Y-%H:%M:%S")
     cp -n docker-compose.yml "docker-compose.backup-${time_now}.yml"
-    # create volumes
-    bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
+}
+
+update_compose_files() {
     curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+}
+
+update_volumes() {
+    bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
+}
+
+update_env() {
+    grep  "hostname" docker-compose.override.yml | xargs | sed "s/hostname:/DOMAIN_NAME=/" >> .env
+    if [[ $os_type == 'macos' ]]; then
+      sed -i "" -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
+    else
+      sed -i -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
+    fi
+}
+
+upgrade() {
+    docker compose down -v
+    backup_config
+    update_volumes
+    update_env
+    update_compose_files
     docker compose up -d
     echo
     echo "Upgrade complete!"
