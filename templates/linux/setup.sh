@@ -1,11 +1,11 @@
 #!/bin/bash
 set -eu -o pipefail
 
-version="0.1.0"
+version="0.2.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL/CentOS 8 (rhel)
-    * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal)
+    * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal), & 22.04 LTS (jammy)
     * Debian 10 (buster), & 11 (bullseye)"
 
 usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
@@ -74,7 +74,6 @@ error() {
 }
 
 identify_os() {
-  arch=$(uname -m)
   # Check for RHEL/CentOS, Fedora, etc.
   if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]; then
     os_type=rhel
@@ -104,19 +103,12 @@ identify_os() {
       case $os_version in
       precise) error 'Ubuntu version 12.04 LTS has reached End of Life and is no longer supported.' ;;
       trusty) error 'Ubuntu version 14.04 LTS has reached End of Life and is no longer supported.' ;;
-      xenial) ;;
+      xenial) error 'Ubuntu version 16.04 LTS has reached End of Life and is no longer supported.' ;;
       bionic) ;;
       focal) ;;
+      jammy) ;;
       *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
       esac
-      if [[ $arch == aarch64 ]]; then
-        case $os_version in
-        xenial) ;;
-        bionic) ;;
-        focal) ;;
-        *) error "Only Ubuntu 16/xenial, 18/bionic, and 20/focal are supported for ARM64. Detected version: '$os_version'" ;;
-        esac
-      fi
       ;;
     esac
   fi
@@ -481,7 +473,7 @@ install_mysql() {
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
 
-    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.22-1_all.deb
+    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.23-1_all.deb
     dpkg -i mysql-apt-config.deb && apt-get update
     rm mysql-apt-config.deb
   fi
