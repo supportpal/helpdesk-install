@@ -104,21 +104,12 @@ identify_os() {
       case $os_version in
       precise) error 'Ubuntu version 12.04 LTS has reached End of Life and is no longer supported.' ;;
       trusty) error 'Ubuntu version 14.04 LTS has reached End of Life and is no longer supported.' ;;
-      xenial) ;;
+      xenial) error 'Ubuntu version 16.04 LTS has reached End of Life and is no longer supported.' ;;
       bionic) ;;
       focal) ;;
       jammy) ;;
       *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
       esac
-      if [[ $arch == aarch64 ]]; then
-        case $os_version in
-        xenial) ;;
-        bionic) ;;
-        focal) ;;
-        jammy) ;;
-        *) error "Only Ubuntu 16/xenial, 18/bionic, 20/focal, 22/jammy are supported for ARM64. Detected version: '$os_version'" ;;
-        esac
-      fi
       ;;
     esac
   fi
