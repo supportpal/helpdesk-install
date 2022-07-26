@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 
-version="0.1.0"
+version="0.2.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL/CentOS 8 (rhel)
