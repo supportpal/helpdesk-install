@@ -74,7 +74,6 @@ error() {
 }
 
 identify_os() {
-  arch=$(uname -m)
   # Check for RHEL/CentOS, Fedora, etc.
   if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]; then
     os_type=rhel
