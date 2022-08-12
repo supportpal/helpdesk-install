@@ -17,6 +17,7 @@ while [[ "$#" -gt 0 ]]; do
     exit 1
     ;;
   esac
+  # shellcheck disable=SC2317
   shift
 done
 
