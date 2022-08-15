@@ -182,7 +182,7 @@ configure() {
 
   # guess the hostname
   hostname="$(hostname)"
-  echo "$(escape_re "${hostname// }")" > .env
+  echo "DOMAIN_NAME=$(escape_re "${hostname// }")" > .env
 
   printf "✔\n"
 
