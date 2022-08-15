@@ -62,7 +62,7 @@ update_volumes() {
 
 update_env() {
     grep  "hostname" docker-compose.override.yml | xargs | sed "s/hostname:/DOMAIN_NAME=/" >> .env
-    if [[ $os_type == 'macos' ]]; then
+    if [[ "$(uname -s)" == Darwin ]]; then
       sed -i "" -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
     else
       sed -i -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
