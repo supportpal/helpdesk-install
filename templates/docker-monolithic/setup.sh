@@ -207,6 +207,6 @@ check_docker_compose
 configure
 
 echo
-echo "To complete the installation update the auto-generated $(pwd)/docker-compose.override.yml file."
+echo "To complete the installation update the auto-generated $(pwd)/.env file."
 echo "Refer back to https://docs.supportpal.com/current/Deploy+on+Docker for suggested changes."
 echo
