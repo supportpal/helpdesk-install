@@ -182,11 +182,7 @@ configure() {
 
   # guess the hostname
   hostname="$(hostname)"
-  if [[ $os_type == 'macos' ]]; then
-    sed -i "" -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.override.yml
-  else
-    sed -i -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.override.yml
-  fi
+  echo "DOMAIN_NAME=$(escape_re "${hostname// }")" > .env
 
   printf "✔\n"
 

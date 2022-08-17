@@ -30,4 +30,5 @@ jobs:
 
       - name: docker compose config test
         run: |
-          docker compose -f docker-compose.yml config
+          echo "" > .env
+          docker compose config
