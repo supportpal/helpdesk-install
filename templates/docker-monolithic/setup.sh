@@ -17,6 +17,7 @@ while [[ "$#" -gt 0 ]]; do
     exit 1
     ;;
   esac
+  # shellcheck disable=SC2317
   shift
 done
 
@@ -181,11 +182,7 @@ configure() {
 
   # guess the hostname
   hostname="$(hostname)"
-  if [[ $os_type == 'macos' ]]; then
-    sed -i "" -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.override.yml
-  else
-    sed -i -e "s/supportpal.example.com/$(escape_re "${hostname// }")/" docker-compose.override.yml
-  fi
+  echo "DOMAIN_NAME=$(escape_re "${hostname// }")" > .env
 
   printf "✔\n"
 
@@ -210,6 +207,6 @@ check_docker_compose
 configure
 
 echo
-echo "To complete the installation update the auto-generated $(pwd)/docker-compose.override.yml file."
+echo "To complete the installation update the auto-generated $(pwd)/.env file."
 echo "Refer back to https://docs.supportpal.com/current/Deploy+on+Docker for suggested changes."
 echo
