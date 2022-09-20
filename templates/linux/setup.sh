@@ -4,7 +4,7 @@ set -eu -o pipefail
 version="0.2.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
-    * RHEL/CentOS 8 (rhel)
+    * RHEL/CentOS 8, & 9
     * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal), & 22.04 LTS (jammy)
     * Debian 10 (buster), & 11 (bullseye)"
 
@@ -80,6 +80,7 @@ identify_os() {
     el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
     8*) os_version=8 ;;
+    9*) os_version=9 ;;
     *) error "Detected RHEL or compatible but version ($el_version) is not supported." "$supported" ;;
     esac
   elif [[ -e /etc/os-release ]]; then
@@ -220,6 +221,9 @@ setup() {
   fi
 
   update
+  if [[ $is_docker == '1' ]] && [[ $os_type == 'rhel' ]] && [[ $os_version == '9' ]]; then
+    dnf swap -y curl-minimal curl
+  fi
   install curl
   install_pwgen
 }
@@ -261,12 +265,12 @@ php_admin_value[log_errors] = on
 }
 
 install_php_rhel() {
-  install_rpm https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-  install_rpm https://rpms.remirepo.net/enterprise/remi-release-8.rpm
+  install_rpm "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${os_version}.noarch.rpm"
+  install_rpm "https://rpms.remirepo.net/enterprise/remi-release-${os_version}.rpm"
   dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
   dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap php-zip
 
-  if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
+  if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce | awk '{ print tolower($0) }')" != "disabled" ]]; then
     semanage fcontext -a -t httpd_var_run_t "${socket_path}"
   fi
 
@@ -463,8 +467,12 @@ install_mysql() {
   user_password="$(generate_password)"
 
   if [[ $os_type == 'rhel' ]]; then
-    install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-3.noarch.rpm
-    dnf -y module disable mysql
+    if [[ $os_version == '8' ]]; then
+      install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-4.noarch.rpm
+      dnf -y module disable mysql
+    else
+      install_rpm https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
+    fi
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
@@ -490,7 +498,7 @@ install_mysql() {
     tmp_root=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
 
     # Allow SupportPal (httpd) to connect to the DB via 127.0.0.1
-    if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
+    if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce | awk '{ print tolower($0) }')" != "disabled" ]]; then
       setsebool -P httpd_can_network_connect 1
     fi
   fi
@@ -531,7 +539,7 @@ install_supportpal() {
   if [[ $os_type == 'rhel' ]]; then
     chown -R apache:apache "${install_path}"
 
-    if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce)" != "disabled" ]]; then
+    if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce | awk '{ print tolower($0) }')" != "disabled" ]]; then
       chcon -Rv --type=httpd_sys_rw_content_t "${install_path}/bootstrap/cache/"
       chcon -Rv --type=httpd_sys_rw_content_t "${install_path}/config/"
       chcon -Rv --type=httpd_sys_rw_content_t "${install_path}/storage/"
