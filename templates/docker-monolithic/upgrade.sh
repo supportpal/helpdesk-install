@@ -70,7 +70,7 @@ migrate_hostname() {
 }
 
 update_env() {
-  if ! grep -qs 'DOMAIN_NAME' .env; then
+  if ! grep -qs 'DOMAIN_NAME=' .env; then
     migrate_hostname
   fi
 }
