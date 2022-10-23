@@ -60,13 +60,19 @@ update_volumes() {
     bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
 }
 
+migrate_hostname() {
+      grep  "hostname" docker-compose.override.yml | xargs | sed "s/hostname: /DOMAIN_NAME=/" >> .env
+      if [[ "$(uname -s)" == Darwin ]]; then
+          sed -i "" -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
+      else
+          sed -i -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
+      fi
+}
+
 update_env() {
-    grep  "hostname" docker-compose.override.yml | xargs | sed "s/hostname: /DOMAIN_NAME=/" >> .env
-    if [[ "$(uname -s)" == Darwin ]]; then
-        sed -i "" -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
-    else
-        sed -i -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
-    fi
+  if ! grep -qs 'DOMAIN_NAME' .env; then
+    migrate_hostname
+  fi
 }
 
 upgrade() {
