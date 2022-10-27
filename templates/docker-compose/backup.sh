@@ -15,7 +15,7 @@ docker exec "${WEB_SERVICE_NAME}" bash -c "cp -r /supportpal/storage ${TEMP_BACK
 docker exec "${WEB_SERVICE_NAME}" bash -c "cp -r /supportpal/addons ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}"
 docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${FILESYSTEM_BACKUP_NAME} filesystem-${TIMESTAMP}"
 
-echo 'Backing up Database...'
+echo 'Backing up database...'
 DB_BACKUP_PATH=$(docker exec -u www-data "${WEB_SERVICE_NAME}" bash -c "cd /supportpal/app-manager && php artisan db:backup | grep -oE '/supportpal.*/database-.*'")
 DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | grep -oE "database-.*")
 docker exec "${WEB_SERVICE_NAME}" bash -c "mv ${DB_BACKUP_PATH} ${TEMP_BACKUP_DIR}/"
