@@ -25,13 +25,13 @@ DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | xargs basename)
 docker exec "${WEB_SERVICE_NAME}" bash -c "mv ${DB_BACKUP_PATH} ${TEMP_BACKUP_DIR}/"
 
 echo 'Backing up volume data...'
-mkdir -p "backup/${TIMESTAMP}/volumes/cache/" && docker cp "${CACHE_SERVICE_NAME}:/data" "backup/${TIMESTAMP}/volumes/cache"
-mkdir -p "backup/${TIMESTAMP}/volumes/mailer/" && docker cp "${MAILER_SERVICE_NAME}:/var/spool/exim4" "backup/${TIMESTAMP}/volumes/mailer"
-docker cp "backup/${TIMESTAMP}/volumes/" "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/"
+mkdir -p "backup/${TIMESTAMP}/volumes-compose/cache/" && docker cp "${CACHE_SERVICE_NAME}:/data" "backup/${TIMESTAMP}/volumes-compose/cache"
+mkdir -p "backup/${TIMESTAMP}/volumes-compose/mailer/" && docker cp "${MAILER_SERVICE_NAME}:/var/spool/exim4" "backup/${TIMESTAMP}/volumes-compose/mailer"
+docker cp "backup/${TIMESTAMP}/volumes-compose/" "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/"
 rm -rf "backup/${TIMESTAMP}/"
 
 echo 'Combining backups...'
-docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${APP_BACKUP_NAME} ${FILESYSTEM_BACKUP_NAME} ${DB_FILE_NAME} volumes/"
+docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${APP_BACKUP_NAME} ${FILESYSTEM_BACKUP_NAME} ${DB_FILE_NAME} volumes-compose/"
 
 echo 'Copying backup to host...'
 docker cp "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "backup/"

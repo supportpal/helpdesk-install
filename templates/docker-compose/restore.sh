@@ -4,7 +4,12 @@ set -eu -o pipefail
 
 . .env
 LAST_BACKUP_DIR="backup"
-LAST_BACKUP_FILE="$(find "${LAST_BACKUP_DIR}" -name '*.tar.gz' -printf "%f\n" | head -n1)"
+LAST_BACKUP_FILE="$(find "${LAST_BACKUP_DIR}" -name '*.tar.gz' -print  | head -n1 | xargs basename)"
+
+if [[ -z "${LAST_BACKUP_FILE}" ]]; then
+  echo "No backups found."
+  exit 1
+fi
 
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S-%s)
 TEMP_BACKUP_DIR="/tmp/tmp-backups/${TIMESTAMP}"
@@ -22,12 +27,12 @@ TAR_OUTPUT=$(docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} &&
 docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force" > /dev/null 2>&1
 
 # If backup generated via docker, restore volumes.
-if echo "${TAR_OUTPUT}" | grep -qs '^volumes/$'; then
+if echo "${TAR_OUTPUT}" | grep -qs '^volumes-compose/$'; then
   echo 'Restoring volume data...'
 
   mkdir -p "backup/${TIMESTAMP}"
-  docker cp "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/volumes" "backup/${TIMESTAMP}"
-  docker cp "backup/${TIMESTAMP}/volumes/cache/data/" "${CACHE_SERVICE_NAME}:/"
-  docker cp "backup/${TIMESTAMP}/volumes/mailer/exim4/" "${MAILER_SERVICE_NAME}:/var/spool/"
+  docker cp "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/volumes-compose" "backup/${TIMESTAMP}"
+  docker cp "backup/${TIMESTAMP}/volumes-compose/cache/data/" "${CACHE_SERVICE_NAME}:/"
+  docker cp "backup/${TIMESTAMP}/volumes-compose/mailer/exim4/" "${MAILER_SERVICE_NAME}:/var/spool/"
   rm -rf "backup/${TIMESTAMP}/"
 fi
