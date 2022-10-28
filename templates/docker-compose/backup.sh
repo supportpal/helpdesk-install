@@ -8,6 +8,10 @@ TEMP_BACKUP_DIR="/tmp/tmp-backups/${TIMESTAMP}"
 FILESYSTEM_BACKUP_NAME="filesystem-${TIMESTAMP}.tar.gz"
 APP_BACKUP_NAME="app-${TIMESTAMP}.tar.gz"
 
+# Determine command path. Some commands moved to app-manager in v4.2.0
+GTE_v420="$(docker exec supportpal php -r "\$release = require '/supportpal/config/release.php'; echo (int) version_compare(\$release['version'], '4.2.0', '>=');")"
+if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/supportpal"; else COMMAND_PATH="/supportpal/app-manager"; fi
+
 echo 'Backing up filesystem...'
 docker exec "${WEB_SERVICE_NAME}" bash -c "mkdir -p ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config/production" # create the farthest directory
 docker exec "${WEB_SERVICE_NAME}" bash -c "cp -r /supportpal/config/production ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config"
@@ -16,8 +20,8 @@ docker exec "${WEB_SERVICE_NAME}" bash -c "cp -r /supportpal/addons ${TEMP_BACKU
 docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${FILESYSTEM_BACKUP_NAME} filesystem-${TIMESTAMP}"
 
 echo 'Backing up database...'
-DB_BACKUP_PATH=$(docker exec -u www-data "${WEB_SERVICE_NAME}" bash -c "cd /supportpal/app-manager && php artisan db:backup | grep -oE '/supportpal.*/database-.*'")
-DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | grep -oE "database-.*")
+DB_BACKUP_PATH=$(docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${COMMAND_PATH} && php artisan db:backup | grep -oE '/supportpal.*/database-.*'")
+DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | xargs basename)
 docker exec "${WEB_SERVICE_NAME}" bash -c "mv ${DB_BACKUP_PATH} ${TEMP_BACKUP_DIR}/"
 
 echo 'Backing up volume data...'
