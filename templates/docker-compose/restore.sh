@@ -8,7 +8,10 @@ if [[ ! -d "${LAST_BACKUP_DIR}" ]]; then
   echo "The ${LAST_BACKUP_DIR}/ directory does not exist. Create the directory, add your backup file to it and try again."; exit 1
 fi
 
-LAST_BACKUP_FILE_PATH="$(find "${LAST_BACKUP_DIR}" -name '*.tar.gz' -print | head -n1)"
+echo "Searching ${LAST_BACKUP_DIR}/ directory for backups..."
+
+# shellcheck disable=SC2012
+LAST_BACKUP_FILE_PATH="$(ls -1t ${LAST_BACKUP_DIR}/app-*.tar.gz | head -n1)"
 if [[ ! -f "${LAST_BACKUP_FILE_PATH}" ]]; then
   echo "No backup files found. Add your backup to the ${LAST_BACKUP_DIR}/ directory and try again."; exit 1
 fi
@@ -21,13 +24,13 @@ TEMP_BACKUP_DIR="/tmp/tmp-backups/${TIMESTAMP}"
 GTE_v420="$(docker exec supportpal php -r "\$release = require '/supportpal/config/release.php'; echo (int) version_compare(\$release['version'], '4.2.0', '>=');")"
 if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/supportpal"; else COMMAND_PATH="/supportpal/app-manager"; fi
 
-echo "Found ${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}..."
+echo "Found ${LAST_BACKUP_FILE}..."
 echo "Restoring..."
 
 docker exec "${WEB_SERVICE_NAME}" bash -c "mkdir -p ${TEMP_BACKUP_DIR}"
 docker cp "${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}" "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/"
 TAR_OUTPUT=$(docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} && tar -xvzf ${LAST_BACKUP_FILE}")
-docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force" > /dev/null 2>&1
+docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force" > /dev/null
 
 # If backup generated via docker, restore volumes.
 if echo "${TAR_OUTPUT}" | grep -qs '^volumes-compose/$'; then

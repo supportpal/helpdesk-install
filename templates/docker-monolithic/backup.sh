@@ -34,4 +34,4 @@ echo 'Copying backup to host...'
 docker cp "supportpal:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "backup/"
 docker exec supportpal bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
 
-echo "Backup created successfully at ${PWD}/backup/${TIMESTAMP}"
+echo "Backup created successfully at ${PWD}/backup/${APP_BACKUP_NAME}"
