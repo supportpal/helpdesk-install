@@ -4,13 +4,16 @@ set -eu -o pipefail
 
 . .env
 LAST_BACKUP_DIR="backup"
-LAST_BACKUP_FILE="$(find "${LAST_BACKUP_DIR}" -name '*.tar.gz' -print  | head -n1 | xargs basename)"
-
-if [[ -z "${LAST_BACKUP_FILE}" ]]; then
-  echo "No backups found."
-  exit 1
+if [[ ! -d "${LAST_BACKUP_DIR}" ]]; then
+  echo "The ${LAST_BACKUP_DIR}/ directory does not exist. Create the directory, add your backup file to it and try again."; exit 1
 fi
 
+LAST_BACKUP_FILE_PATH="$(find "${LAST_BACKUP_DIR}" -name '*.tar.gz' -print | head -n1)"
+if [[ ! -f "${LAST_BACKUP_FILE_PATH}" ]]; then
+  echo "No backup files found. Add your backup to the ${LAST_BACKUP_DIR}/ directory and try again."; exit 1
+fi
+
+LAST_BACKUP_FILE="$(echo "${LAST_BACKUP_FILE_PATH}" | xargs basename)"
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S-%s)
 TEMP_BACKUP_DIR="/tmp/tmp-backups/${TIMESTAMP}"
 
