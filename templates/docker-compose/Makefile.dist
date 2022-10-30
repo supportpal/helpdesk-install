@@ -88,4 +88,14 @@ upgrade: ## Upgrade SupportPal to a later version.
 
 .PHONY: backup
 backup: ## Create a full system backup.
+	$(MAKE) stop
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d supportpal
 	@ bash backup.sh
+	$(MAKE) restart
+
+.PHONY: restore
+restore:
+	$(MAKE) stop
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d supportpal
+	@ bash restore.sh
+	$(MAKE) restart

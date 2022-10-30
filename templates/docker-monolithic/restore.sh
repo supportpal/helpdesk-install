@@ -19,9 +19,17 @@ LAST_BACKUP_FILE="$(echo "${LAST_BACKUP_FILE_PATH}" | xargs basename)"
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S-%s)
 TEMP_BACKUP_DIR="/tmp/tmp-backups/${TIMESTAMP}"
 
-# Determine command path. app:restore moved to app-manager in v4.2.0
 GTE_v420="$(docker exec supportpal php -r "\$release = require '/var/www/supportpal/config/release.php'; echo (int) version_compare(\$release['version'], '4.2.0', '>=');")"
-if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAND_PATH="/var/www/supportpal/app-manager"; fi
+if [[ "${GTE_v420}" = "1" ]]; then
+  echo "Command is only supported after version 4.2.0."
+  exit 1
+fi
+
+BACKUP_AND_RESTORE_MODE="$(docker exec supportpal bash -c "cat /etc/container_environment/BACKUP_AND_RESTORE_MODE")"
+if [[ "${BACKUP_AND_RESTORE_MODE}" = "0" ]]; then
+  echo "Backup and restore mode must be enabled.."
+  exit 1
+fi
 
 echo "Found ${LAST_BACKUP_FILE}..."
 echo "Restoring..."
