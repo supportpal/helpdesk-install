@@ -11,6 +11,9 @@ APP_BACKUP_NAME="app-${TIMESTAMP}.tar.gz"
 GTE_v420="$(docker exec supportpal php -r "\$release = require '/var/www/supportpal/config/release.php'; echo (int) version_compare(\$release['version'], '4.2.0', '>=');")"
 if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAND_PATH="/var/www/supportpal/app-manager"; fi
 
+echo "Stopping services..."
+docker exec supportpal bash -c "find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name 'mysql' -printf '%f\n' -exec sv stop {} \;"  > /dev/null
+
 echo 'Backing up filesystem...'
 docker exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config/production" # create the farthest directory
 docker exec supportpal bash -c "cp -r /var/www/supportpal/config/production ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config"
@@ -33,5 +36,8 @@ docker exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${APP_BACKUP_N
 echo 'Copying backup to host...'
 docker cp "supportpal:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "backup/"
 docker exec supportpal bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
+
+echo "Restarting services..."
+docker restart supportpal 2> /dev/null
 
 echo "Backup created successfully at ${PWD}/backup/${APP_BACKUP_NAME}"
