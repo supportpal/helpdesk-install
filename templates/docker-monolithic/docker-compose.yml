@@ -3,7 +3,7 @@ version: '3.8'
 services:
   supportpal:
     container_name: supportpal
-    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:4.1.2'
+    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:4.2.0'
     restart: always
     ports:
       - '80:80'
