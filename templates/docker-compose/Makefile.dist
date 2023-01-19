@@ -58,6 +58,7 @@ create_volumes:
 	$(DOCKER_BIN) volume create --name $(CACHE_VOLUME)
 	$(DOCKER_BIN) volume create --name $(MAILER_VOLUME)
 	$(DOCKER_BIN) volume create --name $(ADDONS_VOLUME)
+	$(DOCKER_BIN) volume create --name $(MEILISEARCH_VOLUME)
 
 .PHONY: create_secrets
 create_secrets:
@@ -98,4 +99,5 @@ restore:
 	$(MAKE) stop
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d supportpal
 	@ bash restore.sh
-	$(MAKE) restart
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
+	$(MAKE) start

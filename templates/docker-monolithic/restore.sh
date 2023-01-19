@@ -41,8 +41,10 @@ if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/$'; then
 
   docker exec supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/cache/redis-data /"
   docker exec supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/caddy/caddy /"
+  docker exec supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/caddy/meilisearch /"
   rm -rf "backup/${TIMESTAMP}/"
 fi
 
 echo "Restarting services..."
-docker restart supportpal 2> /dev/null
+docker compose down 2> /dev/null
+docker compose up -d

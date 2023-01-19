@@ -3,7 +3,7 @@ version: '3.8'
 services:
   supportpal:
     container_name: supportpal
-    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:4.2.5'
+    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:4.3.0'
     restart: always
     ports:
       - '80:80'
@@ -17,6 +17,7 @@ services:
       - supportpal_logs:/var/log
       - supportpal_addons:/var/www/supportpal/addons
       - supportpal_caddy:/caddy
+      - supportpal_meilisearch:/meilisearch
 
 volumes:
   supportpal_db:
@@ -40,3 +41,6 @@ volumes:
   supportpal_caddy:
     external: true
     name: supportpal_caddy
+  supportpal_meilisearch:
+    external: true
+    name: supportpal_meilisearch

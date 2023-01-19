@@ -28,12 +28,14 @@ services:
         depends_on:
             - db
             - redis
+            - meilisearch
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+            MEILISEARCH_HOST: "http://${MEILISEARCH_SERVICE_NAME}:${MEILISEARCH_PORT}"
         networks:
             - supportpal_frontend
             - supportpal_backend
@@ -64,12 +66,14 @@ services:
         depends_on:
             - db
             - redis
+            - meilisearch
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+            MEILISEARCH_HOST: "http://${MEILISEARCH_SERVICE_NAME}:${MEILISEARCH_PORT}"
         networks:
             - supportpal_backend
             - supportpal_frontend
@@ -77,21 +81,22 @@ services:
 
     supportpal_mq:
         container_name: '${MQ_SERVICE_NAME}'
-        user: www-data
         image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq'
         restart: always
         depends_on:
             - db
             - redis
+            - meilisearch
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+            MEILISEARCH_HOST: "http://${MEILISEARCH_SERVICE_NAME}:${MEILISEARCH_PORT}"
         networks:
             - supportpal_backend
-        command: 'php artisan mq:start'
+        command: 'gosu www-data bash -c "php artisan mq:start"'
         stop_grace_period: 60s
 
     redis:
@@ -111,6 +116,20 @@ services:
         networks:
             - supportpal_backend
 
+    meilisearch:
+        container_name: ${MEILISEARCH_SERVICE_NAME}
+        image: getmeili/meilisearch:v0.30.5
+        environment:
+            MEILI_ENV: "production"
+            MEILI_LOG_LEVEL: "WARN"
+            MEILI_SCHEDULE_SNAPSHOT: "true"
+            MEILI_SNAPSHOT_INTERVAL_SEC: "86400"
+            MEILI_MASTER_KEY: ""
+        volumes:
+            - supportpal_meilisearch:/meili_data
+        networks:
+            - supportpal_backend
+
 volumes:
     supportpal_db:
         external: true
@@ -118,6 +137,9 @@ volumes:
     supportpal_cache:
         external: true
         name: ${CACHE_VOLUME}
+    supportpal_meilisearch:
+        external: true
+        name: ${MEILISEARCH_VOLUME}
 
 networks:
     supportpal_frontend:

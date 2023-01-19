@@ -27,6 +27,7 @@ docker exec "${WEB_SERVICE_NAME}" bash -c "mv ${DB_BACKUP_PATH} ${TEMP_BACKUP_DI
 echo 'Backing up volume data...'
 mkdir -p "backup/${TIMESTAMP}/volumes-compose/cache/" && docker cp "${CACHE_SERVICE_NAME}:/data" "backup/${TIMESTAMP}/volumes-compose/cache"
 mkdir -p "backup/${TIMESTAMP}/volumes-compose/mailer/" && docker cp "${MAILER_SERVICE_NAME}:/var/spool/exim4" "backup/${TIMESTAMP}/volumes-compose/mailer"
+mkdir -p "backup/${TIMESTAMP}/volumes-compose/meilisearch/" && docker cp "${MEILISEARCH_SERVICE_NAME}:/meili_data" "backup/${TIMESTAMP}/volumes-compose/meilisearch"
 docker cp "backup/${TIMESTAMP}/volumes-compose/" "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/"
 rm -rf "backup/${TIMESTAMP}/"
 
