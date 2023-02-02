@@ -2,6 +2,7 @@
 
 set -eu -o pipefail
 
+BACKUP_DIR="backup"
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
 TEMP_BACKUP_DIR="/tmp/tmp-backups/${TIMESTAMP}"
 FILESYSTEM_BACKUP_NAME="filesystem-${TIMESTAMP}.tar.gz"
@@ -34,11 +35,11 @@ echo 'Combining backups...'
 docker exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${APP_BACKUP_NAME} ${FILESYSTEM_BACKUP_NAME} ${DB_FILE_NAME} volumes-monolithic/"
 
 echo 'Copying backup to host...'
-mkdir -p backup/
-docker cp "supportpal:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "backup/"
+mkdir -p "${BACKUP_DIR}/"
+docker cp "supportpal:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "${BACKUP_DIR}/"
 docker exec supportpal bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
 
 echo "Restarting services..."
 docker restart supportpal 2> /dev/null
 
-echo "Backup created successfully at ${PWD}/backup/${APP_BACKUP_NAME}"
+echo "Backup created successfully at ${PWD}/${BACKUP_DIR}/${APP_BACKUP_NAME}"
