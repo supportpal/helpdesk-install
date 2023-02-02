@@ -34,6 +34,7 @@ echo 'Combining backups...'
 docker exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${APP_BACKUP_NAME} ${FILESYSTEM_BACKUP_NAME} ${DB_FILE_NAME} volumes-monolithic/"
 
 echo 'Copying backup to host...'
+mkdir -p backup/
 docker cp "supportpal:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "backup/"
 docker exec supportpal bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
 
