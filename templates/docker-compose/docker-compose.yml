@@ -118,7 +118,7 @@ services:
 
     meilisearch:
         container_name: ${MEILISEARCH_SERVICE_NAME}
-        image: getmeili/meilisearch:v0.30.5
+        image: getmeili/meilisearch:v1.0.0
         environment:
             MEILI_ENV: "production"
             MEILI_LOG_LEVEL: "WARN"
