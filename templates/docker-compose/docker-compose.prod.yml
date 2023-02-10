@@ -60,7 +60,7 @@ services:
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
-            MEILISEARCH_HOST: "http://${MEILISEARCH_SERVICE_NAME}:${MEILISEARCH_PORT}"
+            MEILISEARCH_HOST: ${MEILISEARCH_HOST}
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app

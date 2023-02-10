@@ -35,7 +35,7 @@ services:
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
-            MEILISEARCH_HOST: "http://${MEILISEARCH_SERVICE_NAME}:${MEILISEARCH_PORT}"
+            MEILISEARCH_HOST: ${MEILISEARCH_HOST}
         networks:
             - supportpal_frontend
             - supportpal_backend
@@ -73,7 +73,7 @@ services:
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
-            MEILISEARCH_HOST: "http://${MEILISEARCH_SERVICE_NAME}:${MEILISEARCH_PORT}"
+            MEILISEARCH_HOST: ${MEILISEARCH_HOST}
         networks:
             - supportpal_backend
             - supportpal_frontend
@@ -93,7 +93,7 @@ services:
             MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
-            MEILISEARCH_HOST: "http://${MEILISEARCH_SERVICE_NAME}:${MEILISEARCH_PORT}"
+            MEILISEARCH_HOST: ${MEILISEARCH_HOST}
         networks:
             - supportpal_backend
         command: 'gosu www-data bash -c "php artisan mq:start"'
