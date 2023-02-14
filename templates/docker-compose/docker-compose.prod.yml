@@ -61,6 +61,7 @@ services:
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
             MEILISEARCH_HOST: ${MEILISEARCH_HOST}
+            MEILISEARCH_KEY: ${MEILISEARCH_KEY}
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
@@ -79,6 +80,10 @@ services:
     mailer:
         volumes:
             - supportpal_mailer:/var/spool/exim4
+
+    meilisearch:
+        env_file:
+            - .env.custom
 
 volumes:
     supportpal_resources:
