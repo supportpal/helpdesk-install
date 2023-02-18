@@ -41,7 +41,9 @@ if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/$'; then
 
   docker exec supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/cache/redis-data /"
   docker exec supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/caddy/caddy /"
-  docker exec supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch /"
+  if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/meilisearch'; then
+    docker exec supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch /"
+  fi  
   rm -rf "backup/${TIMESTAMP}/"
 fi
 
