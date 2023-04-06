@@ -194,6 +194,8 @@ configure() {
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
 
+  echo "" > .env
+
   if [ "$interactive" -eq 1 ]; then
     echo
     echo "Enter system administrator email address."
@@ -227,8 +229,6 @@ configure() {
 
     printf "wrote 'MAILTO=%s' to .env\n" "${email// }"
   fi
-
-  printf "✔\n"
 
   # create volumes
   bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
