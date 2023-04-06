@@ -212,22 +212,12 @@ configure() {
     host="$(hostname)"
   fi
 
-  if [[ $os_type == 'macos' ]]; then
-    sed -i "" -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
-  else
-    sed -i -e "s/^\(DOMAIN_NAME=\).*/\1$(escape_re "${host// }")/" .env
-  fi
-
-  printf "wrote 'DOMAIN_NAME=%s' to .env\n" "${host// }"
+  echo "DOMAIN_NAME=$(escape_re "${host// }")" >> .env
+  printf "wrote 'DOMAIN_NAME=%s' to .env ✔\n" "${host// }"
 
   if [[ -n "${email// }" ]]; then
-    if [[ $os_type == 'macos' ]]; then
-      sed -i "" -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
-    else
-      sed -i -e "s/^\(MAILTO=\).*/\1$(escape_re "${email// }")/" .env
-    fi
-
-    printf "wrote 'MAILTO=%s' to .env\n" "${email// }"
+    echo "MAILTO=$(escape_re "${email// }")" >> .env
+    printf "wrote 'MAILTO=%s' to .env ✔\n" "${email// }"
   fi
 
   # create volumes
