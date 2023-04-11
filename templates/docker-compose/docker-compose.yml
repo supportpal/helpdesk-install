@@ -23,7 +23,7 @@ services:
 
     supportpal:
         container_name: '${WEB_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}'
         restart: always
         depends_on:
             - db
@@ -60,7 +60,7 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}'
         restart: always
         depends_on:
             - db
@@ -81,7 +81,7 @@ services:
 
     supportpal_mq:
         container_name: '${MQ_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}'
         restart: always
         depends_on:
             - db
