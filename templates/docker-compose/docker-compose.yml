@@ -51,6 +51,8 @@ services:
             MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
             MYSQL_USER_FILE: /run/secrets/db_user
             MYSQL_PASSWORD_FILE: /run/secrets/db_password
+        volumes:
+            - supportpal_db:/var/lib/mysql
         networks:
             - supportpal_backend
         secrets:
