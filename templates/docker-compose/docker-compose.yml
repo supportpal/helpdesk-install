@@ -119,7 +119,7 @@ services:
 
     meilisearch:
         container_name: ${MEILISEARCH_SERVICE_NAME}
-        image: getmeili/meilisearch:v1.1.0
+        image: getmeili/meilisearch:v1.1.1
         environment:
             MEILI_ENV: ${MEILI_ENV}
             MEILI_LOG_LEVEL: ${MEILI_LOG_LEVEL}
