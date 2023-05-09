@@ -40,7 +40,7 @@ services:
         networks:
             - supportpal_frontend
             - supportpal_backend
-        command: 'php-fpm'
+        command: ["bash", "/etc/cmd/php-fpm.sh"]
 
     db:
         container_name: '${DATABASE_SERVICE_NAME}'
@@ -79,7 +79,7 @@ services:
         networks:
             - supportpal_backend
             - supportpal_frontend
-        command: 'gosu www-data bash -c "php artisan ws:serve"'
+        command: ["bash", "/etc/cmd/sockets.sh"]
 
     supportpal_mq:
         container_name: '${MQ_SERVICE_NAME}'
@@ -99,7 +99,7 @@ services:
             MEILISEARCH_KEY: ${MEILISEARCH_KEY}
         networks:
             - supportpal_backend
-        command: 'gosu www-data bash -c "php artisan mq:start"'
+        command: ["bash", "/etc/cmd/queues.sh"]
         stop_grace_period: 60s
 
     redis:

@@ -73,7 +73,7 @@ services:
         networks:
             - supportpal_frontend
             - supportpal_backend
-        command: 'bash -c "service cron start && tail -f /var/log/cron.log"'
+        command: ["bash", "/etc/cmd/cron.sh"]
         env_file:
             - .env.custom
 
