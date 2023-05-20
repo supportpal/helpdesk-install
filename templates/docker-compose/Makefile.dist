@@ -16,7 +16,7 @@ help:
 install: configure create_secrets create_volumes ## Install the helpdesk.
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d supportpal
 	$(DOCKER_BIN) exec $(WEB_SERVICE_NAME) bash -c "while ! (mysqladmin ping -h db -uroot -p$$(cat secrets/db_root_password.txt) --silent); do sleep 1; done"
-	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c "/usr/local/bin/php artisan app:install --db-host=db --db-user=$$(cat $(SECRETS_DIR)db_user.txt) --db-pass=$$(cat $(SECRETS_DIR)db_password.txt) --db-name=supportpal"
+	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) bash -c "bash /scripts/init-helpdesk.sh --db-host=db --db-user=$$(cat $(SECRETS_DIR)db_user.txt) --db-pass=$$(cat $(SECRETS_DIR)db_password.txt) --db-name=supportpal"
 	$(MAKE) restart
 
 .PHONY: start
@@ -84,8 +84,9 @@ upgrade: ## Upgrade SupportPal to a later version.
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(GIT_BIN) pull
 	$(MAKE) create_volumes
+	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d supportpal
+	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) bash /scripts/upgrade-helpdesk.sh
 	$(MAKE) start
-	$(DOCKER_BIN) exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:upgrade --confirm-backup'
 
 .PHONY: backup
 backup: ## Create a full system backup.
