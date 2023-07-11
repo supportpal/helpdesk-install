@@ -1,3 +1,0 @@
-/.ebextensions/*.dist
-/.platform/hooks/postdeploy/*.dist
-/*.dist

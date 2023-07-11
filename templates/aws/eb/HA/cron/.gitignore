@@ -1,8 +1,0 @@
-/php/
-/gateway/*
-/customization/
-# Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
-docker-compose.yml
