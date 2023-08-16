@@ -32,7 +32,7 @@ services:
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MAILER_SERVICE_HOST: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
             MEILISEARCH_HOST: ${MEILISEARCH_HOST}
@@ -71,7 +71,7 @@ services:
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MAILER_SERVICE_HOST: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
             MEILISEARCH_HOST: ${MEILISEARCH_HOST}
@@ -92,7 +92,7 @@ services:
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MAILER_SERVICE_HOST: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
             MEILISEARCH_HOST: ${MEILISEARCH_HOST}
