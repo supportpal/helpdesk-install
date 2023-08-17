@@ -57,11 +57,18 @@ services:
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MAILER_SERVICE_HOST: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
             MEILISEARCH_HOST: ${MEILISEARCH_HOST}
             MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+            CACHE_DRIVER: ${CACHE_DRIVER}
+            SESSION_DRIVER: ${SESSION_DRIVER}
+            SESSION_CONNECTION: ${SESSION_CONNECTION}
+            QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+            REDIS_QUEUE_CONNECTION: ${REDIS_QUEUE_CONNECTION}
+            SCOUT_DRIVER: ${SCOUT_DRIVER}
+            SCOUT_QUEUE: ${SCOUT_QUEUE}
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
