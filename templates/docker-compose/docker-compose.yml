@@ -37,6 +37,13 @@ services:
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
             MEILISEARCH_HOST: ${MEILISEARCH_HOST}
             MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+            CACHE_DRIVER: ${CACHE_DRIVER}
+            SESSION_DRIVER: ${SESSION_DRIVER}
+            SESSION_CONNECTION: ${SESSION_CONNECTION}
+            QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+            REDIS_QUEUE_CONNECTION: ${REDIS_QUEUE_CONNECTION}
+            SCOUT_DRIVER: ${SCOUT_DRIVER}
+            SCOUT_QUEUE: ${SCOUT_QUEUE}
         networks:
             - supportpal_frontend
             - supportpal_backend
@@ -76,6 +83,13 @@ services:
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
             MEILISEARCH_HOST: ${MEILISEARCH_HOST}
             MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+            CACHE_DRIVER: ${CACHE_DRIVER}
+            SESSION_DRIVER: ${SESSION_DRIVER}
+            SESSION_CONNECTION: ${SESSION_CONNECTION}
+            QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+            REDIS_QUEUE_CONNECTION: ${REDIS_QUEUE_CONNECTION}
+            SCOUT_DRIVER: ${SCOUT_DRIVER}
+            SCOUT_QUEUE: ${SCOUT_QUEUE}
         networks:
             - supportpal_backend
             - supportpal_frontend
@@ -97,6 +111,13 @@ services:
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
             MEILISEARCH_HOST: ${MEILISEARCH_HOST}
             MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+            CACHE_DRIVER: ${CACHE_DRIVER}
+            SESSION_DRIVER: ${SESSION_DRIVER}
+            SESSION_CONNECTION: ${SESSION_CONNECTION}
+            QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+            REDIS_QUEUE_CONNECTION: ${REDIS_QUEUE_CONNECTION}
+            SCOUT_DRIVER: ${SCOUT_DRIVER}
+            SCOUT_QUEUE: ${SCOUT_QUEUE}
         networks:
             - supportpal_backend
         command: ["bash", "/etc/cmd/queues.sh"]
