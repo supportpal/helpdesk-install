@@ -1,3 +1,0 @@
-commands:
-  01_create_ssl:
-    command: "mkdir -p /supportpal/ssl"

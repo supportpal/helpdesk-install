@@ -7,11 +7,25 @@ Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubuserconten
 
 Options:
     -h,--help                  Display this help and exit.
+
+    -n                         Run the command non interactively.
+
+    -H,--host=                 Domain name to use with SupportPal.
+
+    -e,--email=                System administrator email address to receive cron notifications.
 "
+
+# Options
+interactive=1
+host=
+email=
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
   -h|--help) echo "$usage" ; exit 0 ;;
+  -n) interactive=0 ;;
+  -H|--host) host="$2" ; shift ;;
+  -e|--email) email="$2" ; shift ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -180,11 +194,31 @@ configure() {
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
   curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
 
-  # guess the hostname
-  hostname="$(hostname)"
-  echo "DOMAIN_NAME=$(escape_re "${hostname// }")" > .env
+  echo "" > .env
 
-  printf "✔\n"
+  if [ "$interactive" -eq 1 ]; then
+    echo
+    echo "Enter system administrator email address."
+    echo "This will notify you if there's a problem with the cron and allow you to take corrective action."
+    read -r email
+
+    echo
+    echo "Enter system domain name. Leave blank to configure later..."
+    read -r host
+  fi
+
+  # If unset or empty, guess the hostname.
+  if [[ -z "${host// }" ]]; then
+    host="$(hostname)"
+  fi
+
+  echo "DOMAIN_NAME=$(escape_re "${host// }")" >> .env
+  printf "wrote 'DOMAIN_NAME=%s' to .env ✔\n" "${host// }"
+
+  if [[ -n "${email// }" ]]; then
+    echo "MAILTO=$(escape_re "${email// }")" >> .env
+    printf "wrote 'MAILTO=%s' to .env ✔\n" "${email// }"
+  fi
 
   # create volumes
   bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)

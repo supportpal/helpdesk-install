@@ -1,4 +1,0 @@
-option_settings:
-   aws:ec2:vpc:
-      VPCId: vpc-XXXXX
-      Subnets: subnet-XXXX, subnet-YYYY, subnet-ZZZZ

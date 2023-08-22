@@ -47,18 +47,28 @@ services:
 
     supportpal_cron:
         container_name: '${CRON_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-cron'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}'
         restart: always
         depends_on:
             - db
             - redis
             - mailer
+            - meilisearch
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MAILER_SERVICE_HOST: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+            MEILISEARCH_HOST: ${MEILISEARCH_HOST}
+            MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+            CACHE_DRIVER: ${CACHE_DRIVER}
+            SESSION_DRIVER: ${SESSION_DRIVER}
+            SESSION_CONNECTION: ${SESSION_CONNECTION}
+            QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+            REDIS_QUEUE_CONNECTION: ${REDIS_QUEUE_CONNECTION}
+            SCOUT_DRIVER: ${SCOUT_DRIVER}
+            SCOUT_QUEUE: ${SCOUT_QUEUE}
         volumes:
             - supportpal_resources:/supportpal/resources
             - supportpal_app:/supportpal/app
@@ -70,13 +80,17 @@ services:
         networks:
             - supportpal_frontend
             - supportpal_backend
-        command: 'bash -c "service cron start && tail -f /var/log/cron.log"'
+        command: ["bash", "/etc/cmd/cron.sh"]
         env_file:
             - .env.custom
 
     mailer:
         volumes:
             - supportpal_mailer:/var/spool/exim4
+
+    meilisearch:
+        env_file:
+            - .env.custom
 
 volumes:
     supportpal_resources:

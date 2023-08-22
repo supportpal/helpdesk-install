@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-sh /var/app/current/init-letsencrypt.sh --email user@company.com --data_path /supportpal/ssl/certbot -- example.com www.example.com

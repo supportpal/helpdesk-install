@@ -23,21 +23,31 @@ services:
 
     supportpal:
         container_name: '${WEB_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-web'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}'
         restart: always
         depends_on:
             - db
             - redis
+            - meilisearch
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MAILER_SERVICE_HOST: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+            MEILISEARCH_HOST: ${MEILISEARCH_HOST}
+            MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+            CACHE_DRIVER: ${CACHE_DRIVER}
+            SESSION_DRIVER: ${SESSION_DRIVER}
+            SESSION_CONNECTION: ${SESSION_CONNECTION}
+            QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+            REDIS_QUEUE_CONNECTION: ${REDIS_QUEUE_CONNECTION}
+            SCOUT_DRIVER: ${SCOUT_DRIVER}
+            SCOUT_QUEUE: ${SCOUT_QUEUE}
         networks:
             - supportpal_frontend
             - supportpal_backend
-        command: 'php-fpm'
+        command: ["bash", "/etc/cmd/php-fpm.sh"]
 
     db:
         container_name: '${DATABASE_SERVICE_NAME}'
@@ -59,39 +69,58 @@ services:
 
     supportpal_websockets:
         container_name: '${WS_SERVICE_NAME}'
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-ws'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}'
         restart: always
         depends_on:
             - db
             - redis
+            - meilisearch
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MAILER_SERVICE_HOST: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+            MEILISEARCH_HOST: ${MEILISEARCH_HOST}
+            MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+            CACHE_DRIVER: ${CACHE_DRIVER}
+            SESSION_DRIVER: ${SESSION_DRIVER}
+            SESSION_CONNECTION: ${SESSION_CONNECTION}
+            QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+            REDIS_QUEUE_CONNECTION: ${REDIS_QUEUE_CONNECTION}
+            SCOUT_DRIVER: ${SCOUT_DRIVER}
+            SCOUT_QUEUE: ${SCOUT_QUEUE}
         networks:
             - supportpal_backend
             - supportpal_frontend
-        command: 'gosu www-data bash -c "php artisan ws:serve"'
+        command: ["bash", "/etc/cmd/sockets.sh"]
 
     supportpal_mq:
         container_name: '${MQ_SERVICE_NAME}'
-        user: www-data
-        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}-mq'
+        image: 'public.ecr.aws/supportpal/helpdesk:${APP_VERSION}'
         restart: always
         depends_on:
             - db
             - redis
+            - meilisearch
         environment:
             REDIS_HOST: ${CACHE_SERVICE_NAME}
             REDIS_PORT: ${REDIS_PORT}
-            MAILER_SERVICE_NAME: ${MAILER_SERVICE_NAME}
+            MAILER_SERVICE_HOST: ${MAILER_SERVICE_NAME}
             WS_SERVICE_NAME: ${WS_SERVICE_NAME}
             MQ_SERVICE_NAME: ${MQ_SERVICE_NAME}
+            MEILISEARCH_HOST: ${MEILISEARCH_HOST}
+            MEILISEARCH_KEY: ${MEILISEARCH_KEY}
+            CACHE_DRIVER: ${CACHE_DRIVER}
+            SESSION_DRIVER: ${SESSION_DRIVER}
+            SESSION_CONNECTION: ${SESSION_CONNECTION}
+            QUEUE_CONNECTION: ${QUEUE_CONNECTION}
+            REDIS_QUEUE_CONNECTION: ${REDIS_QUEUE_CONNECTION}
+            SCOUT_DRIVER: ${SCOUT_DRIVER}
+            SCOUT_QUEUE: ${SCOUT_QUEUE}
         networks:
             - supportpal_backend
-        command: 'php artisan mq:start'
+        command: ["bash", "/etc/cmd/queues.sh"]
         stop_grace_period: 60s
 
     redis:
@@ -111,6 +140,19 @@ services:
         networks:
             - supportpal_backend
 
+    meilisearch:
+        container_name: ${MEILISEARCH_SERVICE_NAME}
+        image: getmeili/meilisearch:v1.3.1
+        environment:
+            MEILI_ENV: ${MEILI_ENV}
+            MEILI_LOG_LEVEL: ${MEILI_LOG_LEVEL}
+            MEILI_SCHEDULE_SNAPSHOT: ${MEILI_SCHEDULE_SNAPSHOT}
+            MEILI_MASTER_KEY: ${MEILISEARCH_KEY}
+        volumes:
+            - supportpal_meilisearch:/meili_data
+        networks:
+            - supportpal_backend
+
 volumes:
     supportpal_db:
         external: true
@@ -118,6 +160,9 @@ volumes:
     supportpal_cache:
         external: true
         name: ${CACHE_VOLUME}
+    supportpal_meilisearch:
+        external: true
+        name: ${MEILISEARCH_VOLUME}
 
 networks:
     supportpal_frontend:
