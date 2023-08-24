@@ -30,7 +30,7 @@ make restore
    ```
 2. Edit `.env` and update the app version as necessary:
    ```text
-   APP_VERSION=3.4.0
+   APP_VERSION=5.0.1
    ```
 3. Run the `upgrade` command:
    ```bash
