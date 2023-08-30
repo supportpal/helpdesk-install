@@ -32,9 +32,9 @@ docker cp "backup/${TIMESTAMP}/volumes-compose/" "${WEB_SERVICE_NAME}:${TEMP_BAC
 rm -rf "backup/${TIMESTAMP}/"
 
 echo 'Combining backups...'
-docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${APP_BACKUP_NAME} ${FILESYSTEM_BACKUP_NAME} ${DB_FILE_NAME} volumes-compose/"
+docker exec -u root "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${APP_BACKUP_NAME} ${FILESYSTEM_BACKUP_NAME} ${DB_FILE_NAME} volumes-compose/"
 
 echo 'Copying backup to host...'
 docker cp "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "backup/"
-docker exec "${WEB_SERVICE_NAME}" bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
+docker exec -u root "${WEB_SERVICE_NAME}" bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
 echo "Backup created successfully at ${PWD}/backup/${APP_BACKUP_NAME}"
