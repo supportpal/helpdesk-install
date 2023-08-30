@@ -28,11 +28,7 @@ make restore
    ```bash
    make backup
    ```
-2. Edit `.env` and update the app version as necessary:
-   ```text
-   APP_VERSION=5.0.1
-   ```
-3. Run the `upgrade` command:
+2. Run the `upgrade` command:
    ```bash
    make upgrade
    ```
