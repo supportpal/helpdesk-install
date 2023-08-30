@@ -30,7 +30,7 @@ docker exec supportpal bash -c "mv ${DB_BACKUP_PATH} ${TEMP_BACKUP_DIR}/"
 echo 'Backing up volume data...'
 docker exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/cache && cp -r /redis-data/ ${TEMP_BACKUP_DIR}/volumes-monolithic/cache"
 docker exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/caddy && cp -r /caddy/ ${TEMP_BACKUP_DIR}/volumes-monolithic/caddy"
-if [[ "$(docker exec -u root supportpal bash -c "test -d /meilisearch")" ]]; then
+if docker exec -u root supportpal bash -c "test -d /meilisearch"; then
   docker exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch && cp -r /meilisearch/ ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch"
 fi
 
