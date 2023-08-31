@@ -83,10 +83,8 @@ upgrade: ## Upgrade SupportPal to a later version.
 	@sleep 10
 	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) down -v
 	$(GIT_BIN) pull
-	$(MAKE) create_volumes
-	$(DOCKER_COMPOSE_BIN) $(COMPOSE_FILES) up -d supportpal
-	$(DOCKER_BIN) exec -it $(WEB_SERVICE_NAME) bash /scripts/upgrade-helpdesk.sh
-	$(MAKE) start
+	MAKE="$(MAKE)" DOCKER_COMPOSE_BIN="$(DOCKER_COMPOSE_BIN)" COMPOSE_FILES="$(COMPOSE_FILES)" DOCKER_BIN="$(DOCKER_BIN)" WEB_SERVICE_NAME="$(WEB_SERVICE_NAME)" bash upgrade.sh
+
 
 .PHONY: backup
 backup: ## Create a full system backup.
