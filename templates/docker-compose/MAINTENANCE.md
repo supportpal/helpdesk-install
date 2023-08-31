@@ -33,7 +33,7 @@ make restore
    make upgrade
    ```
    
-   > :warning: **Upgrades from v4.x to v5
+   > :warning: **Upgrades from v4.x to v5**
    > 
    > You will receive an error after running the `docker exec -it -u www-data $(WEB_SERVICE_NAME) bash -c '/usr/local/bin/php artisan app:upgrade --confirm-backup'`
    > command. Run `make upgrade` again to resolve the issue.
