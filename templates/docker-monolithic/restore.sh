@@ -26,14 +26,14 @@ if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAN
 echo "Found ${LAST_BACKUP_FILE}..."
 
 echo "Stopping services..."
-docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name 'mysql' -printf '%f\n' -exec sv stop {} \;"  > /dev/null
+docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name 'mysql' -printf '%f\n' -exec sv stop {} \;"
 
 echo "Restoring..."
 
 docker exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}"
 docker cp "${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}" "supportpal:${TEMP_BACKUP_DIR}/"
 TAR_OUTPUT=$(docker exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -xvzf ${LAST_BACKUP_FILE}")
-docker exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force" > /dev/null
+docker exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force"
 
 # If backup generated via docker, restore volumes.
 if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/$'; then
@@ -48,5 +48,5 @@ if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/$'; then
 fi
 
 echo "Restarting services..."
-docker compose down 2> /dev/null
+docker compose down
 docker compose up -d

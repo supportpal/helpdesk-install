@@ -13,7 +13,7 @@ GTE_v420="$(docker exec supportpal php -r "\$release = require '/var/www/support
 if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAND_PATH="/var/www/supportpal/app-manager"; fi
 
 echo "Stopping services..."
-docker exec supportpal bash -c "find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name 'mysql' -printf '%f\n' -exec sv stop {} \;"  > /dev/null
+docker exec supportpal bash -c "find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name 'mysql' -printf '%f\n' -exec sv stop {} \;"
 
 echo 'Backing up filesystem...'
 docker exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config/production" # create the farthest directory
@@ -43,6 +43,6 @@ docker cp "supportpal:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "${BACKUP_DIR}/"
 docker exec -u root supportpal bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
 
 echo "Restarting services..."
-docker restart supportpal 2> /dev/null
+docker restart supportpal
 
 echo "Backup created successfully at ${PWD}/${BACKUP_DIR}/${APP_BACKUP_NAME}"
