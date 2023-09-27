@@ -19,4 +19,4 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       - name: create pull request
-        run: gh pr create -t  "[Automated] Merge ${{ github.ref_name }} into master" -b "Automated Pull Request" -r bytestream
+        run: gh pr create -t  "[Automated] Merge ${{ github.ref_name }} into master" -b "Automated Pull Request" -r bytestream -a bytestream
