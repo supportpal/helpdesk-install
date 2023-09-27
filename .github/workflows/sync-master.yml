@@ -1,0 +1,23 @@
+name: Merge Default Branch Into Master
+
+on:
+  push:
+    branches:
+      - 5.x
+
+permissions:
+  pull-requests: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  main:
+    name: Create PR to Master
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+
+      - name: create pull request
+        run: gh pr create -t  "[Automated] Merge ${{ github.ref_name }} into master" -b "Automated Pull Request" -r bytestream -a bytestream --head ${{ github.ref_name }} --base master
