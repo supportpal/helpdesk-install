@@ -1,14 +1,12 @@
 #!/bin/bash
 set -eu -o pipefail
 
-usage="Usage (Linux / MacOS): bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/setup.sh)
-
-Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/setup.sh)
-
-Options:
+usage="Options:
     -h,--help                  Display this help and exit.
 
     -n                         Run the command non interactively.
+
+    -r,--ref=                  Git ref (commit sha, ref name, tag) to run the script on.
 
     -H,--host=                 Domain name to use with SupportPal.
 
@@ -19,6 +17,7 @@ Options:
 interactive=1
 host=
 email=
+ref=5.x
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -26,6 +25,7 @@ while [[ "$#" -gt 0 ]]; do
   -n) interactive=0 ;;
   -H|--host) host="$2" ; shift ;;
   -e|--email) email="$2" ; shift ;;
+  -r|--ref) ref="$2" ; shift ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -191,8 +191,8 @@ configure() {
     echo "error: $(pwd)/docker-compose.yml already exists. Delete the file and try again."
     exit 1
   fi
-  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
-  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
+  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
 
   echo "" > .env
 
@@ -221,7 +221,7 @@ configure() {
   fi
 
   # create volumes
-  bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
+  bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/create_volumes.sh)
 }
 
 cat << "EOF"

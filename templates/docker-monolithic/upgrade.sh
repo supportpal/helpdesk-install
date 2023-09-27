@@ -1,17 +1,17 @@
 #!/bin/bash
 set -eu -o pipefail
 
-usage="Usage (Linux / MacOS): bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/upgrade.sh)
-
-Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/upgrade.sh)
-
-Options:
+usage="Options:
     -h,--help                  Display this help and exit.
 "
+
+# options
+ref=5.x
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
   -h|--help) echo "$usage" ; exit 0 ;;
+  -r|--ref) ref="$2" ; shift ;;
   *)
     echo "Unknown parameter passed: $1"
     exit 1
@@ -53,11 +53,11 @@ backup_config() {
 }
 
 update_compose_files() {
-    curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+    curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
 }
 
 update_volumes() {
-    bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
+    bash <(curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/create_volumes.sh)
 }
 
 migrate_hostname() {
