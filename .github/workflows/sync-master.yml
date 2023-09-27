@@ -3,7 +3,7 @@ name: Merge Default Branch Into Master
 on:
   push:
     branches:
-      - ${{ github.event.repository.default_branch }}
+      - 5.x
 
 permissions:
   pull-requests: write
