@@ -1,9 +1,9 @@
 #!/bin/bash
 set -eu -o pipefail
 
-usage="Usage (Linux / MacOS): bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/setup.sh)
+usage="Usage (Linux / MacOS): bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/setup.sh)
 
-Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/setup.sh)
+Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/setup.sh)
 
 Options:
     -h,--help                  Display this help and exit.
@@ -177,8 +177,8 @@ configure() {
     echo "error: $(pwd)/docker-compose.yml already exists. Delete the file and try again."
     exit 1
   fi
-  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
-  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
+  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
 
   # guess the hostname
   hostname="$(hostname)"
@@ -187,7 +187,7 @@ configure() {
   printf "✔\n"
 
   # create volumes
-  bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
+  bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/create_volumes.sh)
 }
 
 cat << "EOF"
