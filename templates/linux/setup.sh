@@ -1,12 +1,12 @@
 #!/bin/bash
 set -eu -o pipefail
 
-version="0.3.0"
+version="0.4.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL/CentOS 8, & 9
-    * Ubuntu 18.04 LTS (bionic), & 20.04 LTS (focal), & 22.04 LTS (jammy)
-    * Debian 10 (buster), & 11 (bullseye)"
+    * Ubuntu 20.04 LTS (focal), & 22.04 LTS (jammy)
+    * Debian 11 (bullseye) & 12 (bookworm)"
 
 usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
 
@@ -94,6 +94,7 @@ identify_os() {
       9*) error 'Debian version 9 (stretch) has reached End of Life and is no longer supported.' ;;
       10*) os_version=buster ;;
       11*) os_version=bullseye ;;
+      12*) os_version=bookworm ;;
       *) error "Detected Debian but version ($debian_version) is not supported." "$supported" ;;
       esac
       ;;
@@ -481,7 +482,7 @@ install_mysql() {
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
 
-    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.23-1_all.deb
+    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.26-1_all.deb
     dpkg -i mysql-apt-config.deb && apt-get update
     rm mysql-apt-config.deb
   fi
