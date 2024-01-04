@@ -482,7 +482,7 @@ install_mysql() {
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
 
-    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.26-1_all.deb
+    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb
     dpkg -i mysql-apt-config.deb && apt-get update
     rm mysql-apt-config.deb
   fi
