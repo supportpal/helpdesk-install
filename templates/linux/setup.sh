@@ -469,10 +469,10 @@ install_mysql() {
 
   if [[ $os_type == 'rhel' ]]; then
     if [[ $os_version == '8' ]]; then
-      install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-4.noarch.rpm
+      install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-9.noarch.rpm
       dnf -y module disable mysql
     else
-      install_rpm https://dev.mysql.com/get/mysql80-community-release-el9-1.noarch.rpm
+      install_rpm https://dev.mysql.com/get/mysql80-community-release-el9-5.noarch.rpm
     fi
   fi
 
