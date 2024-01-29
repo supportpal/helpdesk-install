@@ -224,6 +224,24 @@ configure() {
   bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/create_volumes.sh)
 }
 
+check_memory() {
+    if [[ "$os_type" == "windows" ]] || [[ "$os_type" == "macos" ]]; then
+      return
+    fi
+
+    # Get total memory (RAM + Swap) in kilobytes
+    total_memory=$(awk '/MemTotal/ {mem=$2} /SwapTotal/ {swap=$2} END {print mem+swap}' /proc/meminfo)
+
+    # 4GB
+    required_memory=$((4*1024*1024))
+
+    if (( total_memory < required_memory )); then
+        echo "Error: Your system has less than 4GB of total memory (RAM + Swap)."
+        echo "Please upgrade your system memory to at least 4GB."
+        exit 1
+    fi
+}
+
 cat << "EOF"
  ____                               _   ____       _
 / ___| _   _ _ __  _ __   ___  _ __| |_|  _ \ __ _| |
@@ -235,6 +253,7 @@ EOF
 
 echo
 identify_os
+check_memory
 configure_windows
 check_docker
 check_docker_compose
