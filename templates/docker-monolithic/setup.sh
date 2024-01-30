@@ -225,21 +225,33 @@ configure() {
 }
 
 check_memory() {
-    if [[ "$os_type" == "windows" ]] || [[ "$os_type" == "macos" ]]; then
-      return
-    fi
+  if ! [ -f /proc/meminfo ]; then
+    return
+  fi
 
-    # Get total memory (RAM + Swap) in kilobytes
-    total_memory=$(awk '/MemTotal/ {mem=$2} /SwapTotal/ {swap=$2} END {print mem+swap}' /proc/meminfo)
+  # Get total memory (RAM + Swap) in kilobytes
+  total_memory=$(awk '/MemTotal/ {mem=$2} /SwapTotal/ {swap=$2} END {print mem+swap}' /proc/meminfo)
 
-    # 4GB
-    required_memory=$((4*1024*1024))
+  # 4GB (approx)
+  required_memory=$((4*1000*1000))
 
-    if (( total_memory < required_memory )); then
-        echo "Error: Your system has less than 4GB of total memory (RAM + Swap)."
-        echo "Please upgrade your system memory to at least 4GB."
-        exit 1
-    fi
+  if (( total_memory < required_memory )); then
+    echo "##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####"
+    echo "                         !! WARNING !!                           "
+    echo "##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####"
+    echo ""
+    echo "The system has less than 4GB of total memory (RAM + Swap),"
+    echo "detected ${total_memory}KB. The system may crash if launched with"
+    echo "insufficient memory."
+    echo
+    echo "Greater than ${required_memory}KB is recommended."
+    echo
+    echo "Press CTRL+C to exit and add more RAM/Swap. Continuing in 15s..."
+    echo
+    echo "##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####"
+    echo
+    sleep 15
+  fi
 }
 
 cat << "EOF"
