@@ -13,7 +13,7 @@ GTE_v420="$(docker exec supportpal php -r "\$release = require '/var/www/support
 if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAND_PATH="/var/www/supportpal/app-manager"; fi
 
 echo "Stopping services..."
-docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name 'mysql' -printf '%f\n' -exec sv stop {} \;"
+docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' -printf '%f\n' -exec sv stop {} \;"
 
 echo 'Backing up filesystem...'
 docker exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config/production" # create the farthest directory
@@ -23,7 +23,7 @@ docker exec supportpal bash -c "cp -r /var/www/supportpal/addons ${TEMP_BACKUP_D
 docker exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${FILESYSTEM_BACKUP_NAME} filesystem-${TIMESTAMP}"
 
 echo 'Backing up database...'
-DB_BACKUP_PATH=$(docker exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan db:backup | grep -oE '/var/www/supportpal/.*/database-.*'")
+DB_BACKUP_PATH=$(docker exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan db:backup --store-local | grep -oE '/var/www/supportpal/.*/database-.*'")
 DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | xargs basename)
 docker exec supportpal bash -c "mv ${DB_BACKUP_PATH} ${TEMP_BACKUP_DIR}/"
 

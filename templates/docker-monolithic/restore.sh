@@ -26,7 +26,7 @@ if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAN
 echo "Found ${LAST_BACKUP_FILE}..."
 
 echo "Stopping services..."
-docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name 'mysql' -printf '%f\n' -exec sv stop {} \;"
+docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' -printf '%f\n' -exec sv stop {} \;"
 
 echo "Restoring..."
 

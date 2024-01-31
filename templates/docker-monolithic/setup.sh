@@ -224,6 +224,36 @@ configure() {
   bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/create_volumes.sh)
 }
 
+check_memory() {
+  if ! [ -f /proc/meminfo ]; then
+    return
+  fi
+
+  # Get total memory (RAM + Swap) in kilobytes
+  total_memory=$(awk '/MemTotal/ {mem=$2} /SwapTotal/ {swap=$2} END {print mem+swap}' /proc/meminfo)
+
+  # 4GB (approx)
+  required_memory=$((4*1000*1000))
+
+  if (( total_memory < required_memory )); then
+    echo "##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####"
+    echo "                         !! WARNING !!                           "
+    echo "##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####"
+    echo ""
+    echo "The system has less than 4GB of total memory (RAM + Swap),"
+    echo "detected ${total_memory}KB. The system may crash if launched with"
+    echo "insufficient memory."
+    echo
+    echo "Greater than ${required_memory}KB is recommended."
+    echo
+    echo "Press CTRL+C to exit and add more RAM/Swap. Continuing in 15s..."
+    echo
+    echo "##### ##### ##### ##### ##### ##### ##### ##### ##### ##### #####"
+    echo
+    sleep 15
+  fi
+}
+
 cat << "EOF"
  ____                               _   ____       _
 / ___| _   _ _ __  _ __   ___  _ __| |_|  _ \ __ _| |
@@ -235,6 +265,7 @@ EOF
 
 echo
 identify_os
+check_memory
 configure_windows
 check_docker
 check_docker_compose
