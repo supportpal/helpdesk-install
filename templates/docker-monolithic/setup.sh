@@ -6,6 +6,8 @@ usage="Options:
 
     -n                         Run the command non interactively.
 
+    --local                    The script is being ran from the repository, so don't use CURL to download them.
+
     -r,--ref=                  Git ref (commit sha, ref name, tag) to run the script on.
 
     -H,--host=                 Domain name to use with SupportPal.
@@ -14,6 +16,7 @@ usage="Options:
 "
 
 # Options
+local=0
 interactive=1
 host=
 email=
@@ -23,6 +26,7 @@ while [[ "$#" -gt 0 ]]; do
   case $1 in
   -h|--help) echo "$usage" ; exit 0 ;;
   -n) interactive=0 ;;
+  --local) local=1 ;;
   -H|--host) host="$2" ; shift ;;
   -e|--email) email="$2" ; shift ;;
   -r|--ref) ref="$2" ; shift ;;
@@ -186,13 +190,16 @@ create_volume() {
 configure() {
   # download docker-compose.yml example
   printf "generating docker-compose.yml ... "
-  if [[ -f "docker-compose.yml" ]]; then
+  if [[ -f "docker-compose.yml" ]] && [[ "$local" -eq 0 ]]; then
     echo
     echo "error: $(pwd)/docker-compose.yml already exists. Delete the file and try again."
     exit 1
   fi
-  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
-  curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
+
+  if [[ "$local" -eq 0 ]]; then
+    curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+    curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
+  fi
 
   echo "" > .env
 
@@ -221,7 +228,11 @@ configure() {
   fi
 
   # create volumes
-  bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/create_volumes.sh)
+  if [[ "$local" -eq 0 ]]; then
+    bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/create_volumes.sh)
+  else
+    bash create_volumes.sh
+  fi
 }
 
 check_memory() {
