@@ -46,7 +46,7 @@ set timeout -1
 
 match_max 100000
 
-spawn "docker compose exec supportpal bash -c \"bash /init/init-helpdesk.sh\""
+spawn docker compose exec supportpal bash -c {bash /init/init-helpdesk.sh}
 
 expect "I Accept and Continue (yes/no)*:\r"
 send -- "yes\r"
