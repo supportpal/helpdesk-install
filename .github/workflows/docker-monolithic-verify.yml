@@ -26,9 +26,32 @@ jobs:
             -w "/v" \
             koalaman/shellcheck \
             -e SC1091 -e SC1117 \
-            setup.sh
+            *.sh
 
       - name: docker compose config test
         run: |
           echo "" > .env
           docker compose config
+
+      - name: install supportpal
+        run: |
+          bash setup.sh --local -n --host "http://localhost" --email "kieran@supportpal.com"
+          docker compose up -d
+
+          sudo apt install -y expect
+          expect verify-install.exp
+
+          sleep 5 
+          curl -fSL -o /tmp/test.txt http://localhost/
+          if ! grep -q "SupportPal" /tmp/test.txt; then
+            echo "ERROR: SupportPal is not loading via HTTP"
+            exit 3
+          fi
+        env:
+          SUPPORTPAL_LICENSE_KEY: "${{ secrets.SUPPORTPAL_MONO_LICENSE_KEY }}"
+
+      - name: test backup/restore
+        run: |
+          bash backup.sh
+          sleep 60
+          bash restore.sh

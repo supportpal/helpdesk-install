@@ -27,7 +27,7 @@ jobs:
             -w "/v" \
             koalaman/shellcheck \
             -e SC1091 -e SC1117 \
-            setup.sh
+            *.sh
 
       - name: docker compose config test
         run: |

@@ -4,7 +4,11 @@ This repository contains templates to get started using SupportPal.
 
 ## Docker Compose
 
-This [template](https://docs.supportpal.com/current/Deploy+on+Docker) relies on docker-compose to manage the helpdesk software deployment. A typical use case for this template would be a standalone server.
+This [template](https://docs.supportpal.com/current/Deploy+on+Docker+HA) is intended for use in a microservice style architecture, whereby each service is deployed to a separate container. It provides a functional example for how you may deploy SupportPal in a HA environment.
+
+## Docker Monolithic
+
+This [template](https://docs.supportpal.com/current/Deploy+on+Docker) uses a monolithic image which runs all the necessary services in a single container. This is our recommended installation method.
 
 ## Linux
 
