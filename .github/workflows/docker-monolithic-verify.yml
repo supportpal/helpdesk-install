@@ -53,4 +53,5 @@ jobs:
       - name: test backup/restore
         run: |
           bash backup.sh
+          sleep 60
           bash restore.sh
