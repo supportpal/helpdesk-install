@@ -4,7 +4,7 @@ set -eu -o pipefail
 version="0.4.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
-    * RHEL/CentOS 8, & 9
+    * RHEL 8, & 9
     * Ubuntu 20.04 LTS (focal), & 22.04 LTS (jammy)
     * Debian 11 (bullseye) & 12 (bookworm)"
 
@@ -106,7 +106,7 @@ identify_os() {
       precise) error 'Ubuntu version 12.04 LTS has reached End of Life and is no longer supported.' ;;
       trusty) error 'Ubuntu version 14.04 LTS has reached End of Life and is no longer supported.' ;;
       xenial) error 'Ubuntu version 16.04 LTS has reached End of Life and is no longer supported.' ;;
-      bionic) ;;
+      bionic) error 'Ubuntu version 18.04 LTS has reached End of Life and is no longer supported.' ;;
       focal) ;;
       jammy) ;;
       *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
