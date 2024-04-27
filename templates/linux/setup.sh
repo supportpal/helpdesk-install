@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 
-version="0.4.0"
+version="0.5.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL 8, & 9
@@ -31,7 +31,7 @@ os_type=
 # os_version as demanded by the OS (codename, major release, etc.)
 os_version=
 # php version to install
-php_version='8.1'
+php_version='8.2'
 # mysql authentication
 root_password=
 database='supportpal'
