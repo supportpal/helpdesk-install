@@ -4,7 +4,7 @@ set -eu -o pipefail
 version="0.6.0"
 
 supported="The following Linux OSs are supported, on x86_64 only:
-    * RHEL 8, & 9
+    * RHEL 9
     * Ubuntu 20.04 LTS (focal), 22.04 LTS (jammy) & 24.04 LTS (noble)
     * Debian 11 (bullseye) & 12 (bookworm)"
 
@@ -79,7 +79,6 @@ identify_os() {
     os_type=rhel
     el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
-    8*) os_version=8 ;;
     9*) os_version=9 ;;
     *) error "Detected RHEL or compatible but version ($el_version) is not supported." "$supported" ;;
     esac
