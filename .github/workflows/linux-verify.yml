@@ -19,7 +19,6 @@ jobs:
     strategy:
       matrix:
         os:
-          - quay.io/centos/centos:stream8
           - quay.io/centos/centos:stream9
           - ubuntu:20.04
           - ubuntu:22.04
