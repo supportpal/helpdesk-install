@@ -33,6 +33,9 @@ docker exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-mono
 if docker exec -u root supportpal bash -c "test -d /meilisearch"; then
   docker exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch && cp -r /meilisearch/ ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch"
 fi
+if docker exec -u root supportpal bash -c "test -d /qdrant"; then
+    docker exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/qdrant && cp -r /qdrant/ ${TEMP_BACKUP_DIR}/volumes-monolithic/qdrant"
+fi
 
 echo 'Combining backups...'
 docker exec -u root supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${APP_BACKUP_NAME} ${FILESYSTEM_BACKUP_NAME} ${DB_FILE_NAME} volumes-monolithic/"
