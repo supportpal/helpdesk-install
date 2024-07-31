@@ -314,7 +314,7 @@ install_php() {
     apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
     "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
     "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap" \
-    "php${php_version}-zip"
+    "php${php_version}-zip" "php${php_version}-intl"
 
     configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
 
