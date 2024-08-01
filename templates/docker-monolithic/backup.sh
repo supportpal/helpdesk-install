@@ -33,7 +33,7 @@ APP_BACKUP_NAME="app-${TIMESTAMP}.tar.gz"
 GTE_v420="$(docker exec supportpal php -r "\$release = require '/var/www/supportpal/config/release.php'; echo (int) version_compare(\$release['version'], '4.2.0', '>=');")"
 if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAND_PATH="/var/www/supportpal/app-manager"; fi
 
-if [[ ! $online ]]; then
+if ! $online; then
   echo "Stopping services..."
   docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' -printf '%f\n' -exec sv stop {} \;"
 fi
@@ -65,7 +65,7 @@ mkdir -p "${BACKUP_DIR}/"
 docker cp "supportpal:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "${BACKUP_DIR}/"
 docker exec -u root supportpal bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
 
-if [[ ! $online ]]; then
+if ! $online; then
   echo "Restarting services..."
   docker restart supportpal
 fi
