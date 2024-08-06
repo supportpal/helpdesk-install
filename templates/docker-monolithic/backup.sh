@@ -1,6 +1,27 @@
 #!/bin/bash
-
 set -eu -o pipefail
+
+usage="Options:
+    -h,--help                  Display this help and exit.
+
+    --online                   Do not restart the services.
+"
+
+# Options
+online=false
+
+while [[ "$#" -gt 0 ]]; do
+  case $1 in
+  -h|--help) echo "$usage" ; exit 0 ;;
+  --online) online=true ;;
+  *)
+    echo "Unknown parameter passed: $1"
+    exit 1
+    ;;
+  esac
+  # shellcheck disable=SC2317
+  shift
+done
 
 BACKUP_DIR="backup"
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
@@ -12,8 +33,10 @@ APP_BACKUP_NAME="app-${TIMESTAMP}.tar.gz"
 GTE_v420="$(docker exec supportpal php -r "\$release = require '/var/www/supportpal/config/release.php'; echo (int) version_compare(\$release['version'], '4.2.0', '>=');")"
 if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAND_PATH="/var/www/supportpal/app-manager"; fi
 
-echo "Stopping services..."
-docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' -printf '%f\n' -exec sv stop {} \;"
+if ! $online; then
+  echo "Stopping services..."
+  docker exec supportpal bash -c "sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' -printf '%f\n' -exec sv stop {} \;"
+fi
 
 echo 'Backing up filesystem...'
 docker exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config/production" # create the farthest directory
@@ -42,7 +65,9 @@ mkdir -p "${BACKUP_DIR}/"
 docker cp "supportpal:${TEMP_BACKUP_DIR}/${APP_BACKUP_NAME}" "${BACKUP_DIR}/"
 docker exec -u root supportpal bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
 
-echo "Restarting services..."
-docker restart supportpal
+if ! $online; then
+  echo "Restarting services..."
+  docker restart supportpal
+fi
 
 echo "Backup created successfully at ${PWD}/${BACKUP_DIR}/${APP_BACKUP_NAME}"
