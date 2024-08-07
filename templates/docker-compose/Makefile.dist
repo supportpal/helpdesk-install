@@ -48,6 +48,8 @@ uninstall: ## Irreversibly uninstall the help desk and all associated data.
 	$(DOCKER_BIN) volume remove $(CACHE_VOLUME)
 	$(DOCKER_BIN) volume remove $(MAILER_VOLUME)
 	$(DOCKER_BIN) volume remove $(ADDONS_VOLUME)
+	$(DOCKER_BIN) volume remove $(MEILISEARCH_VOLUME)
+	$(DOCKER_BIN) volume remove $(QDRANT_VOLUME)
 	rm -rf secrets
 
 .PHONY: create_volumes
@@ -59,6 +61,7 @@ create_volumes:
 	$(DOCKER_BIN) volume create --name $(MAILER_VOLUME)
 	$(DOCKER_BIN) volume create --name $(ADDONS_VOLUME)
 	$(DOCKER_BIN) volume create --name $(MEILISEARCH_VOLUME)
+	$(DOCKER_BIN) volume create --name $(QDRANT_VOLUME)
 
 .PHONY: create_secrets
 create_secrets:

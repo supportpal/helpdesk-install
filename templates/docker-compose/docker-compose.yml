@@ -153,6 +153,14 @@ services:
         networks:
             - supportpal_backend
 
+    qdrant:
+        container_name: ${QDRANT_SERVICE_NAME}
+        image: qdrant/qdrant:v1.10.1
+        volumes:
+            - supportpal_qdrant:/qdrant
+        networks:
+            - supportpal_backend
+
 volumes:
     supportpal_db:
         external: true
@@ -163,6 +171,9 @@ volumes:
     supportpal_meilisearch:
         external: true
         name: ${MEILISEARCH_VOLUME}
+    supportpal_qdrant:
+        external: true
+        name: ${QDRANT_VOLUME}
 
 networks:
     supportpal_frontend:
