@@ -30,6 +30,9 @@ mkdir -p "backup/${TIMESTAMP}/volumes-compose/mailer/" && docker cp "${MAILER_SE
 if [[ "$(docker ps -aq -f name="${MEILISEARCH_SERVICE_NAME}")" ]]; then
   mkdir -p "backup/${TIMESTAMP}/volumes-compose/meilisearch/" && docker cp "${MEILISEARCH_SERVICE_NAME}:/meili_data" "backup/${TIMESTAMP}/volumes-compose/meilisearch"
 fi
+if [[ "$(docker ps -aq -f name="${QDRANT_SERVICE_NAME}")" ]]; then
+  mkdir -p "backup/${TIMESTAMP}/volumes-compose/qdrant/" && docker cp "${QDRANT_SERVICE_NAME}:/qdrant" "backup/${TIMESTAMP}/volumes-compose/qdrant"
+fi
 docker cp "backup/${TIMESTAMP}/volumes-compose/" "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/"
 rm -rf "backup/${TIMESTAMP}/"
 

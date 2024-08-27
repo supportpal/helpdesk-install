@@ -92,6 +92,10 @@ services:
         env_file:
             - .env.custom
 
+    qdrant:
+        env_file:
+            - .env.custom
+
 volumes:
     supportpal_resources:
     supportpal_app:
