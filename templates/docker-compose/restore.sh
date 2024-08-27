@@ -42,6 +42,9 @@ if echo "${TAR_OUTPUT}" | grep -qs '^volumes-compose/$'; then
   docker cp "backup/${TIMESTAMP}/volumes-compose/mailer/exim4/" "${MAILER_SERVICE_NAME}:/var/spool/"
   if echo "${TAR_OUTPUT}" | grep -qs '^volumes-compose/meilisearch'; then
     docker cp "backup/${TIMESTAMP}/volumes-compose/meilisearch/meili_data" "${MEILISEARCH_SERVICE_NAME}:/"
-  fi  
+  fi
+  if echo "${TAR_OUTPUT}" | grep -qs '^volumes-compose/qdrant'; then
+    docker cp "backup/${TIMESTAMP}/volumes-compose/qdrant/qdrant" "${QDRANT_SERVICE_NAME}:/"
+  fi
   rm -rf "backup/${TIMESTAMP}/"
 fi
