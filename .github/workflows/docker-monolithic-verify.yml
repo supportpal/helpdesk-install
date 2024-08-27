@@ -41,7 +41,7 @@ jobs:
           sudo apt install -y expect
           expect verify-install.exp
 
-          sleep 5 
+          sleep 60 
           curl -fSL -o /tmp/test.txt http://localhost/
           if ! grep -q "SupportPal" /tmp/test.txt; then
             echo "ERROR: SupportPal is not loading via HTTP"
