@@ -77,7 +77,7 @@ identify_os() {
   # Check for RHEL/CentOS, Fedora, etc.
   if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]; then
     os_type=rhel
-    el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
+    el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora|alma)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
     9*) os_version=9 ;;
     *) error "Detected RHEL or compatible but version ($el_version) is not supported." "$supported" ;;
@@ -272,6 +272,11 @@ install_php_rhel() {
   dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap php-zip
 
   if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce | awk '{ print tolower($0) }')" != "disabled" ]]; then
+    # Some RHEL (Alma) don't include semanage in the baseos repo.
+    if [[ ! -x "$(command -v semanage)" ]]; then
+      dnf -y install policycoreutils-python-utils
+    fi
+
     semanage fcontext -a -t httpd_var_run_t "${socket_path}"
   fi
 
