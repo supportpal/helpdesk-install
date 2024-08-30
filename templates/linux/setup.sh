@@ -77,7 +77,7 @@ identify_os() {
   # Check for RHEL/CentOS, Fedora, etc.
   if command -v rpm >/dev/null && [[ -e /etc/redhat-release ]]; then
     os_type=rhel
-    el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora)*release(|-server)' --queryformat '%{VERSION}')
+    el_version=$(rpm -qa '(oraclelinux|sl|redhat|centos|fedora|alma)*release(|-server)' --queryformat '%{VERSION}')
     case $el_version in
     9*) os_version=9 ;;
     *) error "Detected RHEL or compatible but version ($el_version) is not supported." "$supported" ;;
