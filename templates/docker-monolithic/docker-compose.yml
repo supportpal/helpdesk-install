@@ -3,7 +3,7 @@ version: '3.8'
 services:
   supportpal:
     container_name: supportpal
-    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:5.4.0'
+    image: 'public.ecr.aws/supportpal/helpdesk-monolithic:5.4.1'
     restart: always
     stop_grace_period: 60s
     ports:
