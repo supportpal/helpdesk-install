@@ -1,9 +1,9 @@
 #!/bin/bash
 set -eu -o pipefail
 
-usage="Usage (Linux / MacOS): bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/upgrade.sh)
+usage="Usage (Linux / MacOS): bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/upgrade.sh)
 
-Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/upgrade.sh)
+Usage (Windows / Git Bash): winpty bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/upgrade.sh)
 
 Options:
     -h,--help                  Display this help and exit.
@@ -53,11 +53,11 @@ backup_config() {
 }
 
 update_compose_files() {
-    curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
+    curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
 }
 
 update_volumes() {
-    bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/docker-monolithic/create_volumes.sh)
+    bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/4.x/templates/docker-monolithic/create_volumes.sh)
 }
 
 migrate_hostname() {
