@@ -49,7 +49,7 @@ check_docker_compose() {
 
 backup_config() {
     time_now=$(date +"%d-%m-%Y-%H:%M:%S")
-    cp --update=none docker-compose.yml "docker-compose.backup-${time_now}.yml"
+    cp -n docker-compose.yml "docker-compose.backup-${time_now}.yml"
 }
 
 update_compose_files() {
