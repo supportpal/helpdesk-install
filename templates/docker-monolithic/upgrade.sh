@@ -9,47 +9,53 @@ usage="Options:
 ref=5.x
 
 while [[ "$#" -gt 0 ]]; do
-  case $1 in
-  -h|--help) echo "$usage" ; exit 0 ;;
-  -r|--ref) ref="$2" ; shift ;;
-  *)
-    echo "Unknown parameter passed: $1"
-    exit 1
-    ;;
-  esac
-  shift
+    case $1 in
+    -h | --help)
+        echo "$usage"
+        exit 0
+        ;;
+    -r | --ref)
+        ref="$2"
+        shift
+        ;;
+    *)
+        echo "Unknown parameter passed: $1"
+        exit 1
+        ;;
+    esac
+    shift
 done
 
 # usage: version_ge <installed_version> <minimum_version>
 version_ge() {
-  if ! [ "$(printf '%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]; then
-    printf "error: %s is less than minimum required version of %s\n" "$1" "$2"
-    exit 1
-  fi
+    if ! [ "$(printf '%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]; then
+        printf "error: %s is less than minimum required version of %s\n" "$1" "$2"
+        exit 1
+    fi
 }
 
 check_docker_compose() {
-  local min="2.2.1" version command_status
+    local min="2.2.1" version command_status
 
-  set +e
-  version="$(docker compose version --short 2>&1)"
-  command_status="$?"
-  set -e
+    set +e
+    version="$(docker compose version --short 2>&1)"
+    command_status="$?"
+    set -e
 
-  if [ $command_status -ne 0 ]; then
-    printf "error: Install docker compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
-    exit 1
-  fi
+    if [ $command_status -ne 0 ]; then
+        printf "error: Install docker compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
+        exit 1
+    fi
 
-  version="${version#v}"
-  printf "checking docker compose version %s >= %s ... " "$version" "$min"
-  version_ge "$version" "$min"
-  printf "✔\n"
+    version="${version#v}"
+    printf "checking docker compose version %s >= %s ... " "$version" "$min"
+    version_ge "$version" "$min"
+    printf "✔\n"
 }
 
 backup_config() {
     time_now=$(date +"%d-%m-%Y-%H:%M:%S")
-    cp --update=none docker-compose.yml "docker-compose.backup-${time_now}.yml"
+    cp -n docker-compose.yml "docker-compose.backup-${time_now}.yml"
 }
 
 update_compose_files() {
@@ -61,18 +67,22 @@ update_volumes() {
 }
 
 migrate_hostname() {
-      grep  "hostname" docker-compose.override.yml | xargs | sed "s/hostname: /DOMAIN_NAME=/" >> .env
-      if [[ "$(uname -s)" == Darwin ]]; then
-          sed -i "" -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
-      else
-          sed -i -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
-      fi
+    if [ ! -f docker-compose.override.yml ]; then
+        return
+    fi
+
+    grep "hostname" docker-compose.override.yml | xargs | sed "s/hostname: /DOMAIN_NAME=/" >>.env
+    if [[ "$(uname -s)" == Darwin ]]; then
+        sed -i "" -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
+    else
+        sed -i -e "s/hostname:.*/hostname: ''/" docker-compose.override.yml
+    fi
 }
 
 update_env() {
-  if ! grep -qs 'DOMAIN_NAME=' .env; then
-    migrate_hostname
-  fi
+    if ! grep -qs 'DOMAIN_NAME=' .env; then
+        migrate_hostname
+    fi
 }
 
 upgrade() {
