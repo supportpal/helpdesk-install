@@ -31,7 +31,7 @@ os_type=
 # os_version as demanded by the OS (codename, major release, etc.)
 os_version=
 # php version to install
-php_version='8.2'
+php_version='8.3'
 # mysql authentication
 root_password=
 database='supportpal'
