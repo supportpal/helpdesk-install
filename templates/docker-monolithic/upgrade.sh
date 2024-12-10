@@ -91,7 +91,7 @@ upgrade() {
     update_volumes
     update_env
     update_compose_files
-    docker compose up -d
+    COMPOSE_PARALLEL_LIMIT=1 docker compose up -d
     echo
     echo "Upgrade complete!"
 }
