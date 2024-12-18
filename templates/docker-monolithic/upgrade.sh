@@ -88,8 +88,8 @@ update_env() {
 }
 
 upgrade() {
-    docker compose down -v
     backup
+    docker compose down -v
     update_volumes
     update_env
     update_compose_files
