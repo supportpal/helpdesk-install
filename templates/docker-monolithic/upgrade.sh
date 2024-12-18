@@ -53,9 +53,11 @@ check_docker_compose() {
     printf "✔\n"
 }
 
-backup_config() {
+backup() {
     time_now=$(date +"%d-%m-%Y-%H:%M:%S")
     cp -n docker-compose.yml "docker-compose.backup-${time_now}.yml"
+
+    bash <(curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/5.x/templates/docker-monolithic/backup.sh)
 }
 
 update_compose_files() {
@@ -87,11 +89,12 @@ update_env() {
 
 upgrade() {
     docker compose down -v
-    backup_config
+    backup
     update_volumes
     update_env
     update_compose_files
     COMPOSE_PARALLEL_LIMIT=1 docker compose up -d
+    docker compose exec supportpal bash -c "bash /init/upgrade-helpdesk.sh"
     echo
     echo "Upgrade complete!"
 }
