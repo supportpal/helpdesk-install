@@ -54,6 +54,14 @@ check_docker_compose() {
 }
 
 backup() {
+    echo
+    echo "It is recommend to take a backup before upgrading, this may take some time. If you've already taken a backup you can skip this step."
+    echo "Do you want to take a backup? [Y/n]"
+    read -r PROCEED
+    if [ "${PROCEED}" == "n" ] ; then
+        return
+    fi
+
     time_now=$(date +"%d-%m-%Y-%H:%M:%S")
     cp -n docker-compose.yml "docker-compose.backup-${time_now}.yml"
 
