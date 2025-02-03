@@ -269,7 +269,7 @@ install_php_rhel() {
   install_rpm "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${os_version}.noarch.rpm"
   install_rpm "https://rpms.remirepo.net/enterprise/remi-release-${os_version}.rpm"
   dnf -y module reset php && dnf -y module enable "php:remi-${php_version}"
-  dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-imap php-ldap php-zip
+  dnf -y install php php-fpm php-bcmath php-gd php-mbstring php-mysql php-xml php-ldap php-zip
 
   if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce | awk '{ print tolower($0) }')" != "disabled" ]]; then
     # Some RHEL (Alma) don't include semanage in the baseos repo.
@@ -318,7 +318,7 @@ install_php() {
 
     apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
     "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
-    "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" "php${php_version}-imap" \
+    "php${php_version}-curl" "php${php_version}-bcmath" "php${php_version}-ldap" \
     "php${php_version}-zip" "php${php_version}-intl"
 
     configure_php_fpm www-data "/etc/php/${php_version}/fpm/pool.d/supportpal.conf"
