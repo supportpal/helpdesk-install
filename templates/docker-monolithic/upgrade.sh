@@ -5,11 +5,13 @@ usage="Options:
     -h,--help                  Display this help and exit.
     -r,--ref=5.x               Git ref (commit sha, ref name, tag) to run the script on.
     --skip-backup              Skip taking a backup before upgrading.
+    --only-files               Only update the docker-compose files. Subsequent upgrade steps are skipped.
 "
 
 # options
 ref=5.x
 skip_backup=false
+only_files=false
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -23,6 +25,9 @@ while [[ "$#" -gt 0 ]]; do
         ;;
     --skip-backup)
         skip_backup=true
+        ;;
+    --only-files)
+        only_files=true
         ;;
     *)
         echo "Unknown parameter passed: $1"
@@ -111,6 +116,10 @@ upgrade() {
     update_volumes
     update_env
     update_compose_files
+    if [ "${only_files}" = true ]; then
+        exit 0
+    fi
+
     COMPOSE_PARALLEL_LIMIT=1 docker compose up -d
     docker compose exec supportpal bash -c "bash /init/upgrade-helpdesk.sh"
     echo
