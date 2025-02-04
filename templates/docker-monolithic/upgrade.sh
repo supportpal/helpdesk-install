@@ -3,10 +3,13 @@ set -eu -o pipefail
 
 usage="Options:
     -h,--help                  Display this help and exit.
+    -r,--ref=5.x               Git ref (commit sha, ref name, tag) to run the script on.
+    --skip-backup              Skip taking a backup before upgrading.
 "
 
 # options
 ref=5.x
+skip_backup=false
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -17,6 +20,9 @@ while [[ "$#" -gt 0 ]]; do
     -r | --ref)
         ref="$2"
         shift
+        ;;
+    --skip-backup)
+        skip_backup=true
         ;;
     *)
         echo "Unknown parameter passed: $1"
@@ -54,6 +60,10 @@ check_docker_compose() {
 }
 
 backup() {
+    if [ "${skip_backup}" = true ]; then
+        return
+    fi
+
     echo
     echo "It is recommend to take a backup before upgrading, this may take some time. If you've already taken a backup you can skip this step."
     echo "Do you want to take a backup? [Y/n]"
