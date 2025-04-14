@@ -190,7 +190,7 @@ systemd() {
 
     install python3
     SYSTEMCTL=$(which systemctl || echo '/bin/systemctl')
-    curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/develop/files/docker/systemctl3.py
+    curl -o "$SYSTEMCTL" https://raw.githubusercontent.com/gdraheim/docker-systemctl-replacement/refs/heads/develop/src/systemctl3.py
     chmod +x "$SYSTEMCTL"
     systemctl "$1" "$2"
   elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
