@@ -21,6 +21,7 @@ interactive=1
 host=
 email=
 ref=5.x
+dir_name="supportpal_$(date +%s)_$RANDOM"
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -190,15 +191,16 @@ create_volume() {
 configure() {
   # download docker-compose.yml example
   printf "generating docker-compose.yml ... "
-  if [[ -f "docker-compose.yml" ]] && [[ "$local" -eq 0 ]]; then
-    echo
-    echo "error: $(pwd)/docker-compose.yml already exists. Delete the file and try again."
-    exit 1
-  fi
+
+  # Generate a unique directory name using date and random number
+  mkdir "$dir_name"
+  cd "$dir_name"
 
   if [[ "$local" -eq 0 ]]; then
     curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.yml -o docker-compose.yml
     curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.override.yml -o docker-compose.override.yml
+  else
+    cp ../docker-compose.yml ../docker-compose.override.yml .
   fi
 
   echo "" > .env
@@ -283,6 +285,8 @@ check_docker_compose
 configure
 
 echo
-echo "To complete the installation update the auto-generated $(pwd)/.env file."
-echo "Refer back to https://docs.supportpal.com/current/Deploy+on+Docker for suggested changes."
+echo "The installation files have been created in $(basename "$dir_name")/."
+echo "Browse to the directory by running: cd $(pwd)"
+echo
+echo "Refer to https://docs.supportpal.com/current/Deploy+on+Docker for further guidance."
 echo
