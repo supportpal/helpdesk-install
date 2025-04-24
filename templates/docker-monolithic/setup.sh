@@ -233,7 +233,7 @@ configure() {
   if [[ "$local" -eq 0 ]]; then
     bash <(curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/create_volumes.sh)
   else
-    bash create_volumes.sh
+    bash ../create_volumes.sh
   fi
 }
 
