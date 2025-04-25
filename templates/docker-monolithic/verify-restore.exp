@@ -5,7 +5,7 @@ set timeout -1
 match_max 100000
 
 # Start the process that performs the restore
-spawn ./restore.sh
+spawn bash restore.sh
 
 # Variable to store the detected database details
 set hostname "127.0.0.1"
