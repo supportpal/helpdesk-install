@@ -15,21 +15,28 @@ set password ""
 set name "supportpal"
 
 # The backup will be restored to /home/ubuntu/supportpal_1745573480_17734 [Y/n]
-expect "*[Y/n]*"
-send -- "Y\r"
+expect {
+    -re {The backup will be restored to .+ \[Y/n\]} {
+        # Send 'Y' when prompted
+        send "Y\r"
+    }
+}"
 
 # Container with name 'supportpal' already exists. Do you want to remove that container? [Y/n]
-expect "*[Y/n]*"
-send -- "Y\r"
+expect "Container with name 'supportpal' already exists. Do you want to remove that container? [Y/n]" {
+    # Send 'Y' when prompted
+    send "Y\r"
+}
 
-# Expect in the output
 # Username: ohtusaix9Xionah0
-# Password: thuo1kahngowier7WooGogiegh9Shaid
 expect {
     -re {Username: ([a-zA-Z0-9]{10,})} {
         set username $expect_out(1,string)
     }
+}
 
+## Password: thuo1kahngowier7WooGogiegh9Shaid
+expect {
     -re {Password: ([a-zA-Z0-9]{10,})} {
         set password $expect_output(1,string)
     }
