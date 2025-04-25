@@ -1,11 +1,10 @@
-#!/usr/bin/expect
+#!/usr/bin/expect -f
 
 set timeout -1
 
-match_max 100000
-
-# Start the process that performs the restore
 spawn bash restore.sh
+
+match_max 100000
 
 # Variable to store the detected database details
 set hostname "127.0.0.1"
@@ -15,51 +14,45 @@ set password ""
 set name "supportpal"
 
 # The backup will be restored to /home/ubuntu/supportpal_1745573480_17734 [Y/n]
-expect {
-    -re {The backup will be restored to .+ \[Y/n\]} {
-        # Send 'Y' when prompted
-        send "Y\r"
-    }
-}"
+expect -re {The backup will be restored to .+} {
+    # Send 'Y' when prompted
+    send "Y\r"
+}
 
 # Container with name 'supportpal' already exists. Do you want to remove that container? [Y/n]
-expect "Container with name 'supportpal' already exists. Do you want to remove that container? [Y/n]" {
+expect "Container with name 'supportpal' already exists. Do you want to remove that container?*" {
     # Send 'Y' when prompted
     send "Y\r"
 }
 
 # Username: ohtusaix9Xionah0
-expect {
-    -re {Username: ([a-zA-Z0-9]{10,})} {
-        set username $expect_out(1,string)
-    }
+expect -re {Username: ([a-zA-Z0-9]{10,})} {
+    set username $expect_out(1,string)
 }
 
 ## Password: thuo1kahngowier7WooGogiegh9Shaid
-expect {
-    -re {Password: ([a-zA-Z0-9]{10,})} {
-        set password $expect_output(1,string)
-    }
+expect -re {Password: ([a-zA-Z0-9]{10,})} {
+    set password $expect_out(1,string)
 }
 
 # Hostname [127.0.0.1]:
 expect "Hostname*:*"
-send "$hostname\r"
+send -- "$hostname\r"
 
 # Port [3306]:
 expect "Port*:*"
-send "$port\r"
+send -- "$port\r"
 
 # Database [supportpal]:
 expect "Database*:*"
-send "$name\r"
+send -- "$name\r"
 
 # Username [supportpal]:
 expect "Username*:*"
-send "$username\r"
+send -- "$username\r"
 
 # Password:
 expect "Password*:*"
-send "$password\r"
+send -- "$password\r"
 
 expect eof
