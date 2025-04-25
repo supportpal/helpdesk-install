@@ -3,18 +3,15 @@ set -eu -o pipefail
 
 usage="Options:
     -h,--help                  Display this help and exit.
-    -n                         Run the command non interactively.
     --debug                    Enable verbose output.
 "
 
 # Options
-interactive=1
 debug=false
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
   -h|--help) echo "$usage" ; exit 0 ;;
-  -n) interactive=0 ;;
   --debug) debug=true ;;
   *)
     echo "Unknown parameter passed: $1"
@@ -63,24 +60,18 @@ if tar -tzf "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | grep -qs "^dock
   PARENT_DIR="$(realpath "$(pwd)/../")"
   RESTORE_PATH="${PARENT_DIR}/supportpal_$(date +%s)_$RANDOM"
 
-  echo "The backup will be restored to $RESTORE_PATH."
-  if [ "$interactive" -eq 1 ]; then
-    echo "Do you want to proceed? [Y/n]"
-    read -r PROCEED
-    if [ "${PROCEED}" != "Y" ] ; then
-      exit 0
-    fi
+  echo "The backup will be restored to $RESTORE_PATH. Do you want to proceed? [Y/n]"
+  read -r PROCEED
+  if [ "${PROCEED}" != "Y" ] ; then
+    exit 0
   fi
 
   # Check if container already exists.
   if [[ -n "$(docker ps -a -q -f name=^supportpal$)" ]]; then
-      echo "Container with name 'supportpal' already exists."
-      if [ "$interactive" -eq 1 ]; then
-        echo "Do you want to remove that container? [Y/n]"
-        read -r PROCEED
-        if [ "${PROCEED}" != "Y" ] ; then
-          exit 0
-        fi
+      echo "Container with name 'supportpal' already exists. Do you want to remove that container? [Y/n]"
+      read -r PROCEED
+      if [ "${PROCEED}" != "Y" ] ; then
+        exit 0
       fi
 
       echo "Deleting existing 'supportpal' container and associated volumes..."
