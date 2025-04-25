@@ -13,7 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    timeout-minutes: 4
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -54,4 +54,4 @@ jobs:
         run: |
           bash backup.sh
           sleep 60
-          bash restore.sh
+          expect verify-restore.exp
