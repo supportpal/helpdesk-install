@@ -77,9 +77,6 @@ backup() {
         return
     fi
 
-    time_now=$(date +"%d-%m-%Y-%H:%M:%S")
-    cp -n docker-compose.yml "docker-compose.backup-${time_now}.yml"
-
     bash <(curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/5.x/templates/docker-monolithic/backup.sh)
 }
 
