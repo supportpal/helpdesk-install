@@ -208,7 +208,7 @@ install_pwgen()
   # install dependencies
   install curl gcc make
 
-  curl -L -O https://ixpeering.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
+  curl -L -O https://gigenet.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
   tar -xzf pwgen-2.08.tar.gz
   cd pwgen-2.08
   ./configure
