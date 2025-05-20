@@ -12,7 +12,7 @@ usage="Options:
 
     -H,--host=                 Domain name to use with SupportPal.
 
-    -e,--email=                System administrator email address to receive cron notifications.
+    -e,--email=                System administrator email address.
 "
 
 # Options
@@ -208,7 +208,6 @@ configure() {
   if [ "$interactive" -eq 1 ]; then
     echo
     echo "Enter system administrator email address."
-    echo "This will notify you if there's a problem with the cron and allow you to take corrective action."
     read -r email
 
     echo
