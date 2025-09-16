@@ -129,6 +129,7 @@ if tar -tzf "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | grep -qs "^dock
   echo "Database: $MYSQL_DATABASE"
   echo "Username: $MYSQL_USER"
   echo "Password: $MYSQL_PASSWORD"
+  echo "Root password: $MYSQL_ROOT_PASSWORD"
   echo
   '
 fi
