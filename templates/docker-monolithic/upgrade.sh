@@ -401,6 +401,12 @@ meili_requires_dump_upgrade() {
         exit 1
     fi
 
+    # Check if versions are equal - no dump needed if not upgrading
+    if [ "$from_version" = "$to_version" ]; then
+        echo "DEBUG: No dump required - versions are identical (no upgrade needed)" >&2
+        return 1  # false - no dump required
+    fi
+
     # Check version format (basic validation)
     if ! echo "$from_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
         echo "WARNING: from_version '$from_version' doesn't match expected format (x.y.z)" >&2
