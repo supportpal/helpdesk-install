@@ -37,7 +37,7 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-COMPOSE_FILE_DOWNLOAD_URL="https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/docker-compose.yml"
+COMPOSE_FILE_DOWNLOAD_URL="https://raw.githubusercontent.com/supportpal/helpdesk-install/${ref}/templates/docker-monolithic/docker-compose.yml"
 
 # usage: version_ge <installed_version> <minimum_version>
 version_ge() {
@@ -133,10 +133,11 @@ create_meilisearch_dump_pre_upgrade() {
 
     # Check if Meilisearch is running with timeout
     echo "Checking Meilisearch health status..."
-    local start_time=$(date +%s)
+    local start_time current_time elapsed
+    start_time=$(date +%s)
     while true; do
-        local current_time=$(date +%s)
-        local elapsed=$((current_time - start_time))
+        current_time=$(date +%s)
+        elapsed=$((current_time - start_time))
 
         if (( elapsed >= health_check_timeout )); then
             echo "ERROR: Timeout waiting for Meilisearch to become healthy (${health_check_timeout}s)" >&2
@@ -181,8 +182,8 @@ create_meilisearch_dump_pre_upgrade() {
     echo "Monitoring dump progress..."
     start_time=$(date +%s)
     while true; do
-        local current_time=$(date +%s)
-        local elapsed=$((current_time - start_time))
+        current_time=$(date +%s)
+        elapsed=$((current_time - start_time))
 
         if (( elapsed >= dump_timeout )); then
             echo "ERROR: Timeout waiting for dump to complete (${dump_timeout}s)" >&2
@@ -252,17 +253,18 @@ create_meilisearch_dump_pre_upgrade() {
 # Usage: get_meilisearch_version <container_id>
 get_meilisearch_version() {
     local CID="$1"
-    local version_json="" start_ts=$(date +%s) retry_count=0 max_retries=10
+    local version_json="" start_ts retry_count=0 max_retries=10 now elapsed
     local timeout="${TIMEOUT:-180}"
     local retry_delay="${RETRY_DELAY:-3}"
+    start_ts=$(date +%s)
 
     echo "DEBUG: Getting Meilisearch version from container: $CID" >&2
     echo "DEBUG: Timeout: ${timeout}s, Retry delay: ${retry_delay}s" >&2
 
     # Poll the version endpoint inside the container until it succeeds or times out.
     while true; do
-        local now=$(date +%s)
-        local elapsed=$((now - start_ts))
+        now=$(date +%s)
+        elapsed=$((now - start_ts))
 
         # Check if container is still running
         if ! docker ps -q --no-trunc | grep -q "$CID"; then
