@@ -59,6 +59,7 @@ echo "Searching ${LAST_BACKUP_DIR}/ directory for backups..."
 # Collect all matching backup files into an array
 backup_files=()
 for pattern in "app-*.tar.gz" "app-*.tar"; do
+    # shellcheck disable=SC2086
     for file in "${LAST_BACKUP_DIR}/"${pattern}; do
         if [[ -f "$file" ]]; then
             backup_files+=("$file")
@@ -84,7 +85,7 @@ echo "Found ${LAST_BACKUP_FILE}..."
 
 # List the contents of the archive, and if it contains "docker-files" then restore those files.
 TAR_LIST_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "t")
-if tar -$TAR_LIST_FLAGS "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | grep -qs "^docker-files.tar.gz"; then
+if tar "-$TAR_LIST_FLAGS" "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | grep -qs "^docker-files.tar.gz"; then
   PARENT_DIR="$(realpath "$(pwd)/../")"
   RESTORE_PATH="${PARENT_DIR}/supportpal_$(date +%s)_$RANDOM"
 
@@ -123,7 +124,7 @@ if tar -$TAR_LIST_FLAGS "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | gre
   TAR_EXTRACT_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "x")
   mkdir -p "$RESTORE_PATH"
   cp "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" "$RESTORE_PATH"
-  (cd "$RESTORE_PATH" && tar -$TAR_EXTRACT_FLAGS "$LAST_BACKUP_FILE" docker-files.tar.gz)
+  (cd "$RESTORE_PATH" && tar "-$TAR_EXTRACT_FLAGS" "$LAST_BACKUP_FILE" docker-files.tar.gz)
   (cd "$RESTORE_PATH" && tar -xzf docker-files.tar.gz && rm -f docker-files.tar.gz)
 
   cd "$RESTORE_PATH"
@@ -204,4 +205,6 @@ execute_command "docker compose up -d"
 if [[ -n "${RESTORE_PATH+x}" ]]; then
   echo
   echo "Successfully restored to $RESTORE_PATH"
+
+  rm -f "$RESTORE_PATH/$LAST_BACKUP_FILE"
 fi
