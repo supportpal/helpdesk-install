@@ -56,14 +56,22 @@ fi
 echo "Searching ${LAST_BACKUP_DIR}/ directory for backups..."
 
 # Search for the most recent .tar.gz or .tar file
-LAST_BACKUP_FILE_PATH=""
+# Collect all matching backup files into an array
+backup_files=()
 for pattern in "app-*.tar.gz" "app-*.tar"; do
-    files=$(find "${LAST_BACKUP_DIR}/" -maxdepth 1 -type f -name "${pattern}" -printf '%T@ %p\n' 2>/dev/null | sort -nr | awk '{print $2}')
-    if [[ -n "$files" ]]; then
-        LAST_BACKUP_FILE_PATH=$(printf '%s\n%s' "$LAST_BACKUP_FILE_PATH" "$files" | sort -r | head -n1)
-    fi
+    for file in "${LAST_BACKUP_DIR}/"${pattern}; do
+        if [[ -f "$file" ]]; then
+            backup_files+=("$file")
+        fi
+    done
 done
 
+# Select the most recent backup file
+if [[ ${#backup_files[@]} -gt 0 ]]; then
+    LAST_BACKUP_FILE_PATH=$(printf '%s\n' "${backup_files[@]}" | sort -r | head -n1)
+else
+    LAST_BACKUP_FILE_PATH=""
+fi
 if [[ ! -f "${LAST_BACKUP_FILE_PATH}" ]]; then
   echo "No backup files found. Add your backup to the ${LAST_BACKUP_DIR}/ directory and try again."; exit 1
 fi
