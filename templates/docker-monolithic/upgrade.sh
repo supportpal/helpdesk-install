@@ -374,6 +374,10 @@ get_next_meilisearch_version() {
     }
     trap cleanup EXIT INT TERM
 
+    # Give the container time to initialize before starting health checks
+    echo "DEBUG: Waiting 60s for container initialization..." >&2
+    sleep 60
+
     local version
     if ! version="$(get_meilisearch_version "$CID")"; then
         echo "ERROR: Failed to get Meilisearch version from temporary container" >&2
