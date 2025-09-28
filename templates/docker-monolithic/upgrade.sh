@@ -219,11 +219,6 @@ create_meilisearch_dump_pre_upgrade() {
         case "$task_status" in
             succeeded)
                 echo "✓ Pre-upgrade dump created successfully in ${elapsed}s"
-
-                # Create a marker file to indicate pre-upgrade dump was created
-                if ! docker compose exec -T -u meilisearch supportpal touch "/meilisearch/.pre_upgrade_dump_created" 2>/dev/null; then
-                    echo "WARNING: Failed to create dump marker file (non-critical)" >&2
-                fi
                 return 0
                 ;;
             failed)
@@ -250,85 +245,42 @@ create_meilisearch_dump_pre_upgrade() {
     done
 }
 
-# Usage: get_meilisearch_version <container_id>
-get_meilisearch_version() {
-    local CID="$1"
-    local version_json="" start_ts retry_count=0 max_retries=10 now elapsed
-    local timeout="${TIMEOUT:-180}"
-    local retry_delay="${RETRY_DELAY:-3}"
-    start_ts=$(date +%s)
-
-    echo "DEBUG: Getting Meilisearch version from container: $CID" >&2
-    echo "DEBUG: Timeout: ${timeout}s, Retry delay: ${retry_delay}s" >&2
-
-    # Poll the version endpoint inside the container until it succeeds or times out.
-    while true; do
-        now=$(date +%s)
-        elapsed=$((now - start_ts))
-
-        # Check if container is still running
-        if ! docker ps -q --no-trunc | grep -q "$CID"; then
-            echo "ERROR: Container $CID exited before Meilisearch became ready (after ${elapsed}s)" >&2
-            echo "DEBUG: Check container logs: docker logs $CID" >&2
-            exit 1
-        fi
-
-        # Try to get version with detailed error handling
-        echo "DEBUG: Attempting to get Meilisearch version (attempt $((retry_count + 1)), ${elapsed}s elapsed)" >&2
-
-        if version_json="$(docker exec "$CID" bash -lc 'source <(sudo cat /etc/container_environment.sh) 2>/dev/null; curl -fsS -X GET "$SUPPORTPAL_MEILISEARCH_HOST/version" -H "Authorization: Bearer $MEILI_MASTER_KEY"' 2>&1)"; then
-            echo "DEBUG: Successfully retrieved version response" >&2
-            break
-        else
-            retry_count=$((retry_count + 1))
-            echo "DEBUG: Failed to get version (attempt $retry_count/$max_retries)" >&2
-            echo "DEBUG: Response: $version_json" >&2
-
-            if (( retry_count >= max_retries )); then
-                echo "ERROR: Max retries ($max_retries) exceeded while trying to get Meilisearch version" >&2
-                echo "DEBUG: Container logs:" >&2
-                docker logs --tail 20 "$CID" >&2 || true
-                exit 1
-            fi
-        fi
-
-        if (( elapsed >= timeout )); then
-            echo "ERROR: Timed out waiting for Meilisearch to become ready (${timeout}s)" >&2
-            echo "DEBUG: Container is running but Meilisearch API is not responding" >&2
-            echo "DEBUG: Container logs:" >&2
-            docker logs --tail 30 "$CID" >&2 || true
-            exit 1
-        fi
-
-        echo "DEBUG: Waiting ${retry_delay}s before next attempt..." >&2
-        sleep "$retry_delay"
-    done
-
-    echo "DEBUG: Raw version response: $version_json" >&2
-
-    # Extract pkgVersion from the JSON with better error handling
+# Helper function to parse version from meilisearch --version output
+parse_meilisearch_version() {
+    local version_output="$1"
     local pkgVersion
-    if ! pkgVersion="$(echo "$version_json" | grep -oP '"pkgVersion"\s*:\s*"\K[^"]+')" || [ -z "${pkgVersion:-}" ]; then
-        echo "ERROR: Failed to parse pkgVersion from Meilisearch version response" >&2
-        echo "DEBUG: Expected JSON format: {\"pkgVersion\":\"1.x.x\",...}" >&2
-        echo "DEBUG: Actual response: $version_json" >&2
 
-        # Try alternative parsing methods
-        local alt_version
-        if alt_version="$(echo "$version_json" | sed -n 's/.*"pkgVersion"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"; then
-            if [ -n "$alt_version" ]; then
-                echo "DEBUG: Alternative parsing succeeded: $alt_version" >&2
-                pkgVersion="$alt_version"
-            else
-                exit 1
-            fi
-        else
-            exit 1
-        fi
+    echo "DEBUG: Raw version output: $version_output" >&2
+
+    # Extract version number from output like "meilisearch 1.10.3"
+    if ! pkgVersion="$(echo "$version_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"; then
+        echo "ERROR: Failed to parse version from meilisearch --version output" >&2
+        echo "DEBUG: Expected format: 'meilisearch x.y.z'" >&2
+        echo "DEBUG: Actual output: $version_output" >&2
+        exit 1
     fi
 
     echo "DEBUG: Extracted Meilisearch version: $pkgVersion" >&2
     echo "$pkgVersion"
+}
+
+# Usage: get_current_meilisearch_version <container_id>
+get_current_meilisearch_version() {
+    local CID="$1"
+    local version
+
+    echo "DEBUG: Getting Meilisearch version from container: $CID" >&2
+
+    # Get version directly using meilisearch --version command
+    if ! version="$(docker exec "$CID" meilisearch --version 2>&1)"; then
+        echo "ERROR: Failed to get Meilisearch version from container $CID" >&2
+        echo "DEBUG: Make sure the container is running and has meilisearch binary" >&2
+        echo "DEBUG: Container logs:" >&2
+        docker logs --tail 10 "$CID" >&2 || true
+        exit 1
+    fi
+
+    parse_meilisearch_version "$version"
 }
 
 get_next_meilisearch_version() {
@@ -351,42 +303,18 @@ get_next_meilisearch_version() {
 
     echo "DEBUG: Found image: $IMAGE" >&2
 
-    local TIMEOUT="${TIMEOUT:-180}"        # seconds to wait for Meilisearch
-    local RETRY_DELAY="${RETRY_DELAY:-3}"  # seconds between retries
-
-    echo "DEBUG: Starting temporary container to get Meilisearch version..." >&2
-
-    # Start the container detached; --rm ensures removal after it exits.
-    local CID
-    if ! CID="$(docker run -d --rm "$IMAGE" 2>&1)"; then
-        echo "ERROR: Failed to start container with image: $IMAGE" >&2
-        echo "DEBUG: Docker run output: $CID" >&2
-        echo "DEBUG: Check if the image exists and is accessible" >&2
-        exit 1
-    fi
-
-    echo "DEBUG: Started temporary container: $CID" >&2
-
-    cleanup() {
-        echo "DEBUG: Cleaning up temporary container: $CID" >&2
-        # Stop the container; with --rm it will be removed automatically.
-        docker stop -t 5 "$CID" >/dev/null 2>&1 || true
-    }
-    trap cleanup EXIT INT TERM
-
-    # Give the container time to initialize before starting health checks
-    echo "DEBUG: Waiting 60s for container initialization..." >&2
-    sleep 60
+    # Get version directly using meilisearch --version without starting the full container
+    echo "DEBUG: Getting Meilisearch version from image..." >&2
 
     local version
-    if ! version="$(get_meilisearch_version "$CID")"; then
-        echo "ERROR: Failed to get Meilisearch version from temporary container" >&2
-        cleanup
+    if ! version="$(docker run --rm --entrypoint meilisearch "$IMAGE" --version 2>&1)"; then
+        echo "ERROR: Failed to get Meilisearch version from image: $IMAGE" >&2
+        echo "DEBUG: Check if the image exists and contains meilisearch binary" >&2
+        echo "DEBUG: Docker run output: $version" >&2
         exit 1
     fi
 
-    echo "DEBUG: Successfully retrieved next Meilisearch version: $version" >&2
-    echo "$version"
+    parse_meilisearch_version "$version"
 }
 
 # Check if a version requires data dumping for upgrade
@@ -456,7 +384,7 @@ upgrade() {
     echo "DEBUG: Found supportpal container: $current_container_id" >&2
 
     local current_meili_version
-    if ! current_meili_version="$(get_meilisearch_version "$current_container_id")"; then
+    if ! current_meili_version="$(get_current_meilisearch_version "$current_container_id")"; then
         echo "ERROR: Failed to get current Meilisearch version" >&2
         echo "DEBUG: Check if Meilisearch is properly configured in the supportpal container" >&2
         exit 1
