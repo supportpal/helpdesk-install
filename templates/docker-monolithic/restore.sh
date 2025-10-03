@@ -36,6 +36,18 @@ execute_command() {
     fi
 }
 
+# Function to detect compression and return appropriate tar flags
+get_tar_flags() {
+    local file="$1"
+    local operation="$2"  # 't' for list, 'x' for extract
+
+    if [[ "$file" == *.tar.gz ]]; then
+        echo "${operation}zf"
+    else
+        echo "${operation}f"
+    fi
+}
+
 LAST_BACKUP_DIR="$(pwd)/backup"
 if [[ ! -d "${LAST_BACKUP_DIR}" ]]; then
   echo "The ${LAST_BACKUP_DIR}/ directory does not exist. Create the directory, add your backup file to it and try again."; exit 1
@@ -43,8 +55,24 @@ fi
 
 echo "Searching ${LAST_BACKUP_DIR}/ directory for backups..."
 
-# shellcheck disable=SC2012
-LAST_BACKUP_FILE_PATH="$(ls -1t "${LAST_BACKUP_DIR}"/app-*.tar.gz | head -n1)"
+# Search for the most recent .tar.gz or .tar file
+# Collect all matching backup files into an array
+backup_files=()
+for pattern in "app-*.tar.gz" "app-*.tar"; do
+    # shellcheck disable=SC2086
+    for file in "${LAST_BACKUP_DIR}/"${pattern}; do
+        if [[ -f "$file" ]]; then
+            backup_files+=("$file")
+        fi
+    done
+done
+
+# Select the most recent backup file
+if [[ ${#backup_files[@]} -gt 0 ]]; then
+    LAST_BACKUP_FILE_PATH=$(printf '%s\n' "${backup_files[@]}" | sort -r | head -n1)
+else
+    LAST_BACKUP_FILE_PATH=""
+fi
 if [[ ! -f "${LAST_BACKUP_FILE_PATH}" ]]; then
   echo "No backup files found. Add your backup to the ${LAST_BACKUP_DIR}/ directory and try again."; exit 1
 fi
@@ -56,7 +84,8 @@ TEMP_BACKUP_DIR="/tmp/tmp-backups/${TIMESTAMP}"
 echo "Found ${LAST_BACKUP_FILE}..."
 
 # List the contents of the archive, and if it contains "docker-files" then restore those files.
-if tar -tzf "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | grep -qs "^docker-files.tar.gz"; then
+TAR_LIST_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "t")
+if tar "-$TAR_LIST_FLAGS" "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | grep -qs "^docker-files.tar.gz"; then
   PARENT_DIR="$(realpath "$(pwd)/../")"
   RESTORE_PATH="${PARENT_DIR}/supportpal_$(date +%s)_$RANDOM"
 
@@ -92,9 +121,10 @@ if tar -tzf "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | grep -qs "^dock
   echo "Restoring docker files to $RESTORE_PATH..."
 
   # Extract docker-files.tar.gz from the backup file to the restore path.
+  TAR_EXTRACT_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "x")
   mkdir -p "$RESTORE_PATH"
   cp "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" "$RESTORE_PATH"
-  (cd "$RESTORE_PATH" && tar -xzf "$LAST_BACKUP_FILE" docker-files.tar.gz)
+  (cd "$RESTORE_PATH" && tar "-$TAR_EXTRACT_FLAGS" "$LAST_BACKUP_FILE" docker-files.tar.gz)
   (cd "$RESTORE_PATH" && tar -xzf docker-files.tar.gz && rm -f docker-files.tar.gz)
 
   cd "$RESTORE_PATH"
@@ -149,7 +179,8 @@ echo "Restoring..."
 
 docker compose exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}"
 execute_command "docker cp ""${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}"" ""supportpal:${TEMP_BACKUP_DIR}/"""
-TAR_OUTPUT=$(docker compose exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -xvzf ${LAST_BACKUP_FILE}")
+TAR_EXTRACT_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "xv")
+TAR_OUTPUT=$(docker compose exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -${TAR_EXTRACT_FLAGS} ${LAST_BACKUP_FILE}")
 docker compose exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force"
 
 # If backup generated via docker, restore volumes.
@@ -174,4 +205,6 @@ execute_command "docker compose up -d"
 if [[ -n "${RESTORE_PATH+x}" ]]; then
   echo
   echo "Successfully restored to $RESTORE_PATH"
+
+  rm -f "$RESTORE_PATH/$LAST_BACKUP_FILE"
 fi

@@ -56,3 +56,16 @@ expect "Password*:*"
 send -- "$password\r"
 
 expect eof
+
+# Capture the exit status of the spawned process
+catch wait result
+set exit_code [lindex $result 3]
+
+# Check if the restore script exited successfully
+if {$exit_code == 0} {
+    puts "Restore completed successfully with exit code 0"
+    exit 0
+} else {
+    puts "ERROR: Restore failed with exit code $exit_code"
+    exit 1
+}
