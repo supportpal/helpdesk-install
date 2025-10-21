@@ -40,7 +40,7 @@ user_password=
 # php-fpm
 install_path='/var/www/supportpal'
 log_path='/var/log/supportpal'
-socket_path='/var/run/supportpal.sock'
+socket_path='/run/supportpal.sock'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -430,6 +430,35 @@ install_apache_deb() {
   systemd restart apache2
 }
 
+configure_logrotate() {
+  msg "info" "Configuring logrotate for SupportPal logs..."
+
+  install logrotate
+
+  LOGROTATE_CONFIG="/etc/logrotate.d/supportpal"
+  backup "$LOGROTATE_CONFIG"
+
+  echo "${log_path}/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 $(if [[ $os_type == 'rhel' ]]; then echo "apache apache"; else echo "www-data www-data"; fi)
+    sharedscripts
+    postrotate
+        if [[ $os_type == 'rhel' ]]; then
+            /bin/systemctl reload httpd.service > /dev/null 2>/dev/null || true
+        else
+            /usr/sbin/invoke-rc.d apache2 reload > /dev/null 2>&1 || true
+        fi
+    endscript
+}" > "$LOGROTATE_CONFIG"
+
+  msg "info" "Logrotate configuration created at $LOGROTATE_CONFIG"
+}
+
 install_apache() {
   msg "info" "Configuring Apache2..."
 
@@ -440,6 +469,8 @@ install_apache() {
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     install_apache_deb
   fi
+
+  configure_logrotate
 
   install_php
 }
