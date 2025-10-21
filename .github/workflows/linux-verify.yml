@@ -23,8 +23,8 @@ jobs:
           - quay.io/centos/centos:stream10
           - ubuntu:22.04
           - ubuntu:24.04
-          - debian:11
           - debian:12
+          - debian:13
 
     steps:
       - uses: actions/checkout@v5
