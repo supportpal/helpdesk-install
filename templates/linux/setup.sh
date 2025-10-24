@@ -519,7 +519,7 @@ install_mysql() {
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
 
-    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb
+    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.35-1_all.deb
     dpkg -i mysql-apt-config.deb && apt-get update
     rm mysql-apt-config.deb
   fi
@@ -556,7 +556,7 @@ install_mysql() {
     sleep 1
   done
 
-  mysql --connect-expired-password --user='root' --password="${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}'; FLUSH PRIVILEGES;"
+  mysql --connect-expired-password --user='root' --password="${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '${root_password}'; FLUSH PRIVILEGES;"
   if [[ $os_type == 'rhel' ]]; then
     mysql --user="root" --password="${root_password}" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
   fi
