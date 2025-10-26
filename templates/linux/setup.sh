@@ -40,7 +40,7 @@ user_password=
 # php-fpm
 install_path='/var/www/supportpal'
 log_path='/var/log/supportpal'
-socket_path='/var/run/supportpal.sock'
+socket_path='/run/supportpal.sock'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
@@ -431,6 +431,35 @@ install_apache_deb() {
   systemd restart apache2
 }
 
+configure_logrotate() {
+  msg "info" "Configuring logrotate for SupportPal logs..."
+
+  install logrotate
+
+  LOGROTATE_CONFIG="/etc/logrotate.d/supportpal"
+  backup "$LOGROTATE_CONFIG"
+
+  echo "${log_path}/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 0640 $(if [[ $os_type == 'rhel' ]]; then echo "apache apache"; else echo "www-data www-data"; fi)
+    sharedscripts
+    postrotate
+        if [[ $os_type == 'rhel' ]]; then
+            /bin/systemctl reload httpd.service > /dev/null 2>/dev/null || true
+        else
+            /usr/sbin/invoke-rc.d apache2 reload > /dev/null 2>&1 || true
+        fi
+    endscript
+}" > "$LOGROTATE_CONFIG"
+
+  msg "info" "Logrotate configuration created at $LOGROTATE_CONFIG"
+}
+
 install_apache() {
   msg "info" "Configuring Apache2..."
 
@@ -441,6 +470,8 @@ install_apache() {
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     install_apache_deb
   fi
+
+  configure_logrotate
 
   install_php
 }
@@ -489,7 +520,7 @@ install_mysql() {
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
 
-    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb
+    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.35-1_all.deb
     dpkg -i mysql-apt-config.deb && apt-get update
     rm mysql-apt-config.deb
   fi
@@ -526,7 +557,7 @@ install_mysql() {
     sleep 1
   done
 
-  mysql --connect-expired-password --user='root' --password="${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${root_password}'; FLUSH PRIVILEGES;"
+  mysql --connect-expired-password --user='root' --password="${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '${root_password}'; FLUSH PRIVILEGES;"
   if [[ $os_type == 'rhel' ]]; then
     mysql --user="root" --password="${root_password}" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
   fi
