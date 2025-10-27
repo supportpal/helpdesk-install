@@ -1,8 +1,6 @@
 #!/bin/bash
 set -eu -o pipefail
 
-version="0.6.0"
-
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL 9, 10
     * Ubuntu 22.04 LTS (jammy) & 24.04 LTS (noble)
@@ -14,8 +12,6 @@ $supported
 
 Options:
     --help                  Display this help and exit.
-
-    --version               Output the script version and exit.
 
     --overwrite             Permanently delete existing configurations, databases, files.
 
@@ -44,10 +40,6 @@ socket_path='/run/supportpal.sock'
 
 while [[ "$#" -gt 0 ]]; do
   case $1 in
-  --version)
-    echo "$version"
-    exit 0
-    ;;
   --help)
     echo "$usage"
     exit 0
