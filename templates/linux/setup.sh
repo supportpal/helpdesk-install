@@ -6,7 +6,7 @@ version="0.6.0"
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL 9, 10
     * Ubuntu 22.04 LTS (jammy) & 24.04 LTS (noble)
-    * Debian 11 (bullseye) & 12 (bookworm)"
+    * Debian 12 (bookworm) & 13 (trixie)"
 
 usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
 
@@ -92,9 +92,10 @@ identify_os() {
       debian_version=$(</etc/debian_version)
       case $debian_version in
       9*) error 'Debian version 9 (stretch) has reached End of Life and is no longer supported.' ;;
-      10*) os_version=buster ;;
-      11*) os_version=bullseye ;;
+      10*) error 'Debian version 10 (buster) has reached End of Life and is no longer supported.' ;;
+      11*) error 'Debian version 11 (bullseye) has reached End of Life and is no longer supported.' ;;
       12*) os_version=bookworm ;;
+      13*) os_version=trixie ;;
       *) error "Detected Debian but version ($debian_version) is not supported." "$supported" ;;
       esac
       ;;
@@ -519,7 +520,7 @@ install_mysql() {
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
 
-    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.35-1_all.deb
+    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.36-1_all.deb
     dpkg -i mysql-apt-config.deb && apt-get update
     rm mysql-apt-config.deb
   fi
