@@ -72,6 +72,9 @@ if ! $online; then
   "
 fi
 
+# Ensure backup directory exists before using TMP_DIR
+mkdir -p "${ABS_BACKUP_PATH}/"
+
 echo 'Backing up filesystem...'
 mkdir -p "${TMP_DIR}/filesystem-${TIMESTAMP}/config"
 docker cp supportpal:/var/www/supportpal/config/production "${TMP_DIR}/filesystem-${TIMESTAMP}/config/"
@@ -103,7 +106,6 @@ echo "Backing up current working directory: $(pwd)..."
 tar -czf "$TMP_DIR/docker-files.tar.gz" --exclude="./${BACKUP_DIR}" .
 
 # Combine backup files.
-mkdir -p "${ABS_BACKUP_PATH}/"
 (cd "$TMP_DIR" && tar -czf "${ABS_BACKUP_PATH}/${APP_BACKUP_NAME}" "${FILESYSTEM_BACKUP_NAME}" "${DB_FILE_NAME}" volumes-monolithic/ docker-files.tar.gz)
 
 # Cleanup (now only needs to clean the host TMP_DIR, container cleanup is minimal)
