@@ -77,29 +77,29 @@ mkdir -p "${ABS_BACKUP_PATH}/"
 
 echo 'Backing up filesystem...'
 mkdir -p "${TMP_DIR}/filesystem-${TIMESTAMP}/config"
-docker cp supportpal:/var/www/supportpal/config/production "${TMP_DIR}/filesystem-${TIMESTAMP}/config/"
-docker cp supportpal:/var/www/supportpal/storage "${TMP_DIR}/filesystem-${TIMESTAMP}/"
-docker cp supportpal:/var/www/supportpal/addons "${TMP_DIR}/filesystem-${TIMESTAMP}/"
+docker cp supportpal:/var/www/supportpal/config/production "${TMP_DIR}/filesystem-${TIMESTAMP}/config/" || { echo "error: failed to copy config/production from container"; exit 1; }
+docker cp supportpal:/var/www/supportpal/storage "${TMP_DIR}/filesystem-${TIMESTAMP}/" || { echo "error: failed to copy storage from container"; exit 1; }
+docker cp supportpal:/var/www/supportpal/addons "${TMP_DIR}/filesystem-${TIMESTAMP}/" || { echo "error: failed to copy addons from container"; exit 1; }
 (cd "${TMP_DIR}" && tar -czf "${FILESYSTEM_BACKUP_NAME}" "filesystem-${TIMESTAMP}" && rm -rf "filesystem-${TIMESTAMP}")
 
 echo 'Backing up database...'
 DB_BACKUP_PATH=$(docker compose exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan db:backup --store-local | grep -oE '/var/www/supportpal/.*/database-.*'")
 DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | xargs basename)
-docker cp "supportpal:${DB_BACKUP_PATH}" "${TMP_DIR}/"
+docker cp "supportpal:${DB_BACKUP_PATH}" "${TMP_DIR}/" || { echo "error: failed to copy database backup from container"; exit 1; }
 docker compose exec supportpal bash -c "rm ${DB_BACKUP_PATH}"
 
 echo 'Backing up volume data...'
 mkdir -p "${TMP_DIR}/volumes-monolithic/cache"
 mkdir -p "${TMP_DIR}/volumes-monolithic/caddy"
-docker cp supportpal:/redis-data "${TMP_DIR}/volumes-monolithic/cache/"
-docker cp supportpal:/caddy "${TMP_DIR}/volumes-monolithic/caddy/"
+docker cp supportpal:/redis-data "${TMP_DIR}/volumes-monolithic/cache/" || { echo "error: failed to copy redis-data from container"; exit 1; }
+docker cp supportpal:/caddy "${TMP_DIR}/volumes-monolithic/caddy/" || { echo "error: failed to copy caddy from container"; exit 1; }
 if docker compose exec -u root supportpal bash -c "test -d /meilisearch"; then
   mkdir -p "${TMP_DIR}/volumes-monolithic/meilisearch"
-  docker cp supportpal:/meilisearch "${TMP_DIR}/volumes-monolithic/meilisearch/"
+  docker cp supportpal:/meilisearch "${TMP_DIR}/volumes-monolithic/meilisearch/" || { echo "error: failed to copy meilisearch from container"; exit 1; }
 fi
 if docker compose exec -u root supportpal bash -c "test -d /qdrant"; then
   mkdir -p "${TMP_DIR}/volumes-monolithic/qdrant"
-  docker cp supportpal:/qdrant "${TMP_DIR}/volumes-monolithic/qdrant/"
+  docker cp supportpal:/qdrant "${TMP_DIR}/volumes-monolithic/qdrant/" || { echo "error: failed to copy qdrant from container"; exit 1; }
 fi
 
 echo "Backing up current working directory: $(pwd)..."
