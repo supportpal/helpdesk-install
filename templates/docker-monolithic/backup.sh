@@ -88,15 +88,15 @@ docker compose exec supportpal bash -c "rm ${DB_BACKUP_PATH}"
 echo 'Backing up volume data...'
 mkdir -p "${TMP_DIR}/volumes-monolithic/cache"
 mkdir -p "${TMP_DIR}/volumes-monolithic/caddy"
-docker cp supportpal:/redis-data/ "${TMP_DIR}/volumes-monolithic/cache/"
-docker cp supportpal:/caddy/ "${TMP_DIR}/volumes-monolithic/caddy/"
+docker cp supportpal:/redis-data "${TMP_DIR}/volumes-monolithic/cache/"
+docker cp supportpal:/caddy "${TMP_DIR}/volumes-monolithic/caddy/"
 if docker compose exec -u root supportpal bash -c "test -d /meilisearch"; then
   mkdir -p "${TMP_DIR}/volumes-monolithic/meilisearch"
-  docker cp supportpal:/meilisearch/ "${TMP_DIR}/volumes-monolithic/meilisearch/"
+  docker cp supportpal:/meilisearch "${TMP_DIR}/volumes-monolithic/meilisearch/"
 fi
 if docker compose exec -u root supportpal bash -c "test -d /qdrant"; then
   mkdir -p "${TMP_DIR}/volumes-monolithic/qdrant"
-  docker cp supportpal:/qdrant/ "${TMP_DIR}/volumes-monolithic/qdrant/"
+  docker cp supportpal:/qdrant "${TMP_DIR}/volumes-monolithic/qdrant/"
 fi
 
 echo "Backing up current working directory: $(pwd)..."
