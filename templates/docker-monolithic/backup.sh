@@ -42,7 +42,7 @@ execute_command() {
 BACKUP_DIR="backup"
 ABS_BACKUP_PATH="$(pwd)/${BACKUP_DIR}"
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
-TEMP_BACKUP_DIR="/tmp/tmp-backups/${TIMESTAMP}"
+TMP_DIR="${ABS_BACKUP_PATH}/tmp-${TIMESTAMP}"
 FILESYSTEM_BACKUP_NAME="filesystem-${TIMESTAMP}.tar.gz"
 APP_BACKUP_NAME="app-${TIMESTAMP}.tar.gz"
 
@@ -72,45 +72,43 @@ if ! $online; then
   "
 fi
 
+# Ensure backup directory exists before using TMP_DIR
+mkdir -p "${ABS_BACKUP_PATH}/"
+
 echo 'Backing up filesystem...'
-docker compose exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config/production" # create the farthest directory
-docker compose exec supportpal bash -c "cp -r /var/www/supportpal/config/production ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}/config"
-docker compose exec supportpal bash -c "cp -r /var/www/supportpal/storage ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}"
-docker compose exec supportpal bash -c "cp -r /var/www/supportpal/addons ${TEMP_BACKUP_DIR}/filesystem-${TIMESTAMP}"
-docker compose exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -czf ${FILESYSTEM_BACKUP_NAME} filesystem-${TIMESTAMP}"
+mkdir -p "${TMP_DIR}/filesystem-${TIMESTAMP}/config"
+docker cp supportpal:/var/www/supportpal/config/production "${TMP_DIR}/filesystem-${TIMESTAMP}/config/" || { echo "error: failed to copy config/production from container"; exit 1; }
+docker cp supportpal:/var/www/supportpal/storage "${TMP_DIR}/filesystem-${TIMESTAMP}/" || { echo "error: failed to copy storage from container"; exit 1; }
+docker cp supportpal:/var/www/supportpal/addons "${TMP_DIR}/filesystem-${TIMESTAMP}/" || { echo "error: failed to copy addons from container"; exit 1; }
+(cd "${TMP_DIR}" && tar -czf "${FILESYSTEM_BACKUP_NAME}" "filesystem-${TIMESTAMP}" && rm -rf "filesystem-${TIMESTAMP}")
 
 echo 'Backing up database...'
 DB_BACKUP_PATH=$(docker compose exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan db:backup --store-local | grep -oE '/var/www/supportpal/.*/database-.*'")
 DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | xargs basename)
-docker compose exec supportpal bash -c "mv ${DB_BACKUP_PATH} ${TEMP_BACKUP_DIR}/"
+docker cp "supportpal:${DB_BACKUP_PATH}" "${TMP_DIR}/" || { echo "error: failed to copy database backup from container"; exit 1; }
+docker compose exec supportpal bash -c "rm ${DB_BACKUP_PATH}"
 
 echo 'Backing up volume data...'
-docker compose exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/cache && cp -r /redis-data/ ${TEMP_BACKUP_DIR}/volumes-monolithic/cache"
-docker compose exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/caddy && cp -r /caddy/ ${TEMP_BACKUP_DIR}/volumes-monolithic/caddy"
+mkdir -p "${TMP_DIR}/volumes-monolithic/cache"
+mkdir -p "${TMP_DIR}/volumes-monolithic/caddy"
+docker cp supportpal:/redis-data "${TMP_DIR}/volumes-monolithic/cache/" || { echo "error: failed to copy redis-data from container"; exit 1; }
+docker cp supportpal:/caddy "${TMP_DIR}/volumes-monolithic/caddy/" || { echo "error: failed to copy caddy from container"; exit 1; }
 if docker compose exec -u root supportpal bash -c "test -d /meilisearch"; then
-  docker compose exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch && cp -r /meilisearch/ ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch"
+  mkdir -p "${TMP_DIR}/volumes-monolithic/meilisearch"
+  docker cp supportpal:/meilisearch "${TMP_DIR}/volumes-monolithic/meilisearch/" || { echo "error: failed to copy meilisearch from container"; exit 1; }
 fi
 if docker compose exec -u root supportpal bash -c "test -d /qdrant"; then
-    docker compose exec -u root supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}/volumes-monolithic/qdrant && cp -r /qdrant/ ${TEMP_BACKUP_DIR}/volumes-monolithic/qdrant"
+  mkdir -p "${TMP_DIR}/volumes-monolithic/qdrant"
+  docker cp supportpal:/qdrant "${TMP_DIR}/volumes-monolithic/qdrant/" || { echo "error: failed to copy qdrant from container"; exit 1; }
 fi
-
-TMP_DIR="/tmp/backup_$(date +%s)_$RANDOM"
-mkdir -p "$TMP_DIR"
 
 echo "Backing up current working directory: $(pwd)..."
 tar -czf "$TMP_DIR/docker-files.tar.gz" --exclude="./${BACKUP_DIR}" .
 
-# Copy files to host.
-execute_command "docker cp ""supportpal:${TEMP_BACKUP_DIR}/${FILESYSTEM_BACKUP_NAME}"" ""${TMP_DIR}"""
-execute_command "docker cp ""supportpal:${TEMP_BACKUP_DIR}/${DB_FILE_NAME}"" ""${TMP_DIR}"""
-execute_command "docker cp ""supportpal:${TEMP_BACKUP_DIR}/volumes-monolithic"" ""${TMP_DIR}"""
-
 # Combine backup files.
-mkdir -p "${ABS_BACKUP_PATH}/"
 (cd "$TMP_DIR" && tar -czf "${ABS_BACKUP_PATH}/${APP_BACKUP_NAME}" "${FILESYSTEM_BACKUP_NAME}" "${DB_FILE_NAME}" volumes-monolithic/ docker-files.tar.gz)
 
-# Cleanup.
-docker compose exec -u root supportpal bash -c "rm -rf ${TEMP_BACKUP_DIR}/"
+# Cleanup (now only needs to clean the host TMP_DIR, container cleanup is minimal)
 rm -rf "$TMP_DIR"
 
 echo "Backup created successfully at ${ABS_BACKUP_PATH}/${APP_BACKUP_NAME}"
