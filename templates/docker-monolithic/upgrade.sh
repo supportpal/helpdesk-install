@@ -109,140 +109,24 @@ update_env() {
     fi
 }
 
-create_meilisearch_dump_pre_upgrade() {
-    local MASTER_KEY BASE_URL dump_response task_uid task_status
-    local health_check_timeout=60 dump_timeout=300 retry_count=0 max_retries=30
+drop_meilisearch_data() {
+    echo "Preparing Meilisearch for upgrade..."
 
-    echo "Creating Meilisearch data dump with current version before upgrade..."
-
-    # Get Meilisearch configuration with error handling
-    echo "Retrieving Meilisearch configuration..."
-    if ! MASTER_KEY="$(docker compose exec supportpal bash -c 'source <(sudo cat /etc/container_environment.sh) && echo $MEILI_MASTER_KEY' 2>/dev/null)"; then
-        echo "ERROR: Failed to retrieve Meilisearch master key from container" >&2
-        echo "DEBUG: Ensure the supportpal container is running and environment variables are properly set" >&2
+    # Stop Meilisearch service
+    echo "Stopping Meilisearch service..."
+    if ! docker compose exec supportpal sv stop 00meilisearch; then
+        echo "ERROR: Failed to stop Meilisearch service" >&2
         exit 1
     fi
+    echo "✓ Meilisearch service stopped"
 
-    if ! BASE_URL="$(docker compose exec supportpal bash -c 'echo $SUPPORTPAL_MEILISEARCH_HOST' 2>/dev/null)"; then
-        echo "ERROR: Failed to retrieve Meilisearch host URL from container" >&2
-        echo "DEBUG: Ensure the supportpal container is running and SUPPORTPAL_MEILISEARCH_HOST is set" >&2
+    # Clear Meilisearch database directory (including hidden files)
+    echo "Clearing Meilisearch database directory..."
+    if ! docker compose exec supportpal bash -c 'source <(sudo cat /etc/container_environment.sh) && rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
+        echo "ERROR: Failed to clear Meilisearch database directory" >&2
         exit 1
     fi
-
-    echo "DEBUG: Using Meilisearch URL: $BASE_URL"
-
-    # Check if Meilisearch is running with timeout
-    echo "Checking Meilisearch health status..."
-    local start_time current_time elapsed
-    start_time=$(date +%s)
-    while true; do
-        current_time=$(date +%s)
-        elapsed=$((current_time - start_time))
-
-        if (( elapsed >= health_check_timeout )); then
-            echo "ERROR: Timeout waiting for Meilisearch to become healthy (${health_check_timeout}s)" >&2
-            echo "DEBUG: Check Meilisearch container logs: docker compose logs supportpal" >&2
-            exit 1
-        fi
-
-        if docker compose exec -T supportpal curl -fsS "$BASE_URL/health" -H "Authorization: Bearer $MASTER_KEY" >/dev/null 2>&1; then
-            echo "✓ Meilisearch is ready and healthy"
-            break
-        fi
-
-        echo "Waiting for Meilisearch to be ready... (${elapsed}/${health_check_timeout}s)"
-        sleep 2
-    done
-
-    # Create dump with detailed error handling
-    echo "Initiating Meilisearch dump creation..."
-    if ! dump_response=$(docker compose exec -T supportpal curl -fsS -X POST "$BASE_URL/dumps" \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $MASTER_KEY" 2>&1); then
-        echo "ERROR: Failed to initiate dump creation" >&2
-        echo "DEBUG: cURL response: $dump_response" >&2
-        echo "DEBUG: Check Meilisearch logs: docker compose exec supportpal tail -n 50 /var/log/meilisearch.log" >&2
-        exit 1
-    fi
-
-    echo "DEBUG: Dump API response: $dump_response"
-
-    task_uid=$(echo "$dump_response" | grep -o "\"taskUid\":[0-9]*" | cut -d: -f2)
-
-    if [ -z "$task_uid" ]; then
-        echo "ERROR: Failed to extract task UID from dump creation response" >&2
-        echo "DEBUG: Response was: $dump_response" >&2
-        echo "DEBUG: Expected format: {\"taskUid\":123,...}" >&2
-        exit 1
-    fi
-
-    echo "✓ Dump task created with UID: $task_uid"
-
-    # Wait for dump to complete with enhanced status reporting
-    echo "Monitoring dump progress..."
-    start_time=$(date +%s)
-    while true; do
-        current_time=$(date +%s)
-        elapsed=$((current_time - start_time))
-
-        if (( elapsed >= dump_timeout )); then
-            echo "ERROR: Timeout waiting for dump to complete (${dump_timeout}s)" >&2
-            echo "DEBUG: Check task status manually: curl -H 'Authorization: Bearer \$MASTER_KEY' $BASE_URL/tasks/$task_uid" >&2
-            exit 1
-        fi
-
-        if ! task_status=$(docker compose exec -T supportpal curl -fsS "$BASE_URL/tasks/$task_uid" \
-            -H "Authorization: Bearer $MASTER_KEY" 2>&1); then
-            echo "WARNING: Failed to check task status (attempt $((++retry_count))/$max_retries)" >&2
-            echo "DEBUG: Response: $task_status" >&2
-
-            if (( retry_count >= max_retries )); then
-                echo "ERROR: Max retries exceeded checking dump status" >&2
-                exit 1
-            fi
-
-            sleep 5
-            continue
-        fi
-
-        # Reset retry count on successful API call
-        retry_count=0
-
-        # Extract status with better error handling
-        if ! task_status=$(echo "$task_status" | grep -o "\"status\":\"[^\"]*\"" | cut -d: -f2 | tr -d "\""); then
-            echo "WARNING: Failed to parse task status from response" >&2
-            echo "DEBUG: Raw response: $task_status" >&2
-            sleep 5
-            continue
-        fi
-
-        case "$task_status" in
-            succeeded)
-                echo "✓ Pre-upgrade dump created successfully in ${elapsed}s"
-                return 0
-                ;;
-            failed)
-                echo "ERROR: Pre-upgrade dump creation failed" >&2
-
-                # Try to get error details
-                local error_details
-                if error_details=$(echo "$task_status" | grep -o "\"error\":\"[^\"]*\"" | cut -d: -f2 | tr -d "\""); then
-                    echo "DEBUG: Error details: $error_details" >&2
-                fi
-
-                echo "DEBUG: Check Meilisearch logs for more details: docker compose exec supportpal tail -n 100 /var/log/meilisearch.log" >&2
-                exit 1
-                ;;
-            enqueued|processing)
-                echo "Dump in progress... (${elapsed}s elapsed, status: $task_status)"
-                ;;
-            *)
-                echo "Dump status: $task_status (${elapsed}s elapsed)"
-                ;;
-        esac
-
-        sleep 5
-    done
+    echo "✓ Meilisearch database directory cleared"
 }
 
 # Helper function to parse version from meilisearch --version output
@@ -318,12 +202,12 @@ get_next_meilisearch_version() {
 }
 
 # Check if a version requires data dumping for upgrade
-meili_requires_dump_upgrade() {
+meili_requires_upgrade() {
     local MEILISEARCH_DUMPLESS_VERSION="1.12.0"
     local from_version="$1"
     local to_version="$2"
 
-    echo "DEBUG: Checking if Meilisearch dump is required for upgrade" >&2
+    echo "DEBUG: Checking if Meilisearch requires upgrading" >&2
     echo "DEBUG: Current version: $from_version" >&2
     echo "DEBUG: Target version: $to_version" >&2
     echo "DEBUG: Dumpless version threshold: $MEILISEARCH_DUMPLESS_VERSION" >&2
@@ -355,7 +239,7 @@ meili_requires_dump_upgrade() {
     comparison_result="$(printf '%s\n' "$from_version" "$MEILISEARCH_DUMPLESS_VERSION" | sort -V | head -n1)"
 
     if [ "$comparison_result" = "$from_version" ] && [ "$from_version" != "$MEILISEARCH_DUMPLESS_VERSION" ]; then
-        echo "DEBUG: Dump required - upgrading from pre-$MEILISEARCH_DUMPLESS_VERSION version" >&2
+        echo "DEBUG: Upgrading from pre-$MEILISEARCH_DUMPLESS_VERSION version" >&2
         return 0  # true - dump required
     else
         echo "DEBUG: No dump required - version $from_version >= $MEILISEARCH_DUMPLESS_VERSION" >&2
@@ -404,14 +288,12 @@ upgrade() {
     echo "✓ Target Meilisearch version: $next_meili_version"
 
     # Check if dump is required
-    if meili_requires_dump_upgrade "$current_meili_version" "$next_meili_version"; then
-        echo "✓ Meilisearch dump is required for this upgrade"
-        create_meilisearch_dump_pre_upgrade
-    else
-        echo "✓ No Meilisearch dump required for this upgrade"
+    if meili_requires_upgrade "$current_meili_version" "$next_meili_version"; then
+        echo "✓ Meilisearch upgrade is required."
+        echo "! The Meilisearch database will be dropped and re-indexed... cancel (CTRL+C) if you're not happy to proceed..."
+        sleep 5
+        drop_meilisearch_data
     fi
-
-    backup
 
     echo "Stopping containers..."
     if ! docker compose down -v; then
@@ -453,4 +335,5 @@ upgrade() {
 }
 
 check_docker_compose
+backup
 upgrade
