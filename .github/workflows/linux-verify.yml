@@ -27,7 +27,7 @@ jobs:
           - debian:13
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Shellcheck
         run: make shellcheck
       - name: Check distribution

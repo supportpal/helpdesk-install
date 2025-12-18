@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: create pull request
         run: gh pr create -t  "[Automated] Merge ${{ github.ref_name }} into master" -b "Automated Pull Request" -r bytestream -a bytestream --head ${{ github.ref_name }} --base master
