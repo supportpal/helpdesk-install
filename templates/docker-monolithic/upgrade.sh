@@ -145,7 +145,7 @@ drop_meilisearch_data() {
 
     # Stop Meilisearch service
     echo "Stopping Meilisearch service..."
-    if ! docker compose exec supportpal sv stop 00meilisearch; then
+    if ! docker compose exec supportpal sudo sv stop 00meilisearch; then
         error_exit "Failed to stop Meilisearch service"
     fi
     echo "✓ Meilisearch service stopped"
