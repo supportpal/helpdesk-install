@@ -152,7 +152,7 @@ drop_meilisearch_data() {
 
     # Clear Meilisearch database directory (including hidden files)
     echo "Clearing Meilisearch database directory..."
-    if ! docker compose exec supportpal bash -c 'source <(sudo cat /etc/container_environment.sh) && sudo rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
+    if ! docker compose exec supportpal bash -c 'source <(sudo cat /etc/container_environment.sh) && rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
         error_exit "Failed to clear Meilisearch database directory"
     fi
     echo "✓ Meilisearch database directory cleared"
@@ -295,10 +295,6 @@ upgrade() {
     fi
 
     echo "✓ Current Meilisearch version: $current_meili_version"
-
-    # Write Meilisearch version to file if it doesn't exist
-    echo "Recording current Meilisearch version..."
-    docker compose exec supportpal bash -c 'source <(sudo cat /etc/container_environment.sh) && [ ! -f "$MEILISEARCH_VERSION_FILE" ] && echo "'"$current_meili_version"'" | sudo tee "$MEILISEARCH_VERSION_FILE" > /dev/null' || true
 
     # Get next Meilisearch version with error handling
     echo "Checking target Meilisearch version..."
