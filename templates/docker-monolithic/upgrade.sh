@@ -1,6 +1,37 @@
 #!/bin/bash
 set -eu -o pipefail
 
+# Generate unique log filename
+generate_log_filename() {
+    local base_name="upgrade"
+    local ext="log"
+    local filename="${base_name}.${ext}"
+    local counter=1
+
+    while [ -f "$filename" ]; do
+        filename="${base_name}-${counter}.${ext}"
+        ((counter++))
+    done
+
+    echo "$filename"
+}
+
+# Initialize log file
+LOG_FILE="$(generate_log_filename)"
+touch "$LOG_FILE"
+
+# Log function - writes to log file
+log_debug() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"
+}
+
+# Error exit function - notifies user about log file
+error_exit() {
+    echo "ERROR: $1" >&2
+    echo "A debug log is available in: $LOG_FILE"
+    exit 1
+}
+
 usage="Options:
     -h,--help                  Display this help and exit.
     -r,--ref=5.x               Git ref (commit sha, ref name, tag) to run the script on.
@@ -115,16 +146,14 @@ drop_meilisearch_data() {
     # Stop Meilisearch service
     echo "Stopping Meilisearch service..."
     if ! docker compose exec supportpal sv stop 00meilisearch; then
-        echo "ERROR: Failed to stop Meilisearch service" >&2
-        exit 1
+        error_exit "Failed to stop Meilisearch service"
     fi
     echo "✓ Meilisearch service stopped"
 
     # Clear Meilisearch database directory (including hidden files)
     echo "Clearing Meilisearch database directory..."
     if ! docker compose exec supportpal bash -c 'source <(sudo cat /etc/container_environment.sh) && rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
-        echo "ERROR: Failed to clear Meilisearch database directory" >&2
-        exit 1
+        error_exit "Failed to clear Meilisearch database directory"
     fi
     echo "✓ Meilisearch database directory cleared"
 }
@@ -134,17 +163,16 @@ parse_meilisearch_version() {
     local version_output="$1"
     local pkgVersion
 
-    echo "DEBUG: Raw version output: $version_output" >&2
+    log_debug "Raw version output: $version_output"
 
     # Extract version number from output like "meilisearch 1.10.3"
     if ! pkgVersion="$(echo "$version_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"; then
-        echo "ERROR: Failed to parse version from meilisearch --version output" >&2
-        echo "DEBUG: Expected format: 'meilisearch x.y.z'" >&2
-        echo "DEBUG: Actual output: $version_output" >&2
-        exit 1
+        log_debug "Expected format: 'meilisearch x.y.z'"
+        log_debug "Actual output: $version_output"
+        error_exit "Failed to parse version from meilisearch --version output"
     fi
 
-    echo "DEBUG: Extracted Meilisearch version: $pkgVersion" >&2
+    log_debug "Extracted Meilisearch version: $pkgVersion"
     echo "$pkgVersion"
 }
 
@@ -153,49 +181,45 @@ get_current_meilisearch_version() {
     local CID="$1"
     local version
 
-    echo "DEBUG: Getting Meilisearch version from container: $CID" >&2
+    log_debug "Getting Meilisearch version from container: $CID"
 
     # Get version directly using meilisearch --version command
     if ! version="$(docker exec "$CID" meilisearch --version 2>&1)"; then
-        echo "ERROR: Failed to get Meilisearch version from container $CID" >&2
-        echo "DEBUG: Make sure the container is running and has meilisearch binary" >&2
-        echo "DEBUG: Container logs:" >&2
-        docker logs --tail 10 "$CID" >&2 || true
-        exit 1
+        log_debug "Make sure the container is running and has meilisearch binary"
+        log_debug "Container logs:"
+        docker logs --tail 10 "$CID" >> "$LOG_FILE" 2>&1 || true
+        error_exit "Failed to get Meilisearch version from container $CID"
     fi
 
     parse_meilisearch_version "$version"
 }
 
 get_next_meilisearch_version() {
-    echo "DEBUG: Fetching next Meilisearch version from docker-compose file..." >&2
-    echo "DEBUG: Download URL: $COMPOSE_FILE_DOWNLOAD_URL" >&2
+    log_debug "Fetching next Meilisearch version from docker-compose file..."
+    log_debug "Download URL: $COMPOSE_FILE_DOWNLOAD_URL"
 
     local IMAGE
     if ! IMAGE=$(curl -fsSL "${COMPOSE_FILE_DOWNLOAD_URL}" 2>&1 | grep -m1 -E '^[[:space:]]*image:' | sed -E "s/^[[:space:]]*image:[[:space:]]*//; s/^['\"]//; s/['\"]$//"); then
-        echo "ERROR: Failed to fetch or parse docker-compose file" >&2
-        echo "DEBUG: URL: $COMPOSE_FILE_DOWNLOAD_URL" >&2
-        echo "DEBUG: Check if the URL is accessible and contains valid YAML" >&2
-        exit 1
+        log_debug "URL: $COMPOSE_FILE_DOWNLOAD_URL"
+        log_debug "Check if the URL is accessible and contains valid YAML"
+        error_exit "Failed to fetch or parse docker-compose file"
     fi
 
     if [ -z "$IMAGE" ]; then
-        echo "ERROR: Could not extract image name from docker-compose file" >&2
-        echo "DEBUG: Expected to find a line like 'image: supportpal/helpdesk:latest'" >&2
-        exit 1
+        log_debug "Expected to find a line like 'image: supportpal/helpdesk:latest'"
+        error_exit "Could not extract image name from docker-compose file"
     fi
 
-    echo "DEBUG: Found image: $IMAGE" >&2
+    log_debug "Found image: $IMAGE"
 
     # Get version directly using meilisearch --version without starting the full container
-    echo "DEBUG: Getting Meilisearch version from image..." >&2
+    log_debug "Getting Meilisearch version from image..."
 
     local version
     if ! version="$(docker run --rm --entrypoint meilisearch "$IMAGE" --version 2>&1)"; then
-        echo "ERROR: Failed to get Meilisearch version from image: $IMAGE" >&2
-        echo "DEBUG: Check if the image exists and contains meilisearch binary" >&2
-        echo "DEBUG: Docker run output: $version" >&2
-        exit 1
+        log_debug "Check if the image exists and contains meilisearch binary"
+        log_debug "Docker run output: $version"
+        error_exit "Failed to get Meilisearch version from image: $IMAGE"
     fi
 
     parse_meilisearch_version "$version"
@@ -207,31 +231,30 @@ meili_requires_upgrade() {
     local from_version="$1"
     local to_version="$2"
 
-    echo "DEBUG: Checking if Meilisearch requires upgrading" >&2
-    echo "DEBUG: Current version: $from_version" >&2
-    echo "DEBUG: Target version: $to_version" >&2
-    echo "DEBUG: Dumpless version threshold: $MEILISEARCH_DUMPLESS_VERSION" >&2
+    log_debug "Checking if Meilisearch requires upgrading"
+    log_debug "Current version: $from_version"
+    log_debug "Target version: $to_version"
+    log_debug "Dumpless version threshold: $MEILISEARCH_DUMPLESS_VERSION"
 
     # Validate input versions
     if [ -z "$from_version" ] || [ -z "$to_version" ]; then
-        echo "ERROR: Both from_version and to_version must be provided" >&2
-        echo "DEBUG: from_version='$from_version', to_version='$to_version'" >&2
-        exit 1
+        log_debug "from_version='$from_version', to_version='$to_version'"
+        error_exit "Both from_version and to_version must be provided"
     fi
 
     # Check if versions are equal - no dump needed if not upgrading
     if [ "$from_version" = "$to_version" ]; then
-        echo "DEBUG: No dump required - versions are identical (no upgrade needed)" >&2
+        log_debug "No dump required - versions are identical (no upgrade needed)"
         return 1  # false - no dump required
     fi
 
     # Check version format (basic validation)
     if ! echo "$from_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
-        echo "WARNING: from_version '$from_version' doesn't match expected format (x.y.z)" >&2
+        log_debug "WARNING: from_version '$from_version' doesn't match expected format (x.y.z)"
     fi
 
     if ! echo "$to_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
-        echo "WARNING: to_version '$to_version' doesn't match expected format (x.y.z)" >&2
+        log_debug "WARNING: to_version '$to_version' doesn't match expected format (x.y.z)"
     fi
 
     # If upgrading from < 1.12.0 to any version, dump is required
@@ -239,10 +262,10 @@ meili_requires_upgrade() {
     comparison_result="$(printf '%s\n' "$from_version" "$MEILISEARCH_DUMPLESS_VERSION" | sort -V | head -n1)"
 
     if [ "$comparison_result" = "$from_version" ] && [ "$from_version" != "$MEILISEARCH_DUMPLESS_VERSION" ]; then
-        echo "DEBUG: Upgrading from pre-$MEILISEARCH_DUMPLESS_VERSION version" >&2
+        log_debug "Upgrading from pre-$MEILISEARCH_DUMPLESS_VERSION version"
         return 0  # true - dump required
     else
-        echo "DEBUG: No dump required - version $from_version >= $MEILISEARCH_DUMPLESS_VERSION" >&2
+        log_debug "No dump required - version $from_version >= $MEILISEARCH_DUMPLESS_VERSION"
         return 1  # false - no dump required
     fi
 }
@@ -254,24 +277,21 @@ upgrade() {
     echo "Checking current Meilisearch version..."
     local current_container_id
     if ! current_container_id=$(docker compose ps -q supportpal 2>/dev/null); then
-        echo "ERROR: Failed to get supportpal container ID" >&2
-        echo "DEBUG: Ensure docker compose is running and supportpal service exists" >&2
-        exit 1
+        log_debug "Ensure docker compose is running and supportpal service exists"
+        error_exit "Failed to get supportpal container ID"
     fi
 
     if [ -z "$current_container_id" ]; then
-        echo "ERROR: supportpal container is not running" >&2
-        echo "DEBUG: Start the containers with: docker compose up -d" >&2
-        exit 1
+        log_debug "Start the containers with: docker compose up -d"
+        error_exit "supportpal container is not running"
     fi
 
-    echo "DEBUG: Found supportpal container: $current_container_id" >&2
+    log_debug "Found supportpal container: $current_container_id"
 
     local current_meili_version
     if ! current_meili_version="$(get_current_meilisearch_version "$current_container_id")"; then
-        echo "ERROR: Failed to get current Meilisearch version" >&2
-        echo "DEBUG: Check if Meilisearch is properly configured in the supportpal container" >&2
-        exit 1
+        log_debug "Check if Meilisearch is properly configured in the supportpal container"
+        error_exit "Failed to get current Meilisearch version"
     fi
 
     echo "✓ Current Meilisearch version: $current_meili_version"
@@ -280,9 +300,8 @@ upgrade() {
     echo "Checking target Meilisearch version..."
     local next_meili_version
     if ! next_meili_version="$(get_next_meilisearch_version)"; then
-        echo "ERROR: Failed to get target Meilisearch version" >&2
-        echo "DEBUG: Check network connectivity and docker image availability" >&2
-        exit 1
+        log_debug "Check network connectivity and docker image availability"
+        error_exit "Failed to get target Meilisearch version"
     fi
 
     echo "✓ Target Meilisearch version: $next_meili_version"
@@ -297,9 +316,8 @@ upgrade() {
 
     echo "Stopping containers..."
     if ! docker compose down -v; then
-        echo "ERROR: Failed to stop containers" >&2
-        echo "DEBUG: Check docker compose status and try manually: docker compose down -v" >&2
-        exit 1
+        log_debug "Check docker compose status and try manually: docker compose down -v"
+        error_exit "Failed to stop containers"
     fi
 
     echo "Updating volumes..."
@@ -318,16 +336,14 @@ upgrade() {
 
     echo "Starting upgraded containers..."
     if ! COMPOSE_PARALLEL_LIMIT=1 docker compose up -d; then
-        echo "ERROR: Failed to start upgraded containers" >&2
-        echo "DEBUG: Check docker compose logs: docker compose logs" >&2
-        exit 1
+        log_debug "Check docker compose logs: docker compose logs"
+        error_exit "Failed to start upgraded containers"
     fi
 
     echo "Running helpdesk upgrade script..."
     if ! docker compose exec supportpal bash -c "bash /init/upgrade-helpdesk.sh"; then
-        echo "ERROR: Helpdesk upgrade script failed" >&2
-        echo "DEBUG: Check container logs: docker compose logs supportpal" >&2
-        exit 1
+        log_debug "Check container logs: docker compose logs supportpal"
+        error_exit "Helpdesk upgrade script failed"
     fi
 
     echo
