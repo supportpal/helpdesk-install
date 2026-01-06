@@ -28,7 +28,7 @@ make restore
    ```bash
    make backup
    ```
-2. Run the `upgrade` command:
+2. Consider upgrading dependencies (MySQL, Redis, Meilisearch, etc) to new supported versions, and then run the `upgrade` command:
    ```bash
    make upgrade
    ```
