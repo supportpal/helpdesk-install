@@ -161,19 +161,19 @@ drop_meilisearch_data() {
 # Helper function to parse version from meilisearch --version output
 parse_meilisearch_version() {
     local version_output="$1"
-    local pkgVersion
+    local pkg_version
 
     log_debug "Raw version output: $version_output"
 
     # Extract version number from output like "meilisearch 1.10.3"
-    if ! pkgVersion="$(echo "$version_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"; then
+    if ! pkg_version="$(echo "$version_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"; then
         log_debug "Expected format: 'meilisearch x.y.z'"
         log_debug "Actual output: $version_output"
         error_exit "Failed to parse version from meilisearch --version output"
     fi
 
-    log_debug "Extracted Meilisearch version: $pkgVersion"
-    echo "$pkgVersion"
+    log_debug "Extracted Meilisearch version: $pkg_version"
+    echo "$pkg_version"
 }
 
 # Usage: get_current_meilisearch_version <container_id>
