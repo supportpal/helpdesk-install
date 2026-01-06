@@ -310,7 +310,7 @@ upgrade() {
     if meili_requires_upgrade "$current_meili_version" "$next_meili_version"; then
         echo "✓ Meilisearch upgrade is required."
         echo "! The Meilisearch database will be dropped and re-indexed... cancel (CTRL+C) if you're not happy to proceed..."
-        sleep 5
+        sleep 10
         drop_meilisearch_data
     fi
 
