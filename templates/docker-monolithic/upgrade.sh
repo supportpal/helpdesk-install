@@ -178,17 +178,17 @@ parse_meilisearch_version() {
 
 # Usage: get_current_meilisearch_version <container_id>
 get_current_meilisearch_version() {
-    local CID="$1"
+    local cid="$1"
     local version
 
-    log_debug "Getting Meilisearch version from container: $CID"
+    log_debug "Getting Meilisearch version from container: $cid"
 
     # Get version directly using meilisearch --version command
-    if ! version="$(docker exec "$CID" meilisearch --version 2>&1)"; then
+    if ! version="$(docker exec "$cid" meilisearch --version 2>&1)"; then
         log_debug "Make sure the container is running and has meilisearch binary"
         log_debug "Container logs:"
-        docker logs --tail 10 "$CID" >> "$LOG_FILE" 2>&1 || true
-        error_exit "Failed to get Meilisearch version from container $CID"
+        docker logs --tail 10 "$cid" >> "$LOG_FILE" 2>&1 || true
+        error_exit "Failed to get Meilisearch version from container $cid"
     fi
 
     parse_meilisearch_version "$version"
