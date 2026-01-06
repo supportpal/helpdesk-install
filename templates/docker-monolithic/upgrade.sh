@@ -152,7 +152,7 @@ drop_meilisearch_data() {
 
     # Clear Meilisearch database directory (including hidden files)
     echo "Clearing Meilisearch database directory..."
-    if ! docker compose exec supportpal bash -c 'source <(sudo cat /etc/container_environment.sh) && rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
+    if ! docker compose exec supportpal bash -c 'sudo rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
         error_exit "Failed to clear Meilisearch database directory"
     fi
     echo "✓ Meilisearch database directory cleared"
