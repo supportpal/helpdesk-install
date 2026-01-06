@@ -198,28 +198,28 @@ get_next_meilisearch_version() {
     log_debug "Fetching next Meilisearch version from docker-compose file..."
     log_debug "Download URL: $COMPOSE_FILE_DOWNLOAD_URL"
 
-    local IMAGE
-    if ! IMAGE=$(curl -fsSL "${COMPOSE_FILE_DOWNLOAD_URL}" 2>&1 | grep -m1 -E '^[[:space:]]*image:' | sed -E "s/^[[:space:]]*image:[[:space:]]*//; s/^['\"]//; s/['\"]$//"); then
+    local image
+    if ! image=$(curl -fsSL "${COMPOSE_FILE_DOWNLOAD_URL}" 2>&1 | grep -m1 -E '^[[:space:]]*image:' | sed -E "s/^[[:space:]]*image:[[:space:]]*//; s/^['\"]//; s/['\"]$//"); then
         log_debug "URL: $COMPOSE_FILE_DOWNLOAD_URL"
         log_debug "Check if the URL is accessible and contains valid YAML"
         error_exit "Failed to fetch or parse docker-compose file"
     fi
 
-    if [ -z "$IMAGE" ]; then
+    if [ -z "$image" ]; then
         log_debug "Expected to find a line like 'image: supportpal/helpdesk:latest'"
         error_exit "Could not extract image name from docker-compose file"
     fi
 
-    log_debug "Found image: $IMAGE"
+    log_debug "Found image: $image"
 
     # Get version directly using meilisearch --version without starting the full container
     log_debug "Getting Meilisearch version from image..."
 
     local version
-    if ! version="$(docker run --rm --entrypoint meilisearch "$IMAGE" --version 2>&1)"; then
+    if ! version="$(docker run --rm --entrypoint meilisearch "$image" --version 2>&1)"; then
         log_debug "Check if the image exists and contains meilisearch binary"
         log_debug "Docker run output: $version"
-        error_exit "Failed to get Meilisearch version from image: $IMAGE"
+        error_exit "Failed to get Meilisearch version from image: $image"
     fi
 
     parse_meilisearch_version "$version"
