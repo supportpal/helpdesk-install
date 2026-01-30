@@ -162,7 +162,7 @@ update() {
 }
 
 install_rpm() {
-  dnf install -y "$@"
+  dnf install -y --setopt install_weak_deps=False "$@"
 }
 
 remove_rpm() {
@@ -498,16 +498,12 @@ install_mysql() {
   user_password="$(generate_password)"
 
   if [[ $os_type == 'rhel' ]]; then
-    if [[ $os_version == '8' ]]; then
-      install_rpm https://dev.mysql.com/get/mysql80-community-release-el8-9.noarch.rpm
-      dnf -y module disable mysql
-    else
-      install_rpm https://dev.mysql.com/get/mysql80-community-release-el9-5.noarch.rpm
-    fi
+    install_rpm "https://dev.mysql.com/get/mysql84-community-release-el${os_version}-2.noarch.rpm"
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     install wget debconf-utils lsb-release gnupg2
+    debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-server select mysql-8.4-lts"
     debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-product select Ok"
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
