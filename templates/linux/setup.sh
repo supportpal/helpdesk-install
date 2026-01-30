@@ -503,7 +503,7 @@ install_mysql() {
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     install wget debconf-utils lsb-release gnupg2
-    debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-server select mysql-8.4"
+    debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-server select mysql-8.4-lts"
     debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-product select Ok"
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
