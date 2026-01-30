@@ -162,7 +162,7 @@ update() {
 }
 
 install_rpm() {
-  dnf install -y "$@"
+  dnf install -y --setopt install_weak_deps=False "$@"
 }
 
 remove_rpm() {
