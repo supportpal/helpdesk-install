@@ -498,8 +498,8 @@ install_mysql() {
   user_password="$(generate_password)"
 
   if [[ $os_type == 'rhel' ]]; then
-   dnf -y module disable mysql
-   install_rpm https://dev.mysql.com/get/mysql84-community-release-el10-2.noarch.rpm
+    dnf -y module disable mysql
+    install_rpm "https://dev.mysql.com/get/mysql84-community-release-el${os_version}-2.noarch.rpm"
   fi
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
