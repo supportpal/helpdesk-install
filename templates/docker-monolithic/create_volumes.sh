@@ -16,4 +16,3 @@ create_volume supportpal_logs
 create_volume supportpal_addons
 create_volume supportpal_caddy
 create_volume supportpal_meilisearch
-create_volume supportpal_qdrant

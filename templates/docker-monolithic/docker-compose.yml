@@ -17,7 +17,6 @@ services:
       - supportpal_addons:/var/www/supportpal/addons
       - supportpal_caddy:/caddy
       - supportpal_meilisearch:/meilisearch
-      - supportpal_qdrant:/qdrant
 
 volumes:
   supportpal_db:
@@ -44,6 +43,3 @@ volumes:
   supportpal_meilisearch:
     external: true
     name: supportpal_meilisearch
-  supportpal_qdrant:
-    external: true
-    name: supportpal_qdrant
