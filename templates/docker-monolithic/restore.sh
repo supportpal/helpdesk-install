@@ -178,7 +178,7 @@ docker compose exec supportpal bash -c "
 echo "Restoring..."
 
 docker compose exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}"
-execute_command "docker cp ""${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}"" ""supportpal:${TEMP_BACKUP_DIR}/"""
+execute_command "docker compose cp ""${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}"" ""supportpal:${TEMP_BACKUP_DIR}/"""
 TAR_EXTRACT_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "xv")
 TAR_OUTPUT=$(docker compose exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -${TAR_EXTRACT_FLAGS} ${LAST_BACKUP_FILE}")
 docker compose exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force"
