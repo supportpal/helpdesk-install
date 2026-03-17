@@ -115,7 +115,7 @@ if tar "-$TAR_LIST_FLAGS" "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | g
       execute_command "docker volume rm supportpal_addons"
       execute_command "docker volume rm supportpal_caddy"
       execute_command "docker volume rm supportpal_meilisearch"
-      execute_command "docker volume rm supportpal_qdrant"
+      execute_command "docker volume rm supportpal_qdrant || true"
   fi
 
   echo "Restoring docker files to $RESTORE_PATH..."
