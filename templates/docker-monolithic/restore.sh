@@ -115,7 +115,7 @@ if tar "-$TAR_LIST_FLAGS" "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | g
       execute_command "docker volume rm supportpal_addons"
       execute_command "docker volume rm supportpal_caddy"
       execute_command "docker volume rm supportpal_meilisearch"
-      execute_command "docker volume rm supportpal_qdrant"
+      execute_command "docker volume rm supportpal_qdrant || true"
   fi
 
   echo "Restoring docker files to $RESTORE_PATH..."
@@ -178,7 +178,7 @@ docker compose exec supportpal bash -c "
 echo "Restoring..."
 
 docker compose exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}"
-execute_command "docker cp ""${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}"" ""supportpal:${TEMP_BACKUP_DIR}/"""
+execute_command "docker compose cp ""${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}"" ""supportpal:${TEMP_BACKUP_DIR}/"""
 TAR_EXTRACT_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "xv")
 TAR_OUTPUT=$(docker compose exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -${TAR_EXTRACT_FLAGS} ${LAST_BACKUP_FILE}")
 docker compose exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force"
