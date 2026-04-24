@@ -196,19 +196,21 @@ systemd() {
   msg "info" "issued $1 of service: $2"
 }
 
-# pwgen 2.08 is unavailable on debian 9 (stretch).
-install_pwgen()
-{
-  # install dependencies
-  install curl gcc make
+install_pwgen() {
+  msg "info" "Installing pwgen..."
 
-  curl -L -O https://gigenet.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
-  tar -xzf pwgen-2.08.tar.gz
-  cd pwgen-2.08
-  ./configure
-  make && make install
-  cd ..
-  rm -rf pwgen-2.08.tar.gz pwgen-2.08
+  if [[ $os_type == 'rhel' ]]; then
+    install pwgen
+    return
+  fi
+
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    update
+    install pwgen
+    return
+  fi
+
+  error "Unable to install pwgen on this OS."
 }
 
 setup() {
