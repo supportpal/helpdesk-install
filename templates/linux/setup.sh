@@ -486,9 +486,7 @@ generate_password() {
   # strong passwords must be:
   #     Length >= 8, numeric, mixed case, special characters and dictionary file
   while [[ $passwd = "${passwd,,}" ]] || [[ $passwd = "${passwd^^}" ]]; do
-    # sudo only provides access to /sbin:/bin:/usr/sbin:/usr/bin
-    # commands in /usr/local/bin cannot be found (https://unix.stackexchange.com/a/8652).
-    passwd=$(/usr/local/bin/pwgen -1 -s -y -n -c -v -r \`\'\"\$\|\\ 15)
+    passwd=$(/usr/bin/pwgen -1 -s -y -n -c -v -r \`\'\"\$\|\\ 15)
   done
 
   echo "${passwd}"
