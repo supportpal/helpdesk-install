@@ -200,6 +200,8 @@ install_pwgen() {
   msg "info" "Installing pwgen..."
 
   if [[ $os_type == 'rhel' ]]; then
+    # pwgen is in EPEL, not the default repos
+    install_rpm "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${os_version}.noarch.rpm"
     install pwgen
     return
   fi
