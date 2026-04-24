@@ -3,7 +3,7 @@ set -eu -o pipefail
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL 9, 10
-    * Ubuntu 22.04 LTS (jammy) & 24.04 LTS (noble)
+    * Ubuntu 22.04 LTS (jammy), 24.04 LTS (noble) & 26.04 LTS (resolute raccoon)
     * Debian 12 (bookworm) & 13 (trixie)"
 
 usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
@@ -103,6 +103,7 @@ identify_os() {
       focal) error 'Ubuntu version 20.04 LTS has reached End of Life and is no longer supported.' ;;
       jammy) ;;
       noble) ;;
+      resolute) ;;
       *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
       esac
       ;;
