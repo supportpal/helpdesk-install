@@ -3,7 +3,7 @@ set -eu -o pipefail
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL 9, 10
-    * Ubuntu 22.04 LTS (jammy) & 24.04 LTS (noble)
+    * Ubuntu 22.04 LTS (jammy), 24.04 LTS (noble) & 26.04 LTS (resolute)
     * Debian 12 (bookworm) & 13 (trixie)"
 
 usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
@@ -103,6 +103,7 @@ identify_os() {
       focal) error 'Ubuntu version 20.04 LTS has reached End of Life and is no longer supported.' ;;
       jammy) ;;
       noble) ;;
+      resolute) ;;
       *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
       esac
       ;;
@@ -195,19 +196,23 @@ systemd() {
   msg "info" "issued $1 of service: $2"
 }
 
-# pwgen 2.08 is unavailable on debian 9 (stretch).
-install_pwgen()
-{
-  # install dependencies
-  install curl gcc make
+install_pwgen() {
+  msg "info" "Installing pwgen..."
 
-  curl -L -O https://gigenet.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
-  tar -xzf pwgen-2.08.tar.gz
-  cd pwgen-2.08
-  ./configure
-  make && make install
-  cd ..
-  rm -rf pwgen-2.08.tar.gz pwgen-2.08
+  if [[ $os_type == 'rhel' ]]; then
+    # pwgen is in EPEL, not the default repos
+    install_rpm "https://dl.fedoraproject.org/pub/epel/epel-release-latest-${os_version}.noarch.rpm"
+    install pwgen
+    return
+  fi
+
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    update
+    install pwgen
+    return
+  fi
+
+  error "Unable to install pwgen on this OS."
 }
 
 setup() {
@@ -481,9 +486,7 @@ generate_password() {
   # strong passwords must be:
   #     Length >= 8, numeric, mixed case, special characters and dictionary file
   while [[ $passwd = "${passwd,,}" ]] || [[ $passwd = "${passwd^^}" ]]; do
-    # sudo only provides access to /sbin:/bin:/usr/sbin:/usr/bin
-    # commands in /usr/local/bin cannot be found (https://unix.stackexchange.com/a/8652).
-    passwd=$(/usr/local/bin/pwgen -1 -s -y -n -c -v -r \`\'\"\$\|\\ 15)
+    passwd=$(/usr/bin/pwgen -1 -s -y -n -c -v -r \`\'\"\$\|\\ 15)
   done
 
   echo "${passwd}"
@@ -508,7 +511,7 @@ install_mysql() {
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
 
-    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.36-1_all.deb
+    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.39-1_all.deb
     dpkg -i mysql-apt-config.deb && apt-get update
     rm mysql-apt-config.deb
   fi
