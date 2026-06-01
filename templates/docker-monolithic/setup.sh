@@ -211,7 +211,7 @@ configure() {
     read -r email
 
     echo
-    echo "Enter system domain name. Leave blank to configure later..."
+    echo "Enter mail domain name. Leave blank to configure later..."
     read -r host
   fi
 
@@ -220,8 +220,8 @@ configure() {
     host="$(hostname)"
   fi
 
-  echo "DOMAIN_NAME=$(escape_re "${host// }")" >> .env
-  printf "wrote 'DOMAIN_NAME=%s' to .env ✔\n" "${host// }"
+  echo "MAIL_DOMAIN_NAME=$(escape_re "${host// }")" >> .env
+  printf "wrote 'MAIL_DOMAIN_NAME=%s' to .env ✔\n" "${host// }"
 
   if [[ -n "${email// }" ]]; then
     echo "MAILTO=$(escape_re "${email// }")" >> .env
