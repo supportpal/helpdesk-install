@@ -37,12 +37,14 @@ usage="Options:
     -r,--ref=5.x               Git ref (commit sha, ref name, tag) to run the script on.
     --skip-backup              Skip taking a backup before upgrading.
     --only-files               Only update the docker-compose files. Subsequent upgrade steps are skipped.
+    --skip-meilisearch-prompt  Skip confirmation prompt before dropping Meilisearch data.
 "
 
 # options
 ref=5.x
 skip_backup=false
 only_files=false
+skip_meili_prompt=false
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -59,6 +61,9 @@ while [[ "$#" -gt 0 ]]; do
         ;;
     --only-files)
         only_files=true
+        ;;
+    --skip-meilisearch-prompt)
+        skip_meili_prompt=true
         ;;
     *)
         echo "Unknown parameter passed: $1"
@@ -309,8 +314,18 @@ upgrade() {
     # Check if dump is required
     if meili_requires_upgrade "$current_meili_version" "$next_meili_version"; then
         echo "✓ Meilisearch upgrade is required."
-        echo "! The Meilisearch database will be dropped and re-indexed... cancel (CTRL+C) if you're not happy to proceed..."
-        sleep 10
+
+        if [ "${skip_meili_prompt}" = true ]; then
+            echo "Skipping Meilisearch confirmation prompt (--skip-meilisearch-prompt specified)."
+        else
+            echo "The Meilisearch database will be dropped and re-indexed. Do you want to continue? [Y/n]"
+            read -r PROCEED
+            if [ "${PROCEED}" == "n" ]; then
+                echo "Meilisearch upgrade cancelled."
+                exit 0
+            fi
+        fi
+
         drop_meilisearch_data
     fi
 
