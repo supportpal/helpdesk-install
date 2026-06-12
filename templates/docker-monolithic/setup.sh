@@ -20,7 +20,7 @@ local=0
 interactive=1
 host=
 email=
-ref=5.x
+ref=6.x
 dir_name="supportpal_$(date +%s)_$RANDOM"
 
 while [[ "$#" -gt 0 ]]; do

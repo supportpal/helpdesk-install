@@ -34,14 +34,14 @@ error_exit() {
 
 usage="Options:
     -h,--help                  Display this help and exit.
-    -r,--ref=5.x               Git ref (commit sha, ref name, tag) to run the script on.
+    -r,--ref=6.x               Git ref (commit sha, ref name, tag) to run the script on.
     --skip-backup              Skip taking a backup before upgrading.
     --only-files               Only update the docker-compose files. Subsequent upgrade steps are skipped.
     --skip-meilisearch-prompt  Skip confirmation prompt before dropping Meilisearch data.
 "
 
 # options
-ref=5.x
+ref=6.x
 skip_backup=false
 only_files=false
 skip_meili_prompt=false
