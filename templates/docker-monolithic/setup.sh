@@ -13,6 +13,9 @@ usage="Options:
     -H,--host=                 Domain name to use with SupportPal.
 
     -e,--email=                System administrator email address.
+
+    --external-db              Disable the bundled MySQL server. The installer will ask for the
+                               connection details of your external database server.
 "
 
 # Options
@@ -20,6 +23,7 @@ local=0
 interactive=1
 host=
 email=
+external_db=0
 ref=6.x
 dir_name="supportpal_$(date +%s)_$RANDOM"
 
@@ -30,6 +34,7 @@ while [[ "$#" -gt 0 ]]; do
   --local) local=1 ;;
   -H|--host) host="$2" ; shift ;;
   -e|--email) email="$2" ; shift ;;
+  --external-db) external_db=1 ;;
   -r|--ref) ref="$2" ; shift ;;
   *)
     echo "Unknown parameter passed: $1"
@@ -226,6 +231,16 @@ configure() {
   if [[ -n "${email// }" ]]; then
     echo "MAILTO=$(escape_re "${email// }")" >> .env
     printf "wrote 'MAILTO=%s' to .env ✔\n" "${email// }"
+  fi
+
+  if [[ "$external_db" -eq 1 ]]; then
+    echo "MYSQL_ENABLED=0" >> .env
+    printf "wrote 'MYSQL_ENABLED=0' to .env ✔\n"
+    echo
+    echo "The bundled MySQL server has been disabled. The installer will ask for the connection"
+    echo "details of your external database server. Note that backup and restore of an external"
+    echo "database is your responsibility, it is not managed by the container."
+    echo
   fi
 
   # create volumes
