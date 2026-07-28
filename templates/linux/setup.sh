@@ -512,7 +512,6 @@ install_mariadb() {
     fi
 
     install MariaDB-server
-    systemd restart mariadb
 
     # Allow SupportPal (httpd) to connect to the DB via 127.0.0.1
     if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce | awk '{ print tolower($0) }')" != "disabled" ]]; then
@@ -527,8 +526,15 @@ install_mariadb() {
     fi
 
     install mariadb-server
-    systemd restart mariadb
   fi
+
+  # mariadbd expects its socket directory to exist; systemd-tmpfiles creates it on
+  # boot (see /usr/lib/tmpfiles.d/mariadb.conf) but the docker systemctl replacement does not.
+  if ((is_docker == 1)); then
+    mkdir -p /run/mysqld && chown mysql:mysql /run/mysqld
+  fi
+
+  systemd restart mariadb
 
   while ! mariadb-admin ping --silent; do
     echo "mariadb-server is unavailable. retrying in 1s..."
