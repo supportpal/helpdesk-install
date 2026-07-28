@@ -83,7 +83,7 @@ docker compose cp supportpal:/var/www/supportpal/addons "${TMP_DIR}/filesystem-$
 (cd "${TMP_DIR}" && tar -czf "${FILESYSTEM_BACKUP_NAME}" "filesystem-${TIMESTAMP}" && rm -rf "filesystem-${TIMESTAMP}")
 
 echo 'Backing up database...'
-DB_BACKUP_PATH=$(docker compose exec supportpal bash -c "cd ${COMMAND_PATH} && php artisan db:backup --store-local | grep -oE '/var/www/supportpal/.*/database-.*'")
+DB_BACKUP_PATH=$(docker compose exec -u supportpal supportpal bash -c "cd ${COMMAND_PATH} && php artisan db:backup --store-local | grep -oE '/var/www/supportpal/.*/database-.*'")
 DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | xargs basename)
 docker compose cp "supportpal:${DB_BACKUP_PATH}" "${TMP_DIR}/" || { echo "error: failed to copy database backup from container"; exit 1; }
 docker compose exec supportpal bash -c "rm ${DB_BACKUP_PATH}"
