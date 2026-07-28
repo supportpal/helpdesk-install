@@ -3,7 +3,7 @@ set -eu -o pipefail
 
 supported="The following Linux OSs are supported, on x86_64 only:
     * RHEL 9, 10
-    * Ubuntu 22.04 LTS (jammy) & 24.04 LTS (noble)
+    * Ubuntu 22.04 LTS (jammy), 24.04 LTS (noble) & 26.04 LTS (resolute)
     * Debian 12 (bookworm) & 13 (trixie)"
 
 usage="Usage: curl -LsS https://raw.githubusercontent.com/supportpal/helpdesk-install/master/templates/linux/setup.sh | sudo bash -s -- [options]
@@ -105,6 +105,7 @@ identify_os() {
       focal) error 'Ubuntu version 20.04 LTS has reached End of Life and is no longer supported.' ;;
       jammy) ;;
       noble) ;;
+      resolute) ;;
       *) error "Detected Ubuntu but version ($os_version) is not supported." "Only Ubuntu LTS releases are supported." ;;
       esac
       ;;
@@ -202,6 +203,10 @@ install_pwgen()
 {
   # install dependencies
   install curl gcc make
+  # gcc doesn't pull in libc6-dev on ubuntu 26.04+
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    install libc6-dev
+  fi
 
   curl -L -O https://gigenet.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
   tar -xzf pwgen-2.08.tar.gz
@@ -295,22 +300,13 @@ install_php_deb() {
   apt-get update
 }
 
-install_php_ubuntu() {
-  apt-get install -y software-properties-common gnupg2
-  LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php -y && apt-get update -y
-}
-
 install_php() {
   msg "info" "Installing PHP..."
 
   if [[ $os_type == 'rhel' ]]; then
     install_php_rhel
   elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    if [[ $os_type == 'debian' ]]; then
-      install_php_deb
-    elif [[ $os_type == 'ubuntu' ]]; then
-      install_php_ubuntu
-    fi
+    install_php_deb
 
     apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
     "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
