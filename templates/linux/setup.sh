@@ -28,7 +28,9 @@ os_type=
 os_version=
 # php version to install
 php_version='8.3'
-# mysql authentication
+# mariadb version to install
+mariadb_version='12.3'
+# mariadb authentication
 root_password=
 database='supportpal'
 username='supportpal'
@@ -489,40 +491,28 @@ generate_password() {
   echo "${passwd}"
 }
 
-install_mysql() {
-  msg "info" "Installing MySQL..."
+install_mariadb() {
+  msg "info" "Installing MariaDB..."
 
   install openssl
   root_password="$(generate_password)"
-  tmp_root=root_password
   user_password="$(generate_password)"
 
-  if [[ $os_type == 'rhel' ]]; then
-    install_rpm "https://dev.mysql.com/get/mysql84-community-release-el${os_version}-2.noarch.rpm"
-  fi
-
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    install wget debconf-utils lsb-release gnupg2
-    debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-server select mysql-8.4-lts"
-    debconf-set-selections <<< "mysql-apt-config mysql-apt-config/select-product select Ok"
-    debconf-set-selections <<< "mysql-server mysql-server/root_password password ${root_password}"
-    debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${root_password}"
-
-    wget -O mysql-apt-config.deb https://dev.mysql.com/get/mysql-apt-config_0.8.36-1_all.deb
-    dpkg -i mysql-apt-config.deb && apt-get update
-    rm mysql-apt-config.deb
+    install apt-transport-https ca-certificates lsb-release gnupg2
   fi
+
+  curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- \
+    --mariadb-server-version="mariadb-${mariadb_version}" --skip-maxscale --skip-tools
 
   if [[ $os_type == 'rhel' ]]; then
     if [ "$overwrite" == "1" ]; then
-      remove_rpm mysql-community-server
-      backup /var/lib/mysql/ /var/log/mysqld.log
+      remove_rpm MariaDB-server
+      backup /var/lib/mysql/
     fi
 
-    install mysql-community-server
-    systemd restart mysqld
-
-    tmp_root=$(grep "A temporary password is generated" /var/log/mysqld.log | awk '{print $NF}')
+    install MariaDB-server
+    systemd restart mariadb
 
     # Allow SupportPal (httpd) to connect to the DB via 127.0.0.1
     if [[ -x "$(command -v getenforce)" ]] && [[ "$(getenforce | awk '{ print tolower($0) }')" != "disabled" ]]; then
@@ -532,28 +522,26 @@ install_mysql() {
 
   if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
     if [ "$overwrite" == "1" ]; then
-      apt-get remove -y --purge mysql-server && apt-get -y autoremove
+      apt-get remove -y --purge mariadb-server && apt-get -y autoremove
       backup /var/lib/mysql/
     fi
 
-    install mysql-server
-    systemd restart mysql
+    install mariadb-server
+    systemd restart mariadb
   fi
 
-  while ! mysqladmin ping --silent; do
-    echo "mysql-server is unavailable. retrying in 1s..."
+  while ! mariadb-admin ping --silent; do
+    echo "mariadb-server is unavailable. retrying in 1s..."
     sleep 1
   done
 
-  mysql --connect-expired-password --user='root' --password="${tmp_root}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY '${root_password}'; FLUSH PRIVILEGES;"
-  if [[ $os_type == 'rhel' ]]; then
-    mysql --user="root" --password="${root_password}" -e "UNINSTALL COMPONENT 'file://component_validate_password';"
-  fi
-  mysql --user="root" --password="${root_password}" -e "CREATE DATABASE \`${database}\`;"
-  mysql --user="root" --password="${root_password}" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
-  mysql --user="root" --password="${root_password}" -e "GRANT ALL PRIVILEGES ON \`${database}\`.* TO '${username}'@'localhost';"
-  mysql --user="root" --password="${root_password}" -e "GRANT RELOAD,PROCESS ON *.* TO '${username}'@'localhost';"
-  mysql --user="root" --password="${root_password}" -e "FLUSH PRIVILEGES;"
+  # root authenticates via unix_socket by default; add password authentication too.
+  mariadb -e "ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket OR mysql_native_password USING PASSWORD('${root_password}'); FLUSH PRIVILEGES;"
+  mariadb --user="root" --password="${root_password}" -e "CREATE DATABASE \`${database}\`;"
+  mariadb --user="root" --password="${root_password}" -e "CREATE USER '${username}'@'localhost' IDENTIFIED BY '$user_password';"
+  mariadb --user="root" --password="${root_password}" -e "GRANT ALL PRIVILEGES ON \`${database}\`.* TO '${username}'@'localhost';"
+  mariadb --user="root" --password="${root_password}" -e "GRANT RELOAD,PROCESS ON *.* TO '${username}'@'localhost';"
+  mariadb --user="root" --password="${root_password}" -e "FLUSH PRIVILEGES;"
 }
 
 install_supportpal() {
@@ -599,7 +587,7 @@ check_root
 detect_supportpal
 setup
 
-install_mysql
+install_mariadb
 install_apache
 install_supportpal
 
@@ -618,7 +606,7 @@ echo " Directories"
 echo "   SupportPal: /var/www/supportpal"
 echo "   Logs:       /var/log/supportpal"
 echo
-echo " MySQL"
+echo " MariaDB"
 echo "   Root Password: ${root_password}"
 echo "   Database name: ${database}"
 echo "   Username:      ${username}"
