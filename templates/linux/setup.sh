@@ -203,6 +203,10 @@ install_pwgen()
 {
   # install dependencies
   install curl gcc make
+  # gcc doesn't pull in libc6-dev on ubuntu 26.04+
+  if [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
+    install libc6-dev
+  fi
 
   curl -L -O https://gigenet.dl.sourceforge.net/project/pwgen/pwgen/2.08/pwgen-2.08.tar.gz
   tar -xzf pwgen-2.08.tar.gz
