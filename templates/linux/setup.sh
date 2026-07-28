@@ -300,22 +300,13 @@ install_php_deb() {
   apt-get update
 }
 
-install_php_ubuntu() {
-  apt-get install -y software-properties-common gnupg2
-  LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php -y && apt-get update -y
-}
-
 install_php() {
   msg "info" "Installing PHP..."
 
   if [[ $os_type == 'rhel' ]]; then
     install_php_rhel
   elif [[ $os_type == 'debian' ]] || [[ $os_type == 'ubuntu' ]]; then
-    if [[ $os_type == 'debian' ]]; then
-      install_php_deb
-    elif [[ $os_type == 'ubuntu' ]]; then
-      install_php_ubuntu
-    fi
+    install_php_deb
 
     apt-get install -y "php${php_version}" "php${php_version}-fpm" "php${php_version}-dom" \
     "php${php_version}-gd" "php${php_version}-mbstring" "php${php_version}-mysql" "php${php_version}-xml" \
