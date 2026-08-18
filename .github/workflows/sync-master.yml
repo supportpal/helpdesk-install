@@ -3,7 +3,7 @@ name: Merge Default Branch Into Master
 on:
   push:
     branches:
-      - 5.x
+      - 6.x
 
 permissions:
   pull-requests: write
@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: git checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: create pull request
         run: gh pr create -t  "[Automated] Merge ${{ github.ref_name }} into master" -b "Automated Pull Request" -r bytestream -a bytestream --head ${{ github.ref_name }} --base master

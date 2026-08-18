@@ -171,7 +171,7 @@ parse_meilisearch_version() {
     log_debug "Raw version output: $version_output"
 
     # Extract version number from output like "meilisearch 1.10.3"
-    if ! pkg_version="$(echo "$version_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"; then
+    if ! pkg_version="$(echo "$version_output" | grep -E '^meilisearch ' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"; then
         log_debug "Expected format: 'meilisearch x.y.z'"
         log_debug "Actual output: $version_output"
         error_exit "Failed to parse version from meilisearch --version output"
