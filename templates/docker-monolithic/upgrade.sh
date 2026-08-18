@@ -102,6 +102,33 @@ check_docker_compose() {
     printf "✔\n"
 }
 
+# Determines the currently installed version. Prints an empty string if it can't be determined.
+installed_version() {
+    local version
+    version="$(grep -m1 -E '^[[:space:]]*image:' docker-compose.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
+
+    printf '%s' "${version}"
+}
+
+# The backup script must match the installed version, as the 6.x script isn't compatible with 5.x containers.
+backup_ref() {
+    local version
+    version="$(installed_version)"
+
+    if [ -z "${version}" ]; then
+        log_debug "Unable to determine the installed version, using the backup script from ${ref}"
+        printf '%s' "${ref}"
+        return
+    fi
+
+    log_debug "Detected installed version: ${version}"
+    if [ "$(printf '%s\n' "${version}" "6.0.0" | sort -V | head -n1)" = "6.0.0" ]; then
+        printf '6.x'
+    else
+        printf '5.x'
+    fi
+}
+
 backup() {
     if [ "${skip_backup}" = true ]; then
         return
@@ -115,7 +142,11 @@ backup() {
         return
     fi
 
-    bash <(curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/5.x/templates/docker-monolithic/backup.sh)
+    local backup_branch
+    backup_branch="$(backup_ref)"
+    log_debug "Using backup script from ${backup_branch}"
+
+    bash <(curl -fLsS "https://raw.githubusercontent.com/supportpal/helpdesk-install/${backup_branch}/templates/docker-monolithic/backup.sh")
 }
 
 update_compose_files() {
