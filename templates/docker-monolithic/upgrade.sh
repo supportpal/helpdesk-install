@@ -306,8 +306,49 @@ meili_requires_upgrade() {
     fi
 }
 
+remove_old_image() {
+    local old_version="$1"
+
+    if [ -z "$old_version" ]; then
+        return
+    fi
+
+    local old_image="supportpal/helpdesk:${old_version}"
+    local new_version
+    new_version="$(installed_version)"
+
+    # Don't remove if versions are the same (e.g. re-running upgrade)
+    if [ "$old_version" = "$new_version" ]; then
+        return
+    fi
+
+    # Check if the old image still exists
+    if ! docker image inspect "$old_image" &>/dev/null; then
+        return
+    fi
+
+    echo
+    echo "The previous image ${old_image} is still on disk."
+    echo "Remove the old image to free up disk space? [Y/n]"
+    read -r PROCEED
+    if [ "${PROCEED}" != "n" ]; then
+        if docker rmi "$old_image" &>/dev/null; then
+            echo "✓ Removed old image ${old_image}"
+        else
+            echo "Could not remove old image. You can remove it manually with: docker rmi ${old_image}"
+        fi
+    else
+        echo "Old image kept. You can remove it manually with: docker rmi ${old_image}"
+    fi
+}
+
 upgrade() {
     echo "Starting upgrade process..."
+
+    # Capture the currently installed version before upgrading
+    local old_version
+    old_version="$(installed_version)"
+    log_debug "Old version before upgrade: ${old_version:-unknown}"
 
     # Get current Meilisearch version with error handling
     echo "Checking current Meilisearch version..."
@@ -394,6 +435,8 @@ upgrade() {
 
     echo
     echo "✓ Upgrade complete!"
+
+    remove_old_image "$old_version"
 }
 
 check_docker_compose
