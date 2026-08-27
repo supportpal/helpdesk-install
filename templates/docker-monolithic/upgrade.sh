@@ -306,6 +306,38 @@ meili_requires_upgrade() {
     fi
 }
 
+# Removes stale helpdesk images left on disk by previous upgrades.
+remove_old_images() {
+    local cid current_image repo stale image
+
+    if ! cid="$(docker compose ps -q supportpal 2>>"$LOG_FILE")" || [ -z "$cid" ]; then
+        log_debug "Skipping image clean up, unable to determine the supportpal container ID."
+        return
+    fi
+
+    if ! current_image="$(docker inspect --format '{{.Config.Image}}' "$cid" 2>>"$LOG_FILE")" || [ -z "$current_image" ]; then
+        log_debug "Skipping image clean up, unable to determine the image of container ${cid}."
+        return
+    fi
+
+    repo="${current_image%:*}"
+    log_debug "Current image: ${current_image}"
+
+    if ! stale="$(docker images --format '{{.Repository}}:{{.Tag}}' "$repo" 2>>"$LOG_FILE" | grep -vxF -e "$current_image" -e "${repo}:<none>")" || [ -z "$stale" ]; then
+        log_debug "No stale ${repo} images to remove."
+        return
+    fi
+
+    echo "Removing old images to free up disk space..."
+    while IFS= read -r image; do
+        if docker rmi "$image" >>"$LOG_FILE" 2>&1; then
+            echo "✓ Removed old image ${image}"
+        else
+            echo "Could not remove old image ${image}. Check ${LOG_FILE} for details, or remove it manually with: docker rmi ${image}"
+        fi
+    done <<< "$stale"
+}
+
 upgrade() {
     echo "Starting upgrade process..."
 
@@ -394,6 +426,8 @@ upgrade() {
 
     echo
     echo "✓ Upgrade complete!"
+
+    remove_old_images
 }
 
 check_docker_compose
