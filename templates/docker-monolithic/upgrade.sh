@@ -306,49 +306,40 @@ meili_requires_upgrade() {
     fi
 }
 
-remove_old_image() {
-    local old_version="$1"
+# Removes stale helpdesk images left on disk by previous upgrades.
+remove_old_images() {
+    local cid current_image repo stale image
 
-    if [ -z "$old_version" ]; then
+    if ! cid="$(docker compose ps -q supportpal 2>>"$LOG_FILE")" || [ -z "$cid" ]; then
+        log_debug "Skipping image clean up, unable to determine the supportpal container ID."
         return
     fi
 
-    local old_image="supportpal/helpdesk:${old_version}"
-    local new_version
-    new_version="$(installed_version)"
-
-    # Don't remove if versions are the same (e.g. re-running upgrade)
-    if [ "$old_version" = "$new_version" ]; then
+    if ! current_image="$(docker inspect --format '{{.Config.Image}}' "$cid" 2>>"$LOG_FILE")" || [ -z "$current_image" ]; then
+        log_debug "Skipping image clean up, unable to determine the image of container ${cid}."
         return
     fi
 
-    # Check if the old image still exists
-    if ! docker image inspect "$old_image" &>/dev/null; then
+    repo="${current_image%:*}"
+    log_debug "Current image: ${current_image}"
+
+    if ! stale="$(docker images --format '{{.Repository}}:{{.Tag}}' "$repo" 2>>"$LOG_FILE" | grep -vxF -e "$current_image" -e "${repo}:<none>")" || [ -z "$stale" ]; then
+        log_debug "No stale ${repo} images to remove."
         return
     fi
 
-    echo
-    echo "The previous image ${old_image} is still on disk."
-    echo "Remove the old image to free up disk space? [Y/n]"
-    read -r PROCEED
-    if [ "${PROCEED}" != "n" ]; then
-        if docker rmi "$old_image" &>/dev/null; then
-            echo "✓ Removed old image ${old_image}"
+    echo "Removing old images to free up disk space..."
+    while IFS= read -r image; do
+        if docker rmi "$image" >>"$LOG_FILE" 2>&1; then
+            echo "✓ Removed old image ${image}"
         else
-            echo "Could not remove old image. You can remove it manually with: docker rmi ${old_image}"
+            echo "Could not remove old image ${image}. Check ${LOG_FILE} for details, or remove it manually with: docker rmi ${image}"
         fi
-    else
-        echo "Old image kept. You can remove it manually with: docker rmi ${old_image}"
-    fi
+    done <<< "$stale"
 }
 
 upgrade() {
     echo "Starting upgrade process..."
-
-    # Capture the currently installed version before upgrading
-    local old_version
-    old_version="$(installed_version)"
-    log_debug "Old version before upgrade: ${old_version:-unknown}"
 
     # Get current Meilisearch version with error handling
     echo "Checking current Meilisearch version..."
@@ -436,7 +427,7 @@ upgrade() {
     echo
     echo "✓ Upgrade complete!"
 
-    remove_old_image "$old_version"
+    remove_old_images
 }
 
 check_docker_compose
