@@ -82,11 +82,21 @@ docker compose cp supportpal:/var/www/supportpal/storage "${TMP_DIR}/filesystem-
 docker compose cp supportpal:/var/www/supportpal/addons "${TMP_DIR}/filesystem-${TIMESTAMP}/" || { echo "error: failed to copy addons from container"; exit 1; }
 (cd "${TMP_DIR}" && tar -czf "${FILESYSTEM_BACKUP_NAME}" "filesystem-${TIMESTAMP}" && rm -rf "filesystem-${TIMESTAMP}")
 
-echo 'Backing up database...'
-DB_BACKUP_PATH=$(docker compose exec -u supportpal supportpal bash -c "cd ${COMMAND_PATH} && php artisan db:backup --store-local | grep -oE '/var/www/supportpal/.*/database-.*'")
-DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | xargs basename)
-docker compose cp "supportpal:${DB_BACKUP_PATH}" "${TMP_DIR}/" || { echo "error: failed to copy database backup from container"; exit 1; }
-docker compose exec supportpal bash -c "rm ${DB_BACKUP_PATH}"
+DB_FILE_NAME=
+# MYSQL_ENABLED=0 means an external database is used; the database is excluded from the backup.
+MYSQL_ENABLED="$(docker compose exec supportpal bash -c 'echo "${MYSQL_ENABLED:-1}"' | tr -d '[:space:]')"
+if [[ "$MYSQL_ENABLED" = "1" ]]; then
+  echo 'Backing up database...'
+  DB_BACKUP_PATH=$(docker compose exec -u supportpal supportpal bash -c "cd ${COMMAND_PATH} && php artisan db:backup --store-local | grep -oE '/var/www/supportpal/.*/database-.*'")
+  DB_FILE_NAME=$(echo "${DB_BACKUP_PATH}" | xargs basename)
+  docker compose cp "supportpal:${DB_BACKUP_PATH}" "${TMP_DIR}/" || { echo "error: failed to copy database backup from container"; exit 1; }
+  docker compose exec supportpal bash -c "rm ${DB_BACKUP_PATH}"
+else
+  echo "[WARNING]"
+  echo "The bundled MySQL server is disabled (MYSQL_ENABLED=0). The database will NOT be included in this"
+  echo "backup. Backing up your external database server is your responsibility."
+  echo
+fi
 
 echo 'Backing up volume data...'
 mkdir -p "${TMP_DIR}/volumes-monolithic/cache"
@@ -106,7 +116,7 @@ echo "Backing up current working directory: $(pwd)..."
 tar -czf "$TMP_DIR/docker-files.tar.gz" --exclude="./${BACKUP_DIR}" .
 
 # Combine backup files.
-(cd "$TMP_DIR" && tar -czf "${ABS_BACKUP_PATH}/${APP_BACKUP_NAME}" "${FILESYSTEM_BACKUP_NAME}" "${DB_FILE_NAME}" volumes-monolithic/ docker-files.tar.gz)
+(cd "$TMP_DIR" && tar -czf "${ABS_BACKUP_PATH}/${APP_BACKUP_NAME}" "${FILESYSTEM_BACKUP_NAME}" ${DB_FILE_NAME:+"${DB_FILE_NAME}"} volumes-monolithic/ docker-files.tar.gz)
 
 # Cleanup (now only needs to clean the host TMP_DIR, container cleanup is minimal)
 rm -rf "$TMP_DIR"
