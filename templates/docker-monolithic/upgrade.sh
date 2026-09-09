@@ -38,6 +38,11 @@ usage="Options:
     --skip-backup              Skip taking a backup before upgrading.
     --only-files               Only update the docker-compose files. Subsequent upgrade steps are skipped.
     --skip-meilisearch-prompt  Skip confirmation prompt before dropping Meilisearch data.
+    --compose-url=<url|path>   Source of docker-compose.yml. Defaults to the GitHub copy at --ref.
+    --volumes-url=<url|path>   Source of create_volumes.sh. Defaults to the GitHub copy at --ref.
+    --backup-url=<url|path>    Source of backup.sh. Defaults to the GitHub copy matching the installed version.
+
+Each source may be an http(s) URL or a path to a local file (useful for testing).
 "
 
 # options
@@ -45,6 +50,9 @@ ref=6.x
 skip_backup=false
 only_files=false
 skip_meili_prompt=false
+COMPOSE_FILE_DOWNLOAD_URL="${COMPOSE_FILE_DOWNLOAD_URL:-}"
+VOLUME_FILE_DOWNLOAD_URL="${VOLUME_FILE_DOWNLOAD_URL:-}"
+BACKUP_FILE_DOWNLOAD_URL="${BACKUP_FILE_DOWNLOAD_URL:-}"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -65,6 +73,18 @@ while [[ "$#" -gt 0 ]]; do
     --skip-meilisearch-prompt)
         skip_meili_prompt=true
         ;;
+    --compose-url)
+        COMPOSE_FILE_DOWNLOAD_URL="$2"
+        shift
+        ;;
+    --volumes-url)
+        VOLUME_FILE_DOWNLOAD_URL="$2"
+        shift
+        ;;
+    --backup-url)
+        BACKUP_FILE_DOWNLOAD_URL="$2"
+        shift
+        ;;
     *)
         echo "Unknown parameter passed: $1"
         exit 1
@@ -73,7 +93,34 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-COMPOSE_FILE_DOWNLOAD_URL="https://raw.githubusercontent.com/supportpal/helpdesk-install/${ref}/templates/docker-monolithic/docker-compose.yml"
+GITHUB_RAW_URL="https://raw.githubusercontent.com/supportpal/helpdesk-install"
+COMPOSE_FILE_DOWNLOAD_URL="${COMPOSE_FILE_DOWNLOAD_URL:-${GITHUB_RAW_URL}/${ref}/templates/docker-monolithic/docker-compose.yml}"
+VOLUME_FILE_DOWNLOAD_URL="${VOLUME_FILE_DOWNLOAD_URL:-${GITHUB_RAW_URL}/${ref}/templates/docker-monolithic/create_volumes.sh}"
+# BACKUP_FILE_DOWNLOAD_URL is resolved lazily in backup() as it depends on the installed version.
+
+# Usage: is_url <url|path>
+is_url() {
+    [[ "$1" =~ ^https?:// ]]
+}
+
+# Usage: fetch_file <url|path>
+# Prints the contents of an http(s) URL or a local file to stdout.
+fetch_file() {
+    local source="$1"
+
+    if is_url "${source}"; then
+        curl -fLsS "${source}"
+    else
+        cat "${source}"
+    fi
+}
+
+for source in "${COMPOSE_FILE_DOWNLOAD_URL}" "${VOLUME_FILE_DOWNLOAD_URL}" "${BACKUP_FILE_DOWNLOAD_URL}"; do
+    if [ -n "${source}" ] && ! is_url "${source}" && [ ! -f "${source}" ]; then
+        echo "error: file not found: ${source}" >&2
+        exit 1
+    fi
+done
 
 # usage: version_ge <installed_version> <minimum_version>
 version_ge() {
@@ -142,19 +189,27 @@ backup() {
         return
     fi
 
-    local backup_branch
-    backup_branch="$(backup_ref)"
-    log_debug "Using backup script from ${backup_branch}"
+    local backup_source="${BACKUP_FILE_DOWNLOAD_URL}"
+    if [ -z "${backup_source}" ]; then
+        backup_source="${GITHUB_RAW_URL}/$(backup_ref)/templates/docker-monolithic/backup.sh"
+    fi
+    log_debug "Using backup script from ${backup_source}"
 
-    bash <(curl -fLsS "https://raw.githubusercontent.com/supportpal/helpdesk-install/${backup_branch}/templates/docker-monolithic/backup.sh")
+    bash <(fetch_file "${backup_source}")
 }
 
 update_compose_files() {
-    curl -fLsS "${COMPOSE_FILE_DOWNLOAD_URL}" -o docker-compose.yml
+    # Nothing to do if the source is the docker-compose.yml already in place.
+    if ! is_url "${COMPOSE_FILE_DOWNLOAD_URL}" && [ "${COMPOSE_FILE_DOWNLOAD_URL}" -ef docker-compose.yml ]; then
+        log_debug "Compose file ${COMPOSE_FILE_DOWNLOAD_URL} is already in place, skipping copy."
+        return
+    fi
+
+    fetch_file "${COMPOSE_FILE_DOWNLOAD_URL}" > docker-compose.yml
 }
 
 update_volumes() {
-    bash <(curl -fLsS https://raw.githubusercontent.com/supportpal/helpdesk-install/"${ref}"/templates/docker-monolithic/create_volumes.sh)
+    bash <(fetch_file "${VOLUME_FILE_DOWNLOAD_URL}")
 }
 
 migrate_hostname() {
@@ -232,12 +287,12 @@ get_current_meilisearch_version() {
 
 get_next_meilisearch_version() {
     log_debug "Fetching next Meilisearch version from docker-compose file..."
-    log_debug "Download URL: $COMPOSE_FILE_DOWNLOAD_URL"
+    log_debug "Compose file source: $COMPOSE_FILE_DOWNLOAD_URL"
 
     local image
-    if ! image=$(curl -fsSL "${COMPOSE_FILE_DOWNLOAD_URL}" 2>&1 | grep -m1 -E '^[[:space:]]*image:' | sed -E "s/^[[:space:]]*image:[[:space:]]*//; s/^['\"]//; s/['\"]$//"); then
-        log_debug "URL: $COMPOSE_FILE_DOWNLOAD_URL"
-        log_debug "Check if the URL is accessible and contains valid YAML"
+    if ! image=$(fetch_file "${COMPOSE_FILE_DOWNLOAD_URL}" 2>&1 | grep -m1 -E '^[[:space:]]*image:' | sed -E "s/^[[:space:]]*image:[[:space:]]*//; s/^['\"]//; s/['\"]$//"); then
+        log_debug "Source: $COMPOSE_FILE_DOWNLOAD_URL"
+        log_debug "Check if the source is accessible and contains valid YAML"
         error_exit "Failed to fetch or parse docker-compose file"
     fi
 

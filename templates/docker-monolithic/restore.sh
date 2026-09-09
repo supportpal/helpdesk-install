@@ -142,7 +142,7 @@ if tar "-$TAR_LIST_FLAGS" "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | g
   echo -n "Waiting for container setup to complete."
 
   FILE="/etc/container_environment.sh"
-  while [ -z "${MYSQL_PASSWORD+x}" ] || [ -z "${INITIALIZED+x}" ]; do
+  while { [ "${MYSQL_ENABLED:-1}" = "1" ] && [ -z "${MYSQL_PASSWORD+x}" ]; } || [ -z "${INITIALIZED+x}" ]; do
     if [ -f "$FILE" ]; then
       source <(sudo cat "$FILE")
     fi
@@ -152,15 +152,24 @@ if tar "-$TAR_LIST_FLAGS" "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | g
   done
 
   echo
-  echo "The restore will ask you to provide database connection details. Use the details below:"
-  echo
-  echo "Host: 127.0.0.1"
-  echo "Port: 3306"
-  echo "Database: $MYSQL_DATABASE"
-  echo "Username: $MYSQL_USER"
-  echo "Password: $MYSQL_PASSWORD"
-  echo "Root password: $MYSQL_ROOT_PASSWORD"
-  echo
+  if [ "${MYSQL_ENABLED:-1}" != "1" ]; then
+    echo "The bundled MySQL server is disabled (MYSQL_ENABLED=0)."
+    echo
+    echo "Only the filesystem will be restored; the database will NOT be restored. Restoring your"
+    echo "external database server is your responsibility. The helpdesk will connect to the external"
+    echo "database configured in the backup (config/production/database.php)."
+    echo
+  else
+    echo "The restore will ask you to provide database connection details. Use the details below:"
+    echo
+    echo "Host: 127.0.0.1"
+    echo "Port: 3306"
+    echo "Database: $MYSQL_DATABASE"
+    echo "Username: $MYSQL_USER"
+    echo "Password: $MYSQL_PASSWORD"
+    echo "Root password: $MYSQL_ROOT_PASSWORD"
+    echo
+  fi
   '
 fi
 
@@ -181,7 +190,24 @@ docker compose exec supportpal bash -c "mkdir -p ${TEMP_BACKUP_DIR}"
 execute_command "docker compose cp ""${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}"" ""supportpal:${TEMP_BACKUP_DIR}/"""
 TAR_EXTRACT_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "xv")
 TAR_OUTPUT=$(docker compose exec supportpal bash -c "cd ${TEMP_BACKUP_DIR} && tar -${TAR_EXTRACT_FLAGS} ${LAST_BACKUP_FILE}")
-docker compose exec -u supportpal supportpal bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force"
+
+# MYSQL_ENABLED=0 means an external database is used; skip the database restore and only restore the filesystem.
+MYSQL_ENABLED="$(docker compose exec supportpal bash -c 'echo "${MYSQL_ENABLED:-1}"' | tr -d '[:space:]')"
+if [[ "$MYSQL_ENABLED" = "1" ]]; then
+  docker compose exec -u supportpal supportpal bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force"
+else
+  FS_BACKUP_PATH="$(docker compose exec supportpal bash -c "ls ${TEMP_BACKUP_DIR}/filesystem-*.tar.gz 2>/dev/null | head -n1" | tr -d '[:space:]')"
+  if [[ -z "$FS_BACKUP_PATH" ]]; then
+    echo "error: could not find a filesystem-*.tar.gz archive inside ${LAST_BACKUP_FILE}."
+    exit 1
+  fi
+
+  echo "[WARNING]"
+  echo "The bundled MySQL server is disabled (MYSQL_ENABLED=0)."
+  echo "If necessary, the database must be restored independently of this script."
+
+  docker compose exec -u supportpal supportpal bash -c "cd ${COMMAND_PATH} && php artisan filesystem:restore ${FS_BACKUP_PATH} --no-verify --force"
+fi
 
 # If backup generated via docker, restore volumes.
 if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/$'; then
