@@ -10,8 +10,8 @@ if ! php --version; then
 	exit 1
 fi
 
-if ! mysql -V; then
-  echo "ERROR: Did mysql get installed?"
+if ! mariadb -V; then
+  echo "ERROR: Did mariadb get installed?"
   exit 2
 fi
 

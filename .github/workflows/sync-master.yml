@@ -3,7 +3,7 @@ name: Merge Default Branch Into Master
 on:
   push:
     branches:
-      - 5.x
+      - 6.x
 
 permissions:
   pull-requests: write
