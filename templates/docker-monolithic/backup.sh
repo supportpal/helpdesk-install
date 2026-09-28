@@ -47,7 +47,7 @@ FILESYSTEM_BACKUP_NAME="filesystem-${TIMESTAMP}.tar.gz"
 APP_BACKUP_NAME="app-${TIMESTAMP}.tar.gz"
 
 # Make sure that the script is executed in the directory where docker-compose.yml is.
-if ! docker compose config 2>/dev/null | grep -q "container_name: supportpal"; then
+if ! grep -q "container_name: supportpal" < <(docker compose config 2>/dev/null); then
     echo "error: the script must be executed in your SupportPal installation directory (where your docker-compose.yml file is)."
     exit 1
 fi
