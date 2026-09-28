@@ -33,17 +33,17 @@ TAR_OUTPUT=$(docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${TEMP_BACKUP_DIR} &&
 docker exec "${WEB_SERVICE_NAME}" bash -c "cd ${COMMAND_PATH} && php artisan app:restore ${TEMP_BACKUP_DIR}/${LAST_BACKUP_FILE} --no-verify --force" > /dev/null
 
 # If backup generated via docker, restore volumes.
-if echo "${TAR_OUTPUT}" | grep -qs '^volumes-compose/$'; then
+if grep -qs '^volumes-compose/$' <<< "${TAR_OUTPUT}"; then
   echo 'Restoring volume data...'
 
   mkdir -p "backup/${TIMESTAMP}"
   docker cp "${WEB_SERVICE_NAME}:${TEMP_BACKUP_DIR}/volumes-compose" "backup/${TIMESTAMP}"
   docker cp "backup/${TIMESTAMP}/volumes-compose/cache/data/" "${CACHE_SERVICE_NAME}:/"
   docker cp "backup/${TIMESTAMP}/volumes-compose/mailer/exim4/" "${MAILER_SERVICE_NAME}:/var/spool/"
-  if echo "${TAR_OUTPUT}" | grep -qs '^volumes-compose/meilisearch'; then
+  if grep -qs '^volumes-compose/meilisearch' <<< "${TAR_OUTPUT}"; then
     docker cp "backup/${TIMESTAMP}/volumes-compose/meilisearch/meili_data" "${MEILISEARCH_SERVICE_NAME}:/"
   fi
-  if echo "${TAR_OUTPUT}" | grep -qs '^volumes-compose/qdrant'; then
+  if grep -qs '^volumes-compose/qdrant' <<< "${TAR_OUTPUT}"; then
     docker cp "backup/${TIMESTAMP}/volumes-compose/qdrant/qdrant" "${QDRANT_SERVICE_NAME}:/"
   fi
   rm -rf "backup/${TIMESTAMP}/"

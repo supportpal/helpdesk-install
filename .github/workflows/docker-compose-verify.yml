@@ -22,10 +22,11 @@ jobs:
 
       - name: Shellcheck
         run: |
+          docker build -q -t shellcheck "${GITHUB_WORKSPACE}/.github/shellcheck"
           docker run --rm \
             -v "${PWD}:/v"  \
             -w "/v" \
-            koalaman/shellcheck \
+            shellcheck \
             -e SC1091 -e SC1117 \
             *.sh
 
