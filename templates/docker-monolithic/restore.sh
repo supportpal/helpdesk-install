@@ -85,7 +85,7 @@ echo "Found ${LAST_BACKUP_FILE}..."
 
 # List the contents of the archive, and if it contains "docker-files" then restore those files.
 TAR_LIST_FLAGS=$(get_tar_flags "$LAST_BACKUP_FILE" "t")
-if tar "-$TAR_LIST_FLAGS" "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null | grep -qs "^docker-files.tar.gz"; then
+if grep -qs "^docker-files.tar.gz" < <(tar "-$TAR_LIST_FLAGS" "${LAST_BACKUP_DIR}/$LAST_BACKUP_FILE" 2>/dev/null); then
   PARENT_DIR="$(realpath "$(pwd)/../")"
   RESTORE_PATH="${PARENT_DIR}/supportpal_$(date +%s)_$RANDOM"
 
@@ -210,15 +210,15 @@ else
 fi
 
 # If backup generated via docker, restore volumes.
-if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/$'; then
+if grep -qs '^volumes-monolithic/$' <<< "${TAR_OUTPUT}"; then
   echo 'Restoring volume data...'
 
   docker compose exec -u root supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/cache/redis-data /"
   docker compose exec -u root supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/caddy/caddy /"
-  if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/meilisearch'; then
+  if grep -qs '^volumes-monolithic/meilisearch' <<< "${TAR_OUTPUT}"; then
     docker compose exec -u root supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/meilisearch/meilisearch /"
   fi
-  if echo "${TAR_OUTPUT}" | grep -qs '^volumes-monolithic/qdrant'; then
+  if grep -qs '^volumes-monolithic/qdrant' <<< "${TAR_OUTPUT}"; then
     docker compose exec -u root supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/qdrant/qdrant /"
   fi
   rm -rf "backup/${TIMESTAMP}/"

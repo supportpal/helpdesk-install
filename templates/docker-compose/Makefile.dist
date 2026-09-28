@@ -63,7 +63,13 @@ create_volumes:
 
 .PHONY: create_secrets
 create_secrets:
-	$(DOCKER_COMPOSE_BIN) -f docker-compose.secrets.yml run --rm -T configurator
+	# Generated secrets are chowned to the host user so a non-root install can read them.
+	# In rootless mode container root already maps to the host user, so leave ownership alone.
+	@if $(DOCKER_BIN) info -f '{{.SecurityOptions}}' 2>/dev/null | grep -q 'name=rootless'; then \
+		HOST_UID=0 HOST_GID=0 $(DOCKER_COMPOSE_BIN) -f docker-compose.secrets.yml run --rm -T configurator; \
+	else \
+		HOST_UID=$$(id -u) HOST_GID=$$(id -g) $(DOCKER_COMPOSE_BIN) -f docker-compose.secrets.yml run --rm -T configurator; \
+	fi
 
 .PHONY: configure
 configure:

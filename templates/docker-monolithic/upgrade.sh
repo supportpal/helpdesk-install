@@ -290,7 +290,7 @@ get_next_meilisearch_version() {
     log_debug "Compose file source: $COMPOSE_FILE_DOWNLOAD_URL"
 
     local image
-    if ! image=$(fetch_file "${COMPOSE_FILE_DOWNLOAD_URL}" 2>&1 | grep -m1 -E '^[[:space:]]*image:' | sed -E "s/^[[:space:]]*image:[[:space:]]*//; s/^['\"]//; s/['\"]$//"); then
+    if ! image=$(grep -m1 -E '^[[:space:]]*image:' < <(fetch_file "${COMPOSE_FILE_DOWNLOAD_URL}" 2>&1) | sed -E "s/^[[:space:]]*image:[[:space:]]*//; s/^['\"]//; s/['\"]$//"); then
         log_debug "Source: $COMPOSE_FILE_DOWNLOAD_URL"
         log_debug "Check if the source is accessible and contains valid YAML"
         error_exit "Failed to fetch or parse docker-compose file"
@@ -340,11 +340,11 @@ meili_requires_upgrade() {
     fi
 
     # Check version format (basic validation)
-    if ! echo "$from_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+    if ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+' <<< "$from_version"; then
         log_debug "WARNING: from_version '$from_version' doesn't match expected format (x.y.z)"
     fi
 
-    if ! echo "$to_version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+    if ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+' <<< "$to_version"; then
         log_debug "WARNING: to_version '$to_version' doesn't match expected format (x.y.z)"
     fi
 
