@@ -361,6 +361,47 @@ meili_requires_upgrade() {
     fi
 }
 
+# Services that boot the application. These must not run while the helpdesk is being upgraded, as any of them can
+# re-cache the settings (and therefore the old installed version) after the upgrade has cleared the cache, which leaves
+# the application reporting that it is still being upgraded. 20caddy is stopped first as it starts any stopped
+# services it depends on.
+APP_SERVICES=(20caddy 10horizon 10ws 10phpfpm 10cron)
+
+stop_app_services() {
+    log_debug "Stopping application services: ${APP_SERVICES[*]}"
+
+    # runit may not be supervising the services yet if the container has only just started, so retry for a while.
+    # shellcheck disable=SC2016
+    docker compose exec -T supportpal bash -c '
+        for service in "$@"; do
+            [ -d "/etc/service/${service}" ] || continue
+            attempt=0
+            until sudo sv -w 30 force-stop "${service}" > /dev/null 2>&1; do
+                attempt=$((attempt + 1))
+                if [ "${attempt}" -ge 60 ]; then
+                    echo "Failed to stop ${service}" >&2
+                    exit 1
+                fi
+                sleep 1
+            done
+        done
+    ' bash "${APP_SERVICES[@]}" >> "$LOG_FILE" 2>&1
+}
+
+start_app_services() {
+    log_debug "Starting application services: ${APP_SERVICES[*]}"
+
+    # Reverse order so dependencies are started before the services that use them.
+    # shellcheck disable=SC2016
+    docker compose exec -T supportpal bash -c '
+        for (( i = $#; i > 0; i-- )); do
+            service="${!i}"
+            [ -d "/etc/service/${service}" ] || continue
+            sudo sv start "${service}" > /dev/null
+        done
+    ' bash "${APP_SERVICES[@]}" >> "$LOG_FILE" 2>&1
+}
+
 # Removes stale helpdesk images left on disk by previous upgrades.
 remove_old_images() {
     local cid current_image repo stale image
@@ -473,8 +514,23 @@ upgrade() {
         error_exit "Failed to start upgraded containers"
     fi
 
+    echo "Stopping application services..."
+    if ! stop_app_services; then
+        log_debug "Check container logs: docker compose logs supportpal"
+        error_exit "Failed to stop application services"
+    fi
+
     echo "Running helpdesk upgrade script..."
-    if ! docker compose exec supportpal bash -c "bash /init/upgrade-helpdesk.sh"; then
+    local upgrade_status=0
+    docker compose exec supportpal bash -c "bash /init/upgrade-helpdesk.sh" || upgrade_status=$?
+
+    echo "Starting application services..."
+    if ! start_app_services; then
+        log_debug "Start them manually with: docker compose restart"
+        error_exit "Failed to start application services"
+    fi
+
+    if [ "$upgrade_status" -ne 0 ]; then
         log_debug "Check container logs: docker compose logs supportpal"
         error_exit "Helpdesk upgrade script failed"
     fi
