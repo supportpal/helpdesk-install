@@ -34,13 +34,13 @@ error_exit() {
 
 usage="Options:
     -h,--help                  Display this help and exit.
-    -r,--ref=6.x               Git ref (commit sha, ref name, tag) to run the script on.
+    -r,--ref <ref>             Git ref (commit sha, ref name, tag) to run the script on. Defaults to 6.x.
     --skip-backup              Skip taking a backup before upgrading.
     --only-files               Only update the docker-compose files. Subsequent upgrade steps are skipped.
     --skip-meilisearch-prompt  Skip confirmation prompt before dropping Meilisearch data.
-    --compose-url=<url|path>   Source of docker-compose.yml. Defaults to the GitHub copy at --ref.
-    --volumes-url=<url|path>   Source of create_volumes.sh. Defaults to the GitHub copy at --ref.
-    --backup-url=<url|path>    Source of backup.sh. Defaults to the GitHub copy matching the installed version.
+    --compose-url <url|path>   Source of docker-compose.yml. Defaults to the GitHub copy at --ref.
+    --volumes-url <url|path>   Source of create_volumes.sh. Defaults to the GitHub copy at --ref.
+    --backup-url <url|path>    Source of backup.sh. Defaults to the GitHub copy matching the installed version.
 
 Each source may be an http(s) URL or a path to a local file (useful for testing).
 "
