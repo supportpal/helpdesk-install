@@ -42,6 +42,15 @@ execute_command() {
     fi
 }
 
+# Asks the user to confirm the action described by the preceding output. Exits unless the answer is Y.
+confirm() {
+  echo "Do you want to proceed? [Y/n]"
+  read -r PROCEED
+  if [ "${PROCEED}" != "Y" ] ; then
+    exit 0
+  fi
+}
+
 # Function to detect compression and return appropriate tar flags
 get_tar_flags() {
     local file="$1"
@@ -70,21 +79,15 @@ read_manifest() {
 prepare_fresh_install() {
   RESTORE_PATH="$(realpath "$(pwd)/../")/supportpal_$(date +%s)_$RANDOM"
 
-  echo "The backup will be restored to $RESTORE_PATH. Do you want to proceed? [Y/n]"
-  read -r PROCEED
-  if [ "${PROCEED}" != "Y" ] ; then
-    exit 0
-  fi
+  echo "The backup will be restored to ${RESTORE_PATH}."
+  confirm
 
   # Check if container already exists.
   if [[ -n "$(docker ps -a -q -f name=^supportpal$)" ]]; then
-      echo "Container with name 'supportpal' already exists. Do you want to remove that container? [Y/n]"
-      read -r PROCEED
-      if [ "${PROCEED}" != "Y" ] ; then
-        exit 0
-      fi
+      echo "A container named 'supportpal' already exists. It will be removed along with its docker volumes."
+      confirm
 
-      echo "Deleting existing 'supportpal' container and associated volumes..."
+      echo "Removing the existing 'supportpal' container and its docker volumes..."
 
       execute_command "docker stop supportpal"
       execute_command "docker rm supportpal"
@@ -116,11 +119,8 @@ volume_restore() {
     fi
   done < <(awk '$1 == "volume" {print $2}' <<< "${manifest}")
   if [[ ${#existing[@]} -gt 0 ]]; then
-    echo "The following docker volumes already exist and will be replaced: ${existing[*]}. Do you want to proceed? [Y/n]"
-    read -r PROCEED
-    if [ "${PROCEED}" != "Y" ] ; then
-      exit 0
-    fi
+    echo "The following docker volumes already exist and will be replaced: ${existing[*]}."
+    confirm
     for volume in "${existing[@]}"; do
       execute_command "docker volume rm ${volume}"
     done
@@ -149,7 +149,7 @@ volume_restore() {
   execute_command "docker compose up -d"
 
   echo
-  echo "Successfully restored to $RESTORE_PATH"
+  echo "Restored successfully to ${RESTORE_PATH}"
 }
 
 # Rolls the installation in the current directory back to a rollback point created by backup.sh --pre-upgrade:
@@ -159,7 +159,7 @@ pre_upgrade_restore() {
 
   # Make sure that the script is executed in the directory where docker-compose.yml is.
   if ! grep -q "container_name: supportpal" < <(docker compose config 2>/dev/null); then
-    echo "error: the script must be executed in your SupportPal installation directory (where your docker-compose.yml file is)."
+    echo "error: the script must be executed in your SupportPal installation directory (where your docker-compose.yml file is)"
     exit 1
   fi
 
@@ -169,25 +169,22 @@ pre_upgrade_restore() {
   timestamp="$(awk '$1 == "timestamp" {print $2}' <<< "${manifest}")"
   copied="$(awk '$1 == "volume" {print $2}' <<< "${manifest}")"
   if [[ -z "${timestamp}" || -z "${copied}" ]]; then
-    echo "error: $(basename "${archive}") was not created by backup.sh --pre-upgrade."
+    echo "error: $(basename "${archive}") was not created by backup.sh --pre-upgrade"
     exit 1
   fi
   for volume in ${copied}; do
     clone="${volume}_pre_upgrade"
     if ! grep -q "\"${VOLUME_LABEL}\":\"${timestamp}\"" < <(docker volume inspect --format '{{json .Labels}}' "${clone}" 2>/dev/null); then
-      echo "error: the ${clone} docker volume is missing or belongs to a different rollback point. It is not possible to"
-      echo "roll back to $(basename "${archive}"); restore a full backup instead."
+      echo "error: the ${clone} docker volume is missing or belongs to a different rollback point"
+      echo "hint: it is not possible to roll back to $(basename "${archive}"), restore a full backup instead"
       exit 1
     fi
   done
 
-  echo "The installation in $(pwd) will be rolled back to the point captured in $(basename "${archive}")."
-  echo "The docker files in this directory will be replaced with the copies in the archive, and the docker volumes"
-  echo "will be replaced with the <volume>_pre_upgrade copies. Do you want to proceed? [Y/n]"
-  read -r PROCEED
-  if [ "${PROCEED}" != "Y" ] ; then
-    exit 0
-  fi
+  echo "The installation in $(pwd) will be rolled back to the point captured in $(basename "${archive}"). The docker"
+  echo "files in this directory will be replaced with the copies in the archive, and the docker volumes will be"
+  echo "replaced with their <volume>_pre_upgrade copies."
+  confirm
 
   echo "Restoring docker files to $(pwd)..."
   tar -xzf "${archive}" --exclude="./backup" --exclude="pre-upgrade-manifest.txt"
@@ -202,7 +199,7 @@ pre_upgrade_restore() {
     # storage/ and the logs are not copied by backup.sh --pre-upgrade, as an upgrade does not modify them.
     if ! grep -qx "${volume}" <<< "${copied}"; then
       if ! docker volume inspect "${volume}" > /dev/null 2>&1; then
-        echo "warning: ${volume} no longer exists, it has been recreated empty and must be restored from a full backup."
+        echo "warning: ${volume} no longer exists, it has been recreated empty and must be restored from a full backup"
         execute_command "docker volume create ${volume}"
       fi
       continue
@@ -220,8 +217,13 @@ pre_upgrade_restore() {
   execute_command "docker compose up -d"
 
   echo
-  echo "Successfully rolled back to $(basename "${archive}")."
-  echo "The <volume>_pre_upgrade copies have been kept and can be removed with 'docker volume rm' once no longer needed."
+  echo "Rolled back successfully to $(basename "${archive}")"
+  echo
+  echo "The rollback point has been kept. Once it is no longer needed, remove it to free the disk space:"
+  echo
+  echo "    docker volume rm $(for volume in ${copied}; do printf '%s_pre_upgrade ' "${volume}"; done)"
+  echo "    rm ${archive}"
+  echo
 }
 
 if [[ -n "${backup_file}" ]]; then
@@ -238,7 +240,9 @@ if [[ -n "${backup_file}" ]]; then
 else
   LAST_BACKUP_DIR="$(pwd)/backup"
   if [[ ! -d "${LAST_BACKUP_DIR}" ]]; then
-    echo "The ${LAST_BACKUP_DIR}/ directory does not exist. Create the directory, add your backup file to it and try again."; exit 1
+    echo "error: the ${LAST_BACKUP_DIR}/ directory does not exist"
+    echo "hint: create the directory, add your backup file to it and try again"
+    exit 1
   fi
 
   echo "Searching ${LAST_BACKUP_DIR}/ directory for backups..."
@@ -262,7 +266,9 @@ else
       LAST_BACKUP_FILE_PATH=""
   fi
   if [[ ! -f "${LAST_BACKUP_FILE_PATH}" ]]; then
-    echo "No backup files found. Add your backup to the ${LAST_BACKUP_DIR}/ directory and try again."; exit 1
+    echo "error: no backup files found in the ${LAST_BACKUP_DIR}/ directory"
+    echo "hint: add your backup to the directory and try again"
+    exit 1
   fi
 fi
 
@@ -320,11 +326,9 @@ if grep -qs "^docker-files.tar.gz" <<< "${ARCHIVE_CONTENTS}"; then
 
   echo
   if [ "${MYSQL_ENABLED:-1}" != "1" ]; then
-    echo "The bundled MySQL server is disabled (MYSQL_ENABLED=0)."
-    echo
-    echo "Only the filesystem will be restored; the database will NOT be restored. Restoring your"
-    echo "external database server is your responsibility. The helpdesk will connect to the external"
-    echo "database configured in the backup (config/production/database.php)."
+    echo "notice: the bundled MySQL server is disabled (MYSQL_ENABLED=0), only the filesystem will be restored"
+    echo "hint: restoring your external database server is your responsibility"
+    echo "hint: the helpdesk will connect to the external database configured in the backup (config/production/database.php)"
     echo
   else
     echo "The restore will ask you to provide database connection details. Use the details below:"
@@ -365,13 +369,12 @@ if [[ "$MYSQL_ENABLED" = "1" ]]; then
 else
   FS_BACKUP_PATH="$(docker compose exec supportpal bash -c "ls ${TEMP_BACKUP_DIR}/filesystem-*.tar.gz 2>/dev/null | head -n1" | tr -d '[:space:]')"
   if [[ -z "$FS_BACKUP_PATH" ]]; then
-    echo "error: could not find a filesystem-*.tar.gz archive inside ${LAST_BACKUP_FILE}."
+    echo "error: could not find a filesystem-*.tar.gz archive inside ${LAST_BACKUP_FILE}"
     exit 1
   fi
 
-  echo "[WARNING]"
-  echo "The bundled MySQL server is disabled (MYSQL_ENABLED=0)."
-  echo "If necessary, the database must be restored independently of this script."
+  echo "warning: the bundled MySQL server is disabled (MYSQL_ENABLED=0), the database will not be restored"
+  echo "hint: if necessary, restore your external database server independently of this script"
 
   docker compose exec -u supportpal supportpal bash -c "cd ${COMMAND_PATH} && php artisan filesystem:restore ${FS_BACKUP_PATH} --no-verify --force"
 fi
@@ -397,7 +400,7 @@ execute_command "docker compose up -d"
 
 if [[ -n "${RESTORE_PATH+x}" ]]; then
   echo
-  echo "Successfully restored to $RESTORE_PATH"
+  echo "Restored successfully to ${RESTORE_PATH}"
 
   rm -f "$RESTORE_PATH/$LAST_BACKUP_FILE"
 fi

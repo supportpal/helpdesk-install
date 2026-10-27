@@ -16,7 +16,8 @@ spawn bash restore.sh --file $file
 
 match_max 100000
 
-# The installation in ... will be rolled back ... Do you want to proceed? [Y/n]
+# The installation in ... will be rolled back ...
+# Do you want to proceed? [Y/n]
 expect "Do you want to proceed?*" {
     send "Y\r"
 }

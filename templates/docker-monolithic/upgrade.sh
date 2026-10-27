@@ -27,8 +27,8 @@ log_debug() {
 
 # Error exit function - notifies user about log file
 error_exit() {
-    echo "ERROR: $1" >&2
-    echo "A debug log is available in: $LOG_FILE"
+    echo "error: $1" >&2
+    echo "hint: a debug log is available in ${LOG_FILE}"
     exit 1
 }
 
@@ -125,7 +125,7 @@ done
 # usage: version_ge <installed_version> <minimum_version>
 version_ge() {
     if ! [ "$(printf '%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]; then
-        printf "error: %s is less than minimum required version of %s\n" "$1" "$2"
+        printf "error: %s is less than the minimum required version of %s\n" "$1" "$2"
         exit 1
     fi
 }
@@ -139,14 +139,15 @@ check_docker_compose() {
     set -e
 
     if [ $command_status -ne 0 ]; then
-        printf "error: Install docker compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
+        printf "error: docker compose is not installed\n"
+        printf "hint: install docker compose using the official installation instructions: https://docs.docker.com/compose/install/\n"
         exit 1
     fi
 
     version="${version#v}"
-    printf "checking docker compose version %s >= %s ... " "$version" "$min"
+    printf "Checking docker compose version %s >= %s... " "$version" "$min"
     version_ge "$version" "$min"
-    printf "✔\n"
+    printf "done\n"
 }
 
 backup() {
@@ -155,7 +156,8 @@ backup() {
     fi
 
     echo
-    echo "It is recommend to take a backup before upgrading, this may take some time. If you've already taken a backup you can skip this step."
+    echo "It is recommended to take a backup before upgrading, which may take some time. If you have already taken a"
+    echo "backup you can skip this step."
     echo "Do you want to take a backup? [Y/n]"
     read -r PROCEED
     if [ "${PROCEED}" == "n" ] ; then
@@ -172,20 +174,27 @@ backup() {
     bash <(fetch_file "${backup_source}") --pre-upgrade
 }
 
-# The volume copies made by backup.sh --pre-upgrade are kept as a rollback point; remind the user to remove them.
+# The volume copies and archive made by backup.sh --pre-upgrade are kept as a rollback point; remind the user to
+# remove them.
 volume_clone_notice() {
-    local clones
+    local clones archive
 
     clones="$(docker volume ls -q --filter 'name=_pre_upgrade' 2>>"$LOG_FILE" | { grep -E '_pre_upgrade$' || true; } | tr '\n' ' ')"
     if [ -z "${clones}" ]; then
         return
     fi
 
+    # Each backup.sh --pre-upgrade run replaces the volume copies, so only the most recent archive is usable.
+    archive="$(find backup -maxdepth 1 -name 'pre-upgrade-*.tar.gz' 2>/dev/null | sort | tail -n1)"
+
     echo
-    echo "Copies of the docker volumes were kept as a rollback point. Once you have verified the upgrade, free the"
-    echo "disk space with:"
+    echo "Copies of the docker volumes were kept as a rollback point. Once you have verified the upgrade, remove the"
+    echo "rollback point to free the disk space:"
     echo
     echo "    docker volume rm ${clones}"
+    if [ -n "${archive}" ]; then
+        echo "    rm ${archive}"
+    fi
 }
 
 update_compose_files() {
@@ -227,16 +236,16 @@ drop_meilisearch_data() {
     # Stop Meilisearch service
     echo "Stopping Meilisearch service..."
     if ! docker compose exec supportpal sudo sv stop 00meilisearch; then
-        error_exit "Failed to stop Meilisearch service"
+        error_exit "failed to stop the Meilisearch service"
     fi
-    echo "✓ Meilisearch service stopped"
+    echo "Meilisearch service stopped"
 
     # Clear Meilisearch database directory (including hidden files)
     echo "Clearing Meilisearch database directory..."
     if ! docker compose exec supportpal bash -c 'sudo rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
-        error_exit "Failed to clear Meilisearch database directory"
+        error_exit "failed to clear the Meilisearch database directory"
     fi
-    echo "✓ Meilisearch database directory cleared"
+    echo "Meilisearch database directory cleared"
 }
 
 # Helper function to parse version from meilisearch --version output
@@ -250,7 +259,7 @@ parse_meilisearch_version() {
     if ! pkg_version="$(echo "$version_output" | grep -E '^meilisearch ' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"; then
         log_debug "Expected format: 'meilisearch x.y.z'"
         log_debug "Actual output: $version_output"
-        error_exit "Failed to parse version from meilisearch --version output"
+        error_exit "failed to parse the version from the meilisearch --version output"
     fi
 
     log_debug "Extracted Meilisearch version: $pkg_version"
@@ -269,7 +278,7 @@ get_current_meilisearch_version() {
         log_debug "Make sure the container is running and has meilisearch binary"
         log_debug "Container logs:"
         docker logs --tail 10 "$cid" >> "$LOG_FILE" 2>&1 || true
-        error_exit "Failed to get Meilisearch version from container $cid"
+        error_exit "failed to get the Meilisearch version from container ${cid}"
     fi
 
     parse_meilisearch_version "$version"
@@ -283,12 +292,12 @@ get_next_meilisearch_version() {
     if ! image=$(grep -m1 -E '^[[:space:]]*image:' < <(fetch_file "${COMPOSE_FILE_DOWNLOAD_URL}" 2>&1) | sed -E "s/^[[:space:]]*image:[[:space:]]*//; s/^['\"]//; s/['\"]$//"); then
         log_debug "Source: $COMPOSE_FILE_DOWNLOAD_URL"
         log_debug "Check if the source is accessible and contains valid YAML"
-        error_exit "Failed to fetch or parse docker-compose file"
+        error_exit "failed to fetch or parse the docker-compose file"
     fi
 
     if [ -z "$image" ]; then
         log_debug "Expected to find a line like 'image: supportpal/helpdesk:latest'"
-        error_exit "Could not extract image name from docker-compose file"
+        error_exit "could not extract the image name from the docker-compose file"
     fi
 
     log_debug "Found image: $image"
@@ -300,7 +309,7 @@ get_next_meilisearch_version() {
     if ! version="$(docker run --rm --entrypoint meilisearch "$image" --version 2>&1)"; then
         log_debug "Check if the image exists and contains meilisearch binary"
         log_debug "Docker run output: $version"
-        error_exit "Failed to get Meilisearch version from image: $image"
+        error_exit "failed to get the Meilisearch version from image ${image}"
     fi
 
     parse_meilisearch_version "$version"
@@ -320,7 +329,7 @@ meili_requires_upgrade() {
     # Validate input versions
     if [ -z "$from_version" ] || [ -z "$to_version" ]; then
         log_debug "from_version='$from_version', to_version='$to_version'"
-        error_exit "Both from_version and to_version must be provided"
+        error_exit "both from_version and to_version must be provided"
     fi
 
     # Check if versions are equal - no dump needed if not upgrading
@@ -369,7 +378,7 @@ stop_app_services() {
             until sudo sv -w 30 force-stop "${service}" > /dev/null 2>&1; do
                 attempt=$((attempt + 1))
                 if [ "${attempt}" -ge 60 ]; then
-                    echo "Failed to stop ${service}" >&2
+                    echo "error: failed to stop ${service}" >&2
                     exit 1
                 fi
                 sleep 1
@@ -417,9 +426,10 @@ remove_old_images() {
     echo "Removing old images to free up disk space..."
     while IFS= read -r image; do
         if docker rmi "$image" >>"$LOG_FILE" 2>&1; then
-            echo "✓ Removed old image ${image}"
+            echo "Removed old image ${image}"
         else
-            echo "Could not remove old image ${image}. Check ${LOG_FILE} for details, or remove it manually with: docker rmi ${image}"
+            echo "warning: could not remove old image ${image}"
+            echo "hint: check ${LOG_FILE} for details, or remove it manually with: docker rmi ${image}"
         fi
     done <<< "$stale"
 }
@@ -432,12 +442,12 @@ upgrade() {
     local current_container_id
     if ! current_container_id=$(docker compose ps -q supportpal 2>/dev/null); then
         log_debug "Ensure docker compose is running and supportpal service exists"
-        error_exit "Failed to get supportpal container ID"
+        error_exit "failed to get the supportpal container ID"
     fi
 
     if [ -z "$current_container_id" ]; then
         log_debug "Start the containers with: docker compose up -d"
-        error_exit "supportpal container is not running"
+        error_exit "the supportpal container is not running"
     fi
 
     log_debug "Found supportpal container: $current_container_id"
@@ -445,29 +455,30 @@ upgrade() {
     local current_meili_version
     if ! current_meili_version="$(get_current_meilisearch_version "$current_container_id")"; then
         log_debug "Check if Meilisearch is properly configured in the supportpal container"
-        error_exit "Failed to get current Meilisearch version"
+        error_exit "failed to get the current Meilisearch version"
     fi
 
-    echo "✓ Current Meilisearch version: $current_meili_version"
+    echo "Current Meilisearch version: ${current_meili_version}"
 
     # Get next Meilisearch version with error handling
     echo "Checking target Meilisearch version..."
     local next_meili_version
     if ! next_meili_version="$(get_next_meilisearch_version)"; then
         log_debug "Check network connectivity and docker image availability"
-        error_exit "Failed to get target Meilisearch version"
+        error_exit "failed to get the target Meilisearch version"
     fi
 
-    echo "✓ Target Meilisearch version: $next_meili_version"
+    echo "Target Meilisearch version: ${next_meili_version}"
 
     # Check if dump is required
     if meili_requires_upgrade "$current_meili_version" "$next_meili_version"; then
-        echo "✓ Meilisearch upgrade is required."
+        echo "Meilisearch upgrade is required."
 
         if [ "${skip_meili_prompt}" = true ]; then
             echo "Skipping Meilisearch confirmation prompt (--skip-meilisearch-prompt specified)."
         else
-            echo "The Meilisearch database will be dropped and re-indexed. Do you want to continue? [Y/n]"
+            echo "The Meilisearch database will be dropped and re-indexed."
+            echo "Do you want to proceed? [Y/n]"
             read -r PROCEED
             if [ "${PROCEED}" == "n" ]; then
                 echo "Meilisearch upgrade cancelled."
@@ -481,7 +492,7 @@ upgrade() {
     echo "Stopping containers..."
     if ! docker compose down -v; then
         log_debug "Check docker compose status and try manually: docker compose down -v"
-        error_exit "Failed to stop containers"
+        error_exit "failed to stop the containers"
     fi
 
     echo "Updating volumes..."
@@ -494,20 +505,20 @@ upgrade() {
     update_compose_files
 
     if [ "${only_files}" = true ]; then
-        echo "✓ Files updated successfully (--only-files specified)"
+        echo "Files updated successfully (--only-files specified)"
         exit 0
     fi
 
     echo "Starting upgraded containers..."
     if ! COMPOSE_PARALLEL_LIMIT=1 docker compose up -d; then
         log_debug "Check docker compose logs: docker compose logs"
-        error_exit "Failed to start upgraded containers"
+        error_exit "failed to start the upgraded containers"
     fi
 
     echo "Stopping application services..."
     if ! stop_app_services; then
         log_debug "Check container logs: docker compose logs supportpal"
-        error_exit "Failed to stop application services"
+        error_exit "failed to stop the application services"
     fi
 
     echo "Running helpdesk upgrade script..."
@@ -517,16 +528,16 @@ upgrade() {
     echo "Starting application services..."
     if ! start_app_services; then
         log_debug "Start them manually with: docker compose restart"
-        error_exit "Failed to start application services"
+        error_exit "failed to start the application services"
     fi
 
     if [ "$upgrade_status" -ne 0 ]; then
         log_debug "Check container logs: docker compose logs supportpal"
-        error_exit "Helpdesk upgrade script failed"
+        error_exit "the helpdesk upgrade script failed"
     fi
 
     echo
-    echo "✓ Upgrade complete!"
+    echo "Upgrade completed successfully"
 
     remove_old_images
     volume_clone_notice

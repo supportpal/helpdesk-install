@@ -28,18 +28,8 @@ proc load_credentials {} {
 set prompting 0
 
 expect {
-    # The backup will be restored to /home/ubuntu/supportpal_1745573480_17734. Do you want to proceed? [Y/n]
-    -re {The backup will be restored to .+} {
-        send "Y\r"
-        exp_continue
-    }
-    # Container with name 'supportpal' already exists. Do you want to remove that container? [Y/n]
-    "Container with name 'supportpal' already exists*" {
-        send "Y\r"
-        exp_continue
-    }
-    # The following docker volumes already exist and will be replaced: ... Do you want to proceed? [Y/n]
-    "already exist and will be replaced*" {
+    # Every confirmation (restore path, existing container, existing volumes) ends with the same prompt.
+    "Do you want to proceed?*" {
         send "Y\r"
         exp_continue
     }

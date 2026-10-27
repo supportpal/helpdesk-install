@@ -40,13 +40,12 @@ if $debug; then
 fi
 
 if $pre_upgrade && { $portable || $online; }; then
-  echo "error: --pre-upgrade cannot be combined with --portable or --online."
+  echo "error: --pre-upgrade cannot be combined with --portable or --online"
   exit 1
 fi
 
 if $online && ! $portable; then
-  echo "[NOTICE]"
-  echo "--online implies --portable, as the docker volumes can only be copied while the container is stopped."
+  echo "notice: --online implies --portable, as the docker volumes can only be copied while the container is stopped"
   echo
   portable=true
 fi
@@ -67,14 +66,15 @@ TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
 
 # Make sure that the script is executed in the directory where docker-compose.yml is.
 if ! grep -q "container_name: supportpal" < <(docker compose config 2>/dev/null); then
-    echo "error: the script must be executed in your SupportPal installation directory (where your docker-compose.yml file is)."
+    echo "error: the script must be executed in your SupportPal installation directory (where your docker-compose.yml file is)"
     exit 1
 fi
 
 # MYSQL_ENABLED=0 means an external database is used; the database is excluded from the backup.
 MYSQL_ENABLED="$(docker compose exec supportpal bash -c 'echo "${MYSQL_ENABLED:-1}"' | tr -d '[:space:]')"
 if [[ "${MYSQL_ENABLED}" != "1" ]]; then
-  echo "warning: the bundled MySQL server is disabled (MYSQL_ENABLED=0). Backing up your external database server is your responsibility."
+  echo "warning: the bundled MySQL server is disabled (MYSQL_ENABLED=0), the database will not be included in the backup"
+  echo "hint: backing up your external database server is your responsibility"
   echo
 fi
 
@@ -94,7 +94,7 @@ inspect_container() {
 
   container_id="$(docker compose ps -q supportpal)"
   if [[ -z "${container_id}" ]]; then
-    echo "error: the supportpal container is not running."
+    echo "error: the supportpal container is not running"
     exit 1
   fi
 
@@ -116,7 +116,8 @@ inspect_container() {
   done < <(docker inspect --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}} {{.Destination}}{{"\n"}}{{end}}{{end}}' "${container_id}")
 
   if [[ -z "${SNAPSHOT_VOLUMES}${LIVE_VOLUMES}" ]]; then
-    echo "error: the supportpal container has no named docker volumes to copy. Use --portable instead."
+    echo "error: the supportpal container has no named docker volumes to copy"
+    echo "hint: use --portable instead"
     exit 1
   fi
 }
@@ -128,7 +129,8 @@ remove_volumes() {
   for volume in "$@"; do
     docker volume inspect "${volume}" > /dev/null 2>&1 || continue
     if ! grep -q "\"${VOLUME_LABEL}\"" < <(docker volume inspect --format '{{json .Labels}}' "${volume}"); then
-      echo "error: the ${volume} docker volume already exists and was not created by this script. Remove or rename it and try again."
+      echo "error: the ${volume} docker volume already exists and was not created by this script"
+      echo "hint: remove or rename it and try again"
       exit 1
     fi
     execute_command "docker volume rm ${volume}"
@@ -177,7 +179,7 @@ PHP
   if [[ "${status}" -eq 2 ]]; then
     echo "The MySQL clone plugin is not available (SupportPal 6.2.0 or later), the database will be copied while the container is stopped."
   elif [[ "${status}" -ne 0 ]]; then
-    echo "warning: the online database copy failed, the database will be copied while the container is stopped instead."
+    echo "warning: the online database copy failed, the database will be copied while the container is stopped instead"
   else
     echo "Copying the database to ${target}..."
     copy_volume "${MYSQL_VOLUME}" "${dir}" "${target}" || status=1
@@ -208,7 +210,7 @@ snapshot_volumes() {
 
   # Start the container again if copying fails or is interrupted. An EXIT trap is used as ERR traps do not fire
   # for failures inside functions.
-  trap 'echo; echo "error: failed to copy the docker volumes, starting container..."; docker compose start > /dev/null 2>&1' EXIT
+  trap 'echo; echo "error: failed to copy the docker volumes"; echo "Starting container..."; docker compose start > /dev/null 2>&1' EXIT
   trap 'exit 1' INT TERM
 
   for volume in ${SNAPSHOT_VOLUMES}; do
@@ -287,10 +289,10 @@ volume_backup() {
   done
 
   if [[ "${status[0]}" -eq 1 ]]; then
-    echo "warning: some files changed while they were being archived."
+    echo "warning: some files changed while they were being archived"
   elif [[ "${status[0]}" -ne 0 || "${status[1]}" -ne 0 ]]; then
     rm -f "${archive}"
-    echo "error: failed to create the backup."
+    echo "error: failed to create the backup"
     exit 1
   fi
 
@@ -326,9 +328,10 @@ pre_upgrade_backup() {
   echo
   echo "    bash restore.sh --file ${BACKUP_DIR}/pre-upgrade-${TIMESTAMP}.tar.gz"
   echo
-  echo "Once you are satisfied with the upgrade, free the disk space with:"
+  echo "Once you are satisfied with the upgrade, remove the rollback point to free the disk space:"
   echo
   echo "    docker volume rm $(for volume in ${SNAPSHOT_VOLUMES}; do printf '%s_pre_upgrade ' "${volume}"; done)"
+  echo "    rm ${BACKUP_DIR}/pre-upgrade-${TIMESTAMP}.tar.gz"
   echo
 }
 
