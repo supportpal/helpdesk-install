@@ -44,8 +44,11 @@ expect {
         }
         exp_continue
     }
-    # Hostname [127.0.0.1]:
-    -re {Hostname \[[^\]]*\]:} {
+    # app:restore colours its prompts and prefixes them with a space, for example:
+    #   " \e[32mHostname\e[39m [\e[33m127.0.0.1\e[39m]:"
+    # so the patterns allow ANSI escape sequences around the words. The leading space distinguishes the Password
+    # prompt from the "Password: <value>" line printed by restore.sh.
+    -re { (?:\x1b\[[0-9;]*m)*Hostname(?:\x1b\[[0-9;]*m)* \[[^\]]*\]:} {
         if {$username eq "" || $password eq ""} {
             puts "\nERROR: app:restore asked for credentials before restore.sh printed them"
             exit 1
@@ -55,22 +58,22 @@ expect {
         exp_continue
     }
     # Port [3306]:
-    -re {Port \[[^\]]*\]:} {
+    -re { (?:\x1b\[[0-9;]*m)*Port(?:\x1b\[[0-9;]*m)* \[[^\]]*\]:} {
         send -- "$port\r"
         exp_continue
     }
     # Database [supportpal]:
-    -re {Database \[[^\]]*\]:} {
+    -re { (?:\x1b\[[0-9;]*m)*Database(?:\x1b\[[0-9;]*m)* \[[^\]]*\]:} {
         send -- "$name\r"
         exp_continue
     }
     # Username [supportpal]:
-    -re {Username \[[^\]]*\]:} {
+    -re { (?:\x1b\[[0-9;]*m)*Username(?:\x1b\[[0-9;]*m)* \[[^\]]*\]:} {
         send -- "$username\r"
         exp_continue
     }
     # Password:
-    "Password:" {
+    -re { (?:\x1b\[[0-9;]*m)*Password(?:\x1b\[[0-9;]*m)*:} {
         if {$prompting} {
             send -- "$password\r"
         }
