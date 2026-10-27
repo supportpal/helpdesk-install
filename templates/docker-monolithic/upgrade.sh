@@ -40,7 +40,7 @@ usage="Options:
     --skip-meilisearch-prompt  Skip confirmation prompt before dropping Meilisearch data.
     --compose-url <url|path>   Source of docker-compose.yml. Defaults to the GitHub copy at --ref.
     --volumes-url <url|path>   Source of create_volumes.sh. Defaults to the GitHub copy at --ref.
-    --backup-url <url|path>    Source of backup.sh. Defaults to the GitHub copy matching the installed version.
+    --backup-url <url|path>    Source of backup.sh. Defaults to the GitHub copy at --ref.
 
 Each source may be an http(s) URL or a path to a local file (useful for testing).
 "
@@ -149,33 +149,6 @@ check_docker_compose() {
     printf "✔\n"
 }
 
-# Determines the currently installed version. Prints an empty string if it can't be determined.
-installed_version() {
-    local version
-    version="$(grep -m1 -E '^[[:space:]]*image:' docker-compose.yml | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 || true)"
-
-    printf '%s' "${version}"
-}
-
-# The backup script must match the installed version, as the 6.x script isn't compatible with 5.x containers.
-backup_ref() {
-    local version
-    version="$(installed_version)"
-
-    if [ -z "${version}" ]; then
-        log_debug "Unable to determine the installed version, using the backup script from ${ref}"
-        printf '%s' "${ref}"
-        return
-    fi
-
-    log_debug "Detected installed version: ${version}"
-    if [ "$(printf '%s\n' "${version}" "6.0.0" | sort -V | head -n1)" = "6.0.0" ]; then
-        printf '6.x'
-    else
-        printf '5.x'
-    fi
-}
-
 backup() {
     if [ "${skip_backup}" = true ]; then
         return
@@ -191,11 +164,28 @@ backup() {
 
     local backup_source="${BACKUP_FILE_DOWNLOAD_URL}"
     if [ -z "${backup_source}" ]; then
-        backup_source="${GITHUB_RAW_URL}/$(backup_ref)/templates/docker-monolithic/backup.sh"
+        backup_source="${GITHUB_RAW_URL}/${ref}/templates/docker-monolithic/backup.sh"
     fi
     log_debug "Using backup script from ${backup_source}"
 
-    bash <(fetch_file "${backup_source}")
+    # Create a rollback point (copies of the docker volumes) rather than a full backup, as it is much faster.
+    bash <(fetch_file "${backup_source}") --pre-upgrade
+}
+
+# The volume copies made by backup.sh --pre-upgrade are kept as a rollback point; remind the user to remove them.
+volume_clone_notice() {
+    local clones
+
+    clones="$(docker volume ls -q --filter 'name=_pre_upgrade' 2>>"$LOG_FILE" | { grep -E '_pre_upgrade$' || true; } | tr '\n' ' ')"
+    if [ -z "${clones}" ]; then
+        return
+    fi
+
+    echo
+    echo "Copies of the docker volumes were kept as a rollback point. Once you have verified the upgrade, free the"
+    echo "disk space with:"
+    echo
+    echo "    docker volume rm ${clones}"
 }
 
 update_compose_files() {
@@ -539,6 +529,7 @@ upgrade() {
     echo "✓ Upgrade complete!"
 
     remove_old_images
+    volume_clone_notice
 }
 
 check_docker_compose

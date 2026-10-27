@@ -13,7 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -51,8 +51,42 @@ jobs:
         env:
           SUPPORTPAL_LICENSE_KEY: "${{ secrets.SUPPORTPAL_MONO_LICENSE_KEY }}"
 
+      - name: test pre-upgrade backup/rollback
+        run: |
+          bash backup.sh --pre-upgrade
+          docker volume inspect supportpal_db_pre_upgrade supportpal_config_pre_upgrade > /dev/null
+          if docker volume inspect supportpal_storage_pre_upgrade > /dev/null 2>&1; then
+            echo "ERROR: storage volume should not be copied by --pre-upgrade"
+            exit 3
+          fi
+          ls backup/pre-upgrade-*.tar.gz
+          expect verify-rollback.exp
+
+          sleep 60
+          curl -fSL -o /tmp/test.txt http://localhost/
+          if ! grep -q "SupportPal" /tmp/test.txt; then
+            echo "ERROR: SupportPal is not loading via HTTP after rollback"
+            exit 3
+          fi
+
       - name: test backup/restore
         run: |
           bash backup.sh
-          sleep 60
+          ls backup/app-*.tar.gz
           expect verify-restore.exp
+
+          sleep 60
+          curl -fSL -o /tmp/test.txt http://localhost/
+          if ! grep -q "SupportPal" /tmp/test.txt; then
+            echo "ERROR: SupportPal is not loading via HTTP after restore"
+            exit 3
+          fi
+
+      - name: test portable backup/restore
+        # The previous restore recreated the installation in a sibling directory, so run from there.
+        run: |
+          cd "$(ls -d ../supportpal_*/ | head -n1)"
+          bash "${GITHUB_WORKSPACE}/templates/docker-monolithic/backup.sh" --portable
+          ls backup/app-*.tar.gz
+          sleep 60
+          expect "${GITHUB_WORKSPACE}/templates/docker-monolithic/verify-restore.exp"

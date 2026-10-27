@@ -1,0 +1,36 @@
+#!/usr/bin/expect -f
+
+# Rolls the installation back to the most recent backup/pre-upgrade-*.tar.gz archive created by
+# backup.sh --pre-upgrade.
+
+set timeout -1
+
+set files [lsort -decreasing [glob -nocomplain backup/pre-upgrade-*.tar.gz]]
+if {[llength $files] == 0} {
+    puts "ERROR: no backup/pre-upgrade-*.tar.gz archive found"
+    exit 1
+}
+set file [lindex $files 0]
+
+spawn bash restore.sh --file $file
+
+match_max 100000
+
+# The installation in ... will be rolled back ... Do you want to proceed? [Y/n]
+expect "Do you want to proceed?*" {
+    send "Y\r"
+}
+
+expect eof
+
+# Capture the exit status of the spawned process
+catch wait result
+set exit_code [lindex $result 3]
+
+if {$exit_code == 0} {
+    puts "Rollback completed successfully with exit code 0"
+    exit 0
+} else {
+    puts "ERROR: Rollback failed with exit code $exit_code"
+    exit 1
+}
