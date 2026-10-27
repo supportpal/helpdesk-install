@@ -331,11 +331,6 @@ pre_upgrade_backup() {
   echo
   echo "Rollback point created successfully at ${archive}"
   echo
-  echo "The application data is held in the following docker volumes (storage/ and the logs are not modified by an upgrade and have not been copied):"
-  for volume in ${SNAPSHOT_VOLUMES}; do
-    echo "    ${volume}_pre_upgrade"
-  done
-  echo
   echo "To roll back, run from this directory:"
   echo
   echo "    bash restore.sh --file ${BACKUP_DIR}/pre-upgrade-${TIMESTAMP}.tar.gz"
