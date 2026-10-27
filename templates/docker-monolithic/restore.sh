@@ -91,15 +91,12 @@ prepare_fresh_install() {
 
       execute_command "docker stop supportpal"
       execute_command "docker rm supportpal"
-      execute_command "docker volume rm supportpal_db"
-      execute_command "docker volume rm supportpal_config"
-      execute_command "docker volume rm supportpal_redis"
-      execute_command "docker volume rm supportpal_storage"
-      execute_command "docker volume rm supportpal_logs"
-      execute_command "docker volume rm supportpal_addons"
-      execute_command "docker volume rm supportpal_caddy"
-      execute_command "docker volume rm supportpal_meilisearch"
-      execute_command "docker volume rm supportpal_qdrant || true"
+      for volume in supportpal_db supportpal_config supportpal_redis supportpal_storage supportpal_logs \
+        supportpal_addons supportpal_caddy supportpal_meilisearch supportpal_qdrant; do
+        if docker volume inspect "${volume}" > /dev/null 2>&1; then
+          execute_command "docker volume rm ${volume}"
+        fi
+      done
   fi
 
   mkdir -p "$RESTORE_PATH"
