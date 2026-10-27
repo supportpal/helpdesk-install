@@ -71,19 +71,10 @@ if ! grep -q "container_name: supportpal" < <(docker compose config 2>/dev/null)
     exit 1
 fi
 
-echo "[NOTICE]"
-echo "The backup includes all files in the current working directory ($(pwd))."
-echo
-echo "It is recommended to move your installation files (docker-compose.yml, docker-compose.override.yml, .env, etc) to"
-echo "a separate directory, to avoid including unnecessary files in the backup."
-echo
-
 # MYSQL_ENABLED=0 means an external database is used; the database is excluded from the backup.
 MYSQL_ENABLED="$(docker compose exec supportpal bash -c 'echo "${MYSQL_ENABLED:-1}"' | tr -d '[:space:]')"
 if [[ "${MYSQL_ENABLED}" != "1" ]]; then
-  echo "[WARNING]"
-  echo "The bundled MySQL server is disabled (MYSQL_ENABLED=0). The database will NOT be included in this"
-  echo "backup. Backing up your external database server is your responsibility."
+  echo "warning: the bundled MySQL server is disabled (MYSQL_ENABLED=0). Backing up your external database server is your responsibility."
   echo
 fi
 
