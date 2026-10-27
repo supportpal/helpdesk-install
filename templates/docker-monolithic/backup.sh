@@ -228,7 +228,7 @@ snapshot_volumes() {
 # pigz compresses on all cores. Prefer it inside the helpdesk image, then on the host, then fall back to gzip.
 # Sets CONTAINER_COMPRESSOR and HOST_COMPRESSOR; one compresses and the other passes the stream through.
 select_compressor() {
-  if docker run --rm --entrypoint sh "${CONTAINER_IMAGE}" -c 'command -v pigz' > /dev/null 2>&1; then
+  if docker compose exec -T supportpal sh -c 'command -v pigz' > /dev/null 2>&1; then
     CONTAINER_COMPRESSOR="pigz"
     HOST_COMPRESSOR="cat"
   elif command -v pigz > /dev/null 2>&1; then
@@ -335,31 +335,84 @@ pre_upgrade_backup() {
   echo
 }
 
+# Stops every service except Redis and MySQL, so that the files and database do not change while they are backed up.
+stop_services() {
+  docker compose exec -T supportpal bash -c "
+    sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d \
+    ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' \
+    -printf '%f\n' -exec sv stop {} \; $(if [ "$debug" = false ]; then echo '> /dev/null 2>&1'; fi)
+  "
+}
+
+start_services() {
+  echo "Starting services..."
+  execute_command "docker compose restart supportpal"
+}
+
+# Usage: archive_from_container <archive> <tar arguments...>
+# Runs tar inside the container with the given arguments and streams its output into <archive>, compressed with
+# pigz where available, so that nothing is copied to disk first. Prints a warning if files changed while they were
+# being archived and exits on any other failure.
+archive_from_container() {
+  local archive="$1" status
+  shift
+
+  # tar exits 1 if a file changes while it is read. pipefail inside the container makes tar's status the exec's.
+  set +e +o pipefail
+  docker compose exec -T -u root -e COMPRESSOR="${CONTAINER_COMPRESSOR}" supportpal bash -c '
+    set -o pipefail
+    tar "$@" | "${COMPRESSOR}"
+  ' bash "$@" | "${HOST_COMPRESSOR}" > "${archive}"
+  status=("${PIPESTATUS[@]}")
+  set -e -o pipefail
+
+  if [[ "${status[0]}" -eq 1 ]]; then
+    echo "warning: some files changed while they were being archived"
+  elif [[ "${status[0]}" -ne 0 || "${status[1]}" -ne 0 ]]; then
+    echo "error: failed to create $(basename "${archive}")"
+    exit 1
+  fi
+}
+
+# Usage: abort_portable_backup <tmp dir> <archive>
+# Removes the files left behind by a failed or interrupted portable backup and starts the services again.
+abort_portable_backup() {
+  echo
+  echo "Removing temporary files..."
+  rm -rf "$1" "$2"
+  if ! $online; then
+    start_services
+  fi
+}
+
 # Creates a backup in the helpdesk's own format, which app:restore can restore on any deployment type.
 portable_backup() {
-  local tmp_dir="${ABS_BACKUP_PATH}/tmp-${TIMESTAMP}"
-  local filesystem_backup_name="filesystem-${TIMESTAMP}.tar.gz" app_backup_name="app-${TIMESTAMP}.tar.gz"
-  local command_path gte_v420 db_backup_path db_file_name=
+  local tmp_dir="${ABS_BACKUP_PATH}/tmp-${TIMESTAMP}" archive="${ABS_BACKUP_PATH}/app-${TIMESTAMP}.tar"
+  local filesystem_backup_name="filesystem-${TIMESTAMP}.tar.gz"
+  local command_path gte_v420 db_backup_path volume_dirs dir db_file_name=
 
   # Determine command path. Some commands moved to app-manager in v4.2.0
   gte_v420="$(docker compose exec supportpal php -r "\$release = require '/var/www/supportpal/config/release.php'; echo (int) version_compare(\$release['version'], '4.2.0', '>=');")"
   if [[ "$gte_v420" = "0" ]]; then command_path="/var/www/supportpal"; else command_path="/var/www/supportpal/app-manager"; fi
 
+  select_compressor
+
+  # Clean up and start the services again if the backup fails or is interrupted. An EXIT trap is used as ERR traps
+  # do not fire for failures inside functions. The paths are expanded now as they are local to this function.
+  # shellcheck disable=SC2064
+  trap "abort_portable_backup '${tmp_dir}' '${archive}'" EXIT
+  trap 'exit 1' INT TERM
+
   if ! $online; then
     echo "Stopping services..."
-    docker compose exec supportpal bash -c "
-      sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d \
-      ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' \
-      -printf '%f\n' -exec sv stop {} \; $(if [ "$debug" = false ]; then echo '> /dev/null 2>&1'; fi)
-    "
+    stop_services
   fi
 
-  echo 'Backing up filesystem...'
-  mkdir -p "${tmp_dir}/filesystem-${TIMESTAMP}/config"
-  docker compose cp supportpal:/var/www/supportpal/config/production "${tmp_dir}/filesystem-${TIMESTAMP}/config/" || { echo "error: failed to copy config/production from container"; exit 1; }
-  docker compose cp supportpal:/var/www/supportpal/storage "${tmp_dir}/filesystem-${TIMESTAMP}/" || { echo "error: failed to copy storage from container"; exit 1; }
-  docker compose cp supportpal:/var/www/supportpal/addons "${tmp_dir}/filesystem-${TIMESTAMP}/" || { echo "error: failed to copy addons from container"; exit 1; }
-  (cd "${tmp_dir}" && tar -czf "${filesystem_backup_name}" "filesystem-${TIMESTAMP}" && rm -rf "filesystem-${TIMESTAMP}")
+  mkdir -p "${tmp_dir}"
+
+  echo "Backing up filesystem, this may take a while..."
+  archive_from_container "${tmp_dir}/${filesystem_backup_name}" \
+    -C /var/www/supportpal --transform "s,^,filesystem-${TIMESTAMP}/,S" -cf - config/production storage addons
 
   if [[ "${MYSQL_ENABLED}" = "1" ]]; then
     echo 'Backing up database...'
@@ -370,32 +423,28 @@ portable_backup() {
   fi
 
   echo 'Backing up volume data...'
-  mkdir -p "${tmp_dir}/volumes-monolithic/cache"
-  mkdir -p "${tmp_dir}/volumes-monolithic/caddy"
-  docker compose cp supportpal:/redis-data "${tmp_dir}/volumes-monolithic/cache/" || { echo "error: failed to copy redis-data from container"; exit 1; }
-  docker compose cp supportpal:/caddy "${tmp_dir}/volumes-monolithic/caddy/" || { echo "error: failed to copy caddy from container"; exit 1; }
-  if docker compose exec -u root supportpal bash -c "test -d /meilisearch"; then
-    mkdir -p "${tmp_dir}/volumes-monolithic/meilisearch"
-    docker compose cp supportpal:/meilisearch "${tmp_dir}/volumes-monolithic/meilisearch/" || { echo "error: failed to copy meilisearch from container"; exit 1; }
-  fi
-  if docker compose exec -u root supportpal bash -c "test -d /qdrant"; then
-    mkdir -p "${tmp_dir}/volumes-monolithic/qdrant"
-    docker compose cp supportpal:/qdrant "${tmp_dir}/volumes-monolithic/qdrant/" || { echo "error: failed to copy qdrant from container"; exit 1; }
-  fi
+  volume_dirs=(redis-data caddy)
+  for dir in meilisearch qdrant; do
+    if docker compose exec -T -u root supportpal test -d "/${dir}"; then
+      volume_dirs+=("${dir}")
+    fi
+  done
+  archive_from_container "${tmp_dir}/volumes-monolithic.tar.gz" -C / -cf - "${volume_dirs[@]}"
 
   echo "Backing up current working directory: $(pwd)..."
   tar -czf "${tmp_dir}/docker-files.tar.gz" --exclude="./${BACKUP_DIR}" .
 
-  # Combine backup files.
-  (cd "${tmp_dir}" && tar -czf "${ABS_BACKUP_PATH}/${app_backup_name}" "${filesystem_backup_name}" ${db_file_name:+"${db_file_name}"} volumes-monolithic/ docker-files.tar.gz)
+  echo "Combining into $(basename "${archive}")..."
+  (cd "${tmp_dir}" && tar -cf "${archive}" "${filesystem_backup_name}" ${db_file_name:+"${db_file_name}"} volumes-monolithic.tar.gz docker-files.tar.gz)
   rm -rf "${tmp_dir}"
 
-  echo "Backup created successfully at ${ABS_BACKUP_PATH}/${app_backup_name}"
+  trap - EXIT INT TERM
+
+  echo "Backup created successfully at ${archive}"
   echo
 
   if ! $online; then
-    echo "Restarting services..."
-    execute_command "docker compose restart supportpal"
+    start_services
   fi
 }
 

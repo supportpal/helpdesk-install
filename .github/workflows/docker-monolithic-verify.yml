@@ -87,6 +87,6 @@ jobs:
         run: |
           cd "$(ls -d ../supportpal_*/ | head -n1)"
           bash "${GITHUB_WORKSPACE}/templates/docker-monolithic/backup.sh" --portable
-          ls backup/app-*.tar.gz
+          ls backup/app-*.tar
           sleep 60
           expect "${GITHUB_WORKSPACE}/templates/docker-monolithic/verify-restore.exp"

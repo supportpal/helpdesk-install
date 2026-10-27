@@ -376,8 +376,13 @@ else
   docker compose exec -u supportpal supportpal bash -c "cd ${COMMAND_PATH} && php artisan filesystem:restore ${FS_BACKUP_PATH} --no-verify --force"
 fi
 
-# If backup generated via docker, restore volumes.
-if grep -qs '^volumes-monolithic/$' <<< "${TAR_OUTPUT}"; then
+# If backup generated via docker, restore volumes. Newer backups hold the volume data in an archive rooted at /,
+# older ones in a volumes-monolithic/ directory.
+if grep -qs '^volumes-monolithic.tar.gz$' <<< "${TAR_OUTPUT}"; then
+  echo 'Restoring volume data...'
+
+  docker compose exec -T -u root supportpal bash -c "tar -C / -I \"\$(command -v pigz || command -v gzip)\" -xf ${TEMP_BACKUP_DIR}/volumes-monolithic.tar.gz"
+elif grep -qs '^volumes-monolithic/$' <<< "${TAR_OUTPUT}"; then
   echo 'Restoring volume data...'
 
   docker compose exec -u root supportpal bash -c "cp -r ${TEMP_BACKUP_DIR}/volumes-monolithic/cache/redis-data /"
