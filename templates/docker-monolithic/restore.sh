@@ -3,7 +3,7 @@ set -eu -o pipefail
 
 usage="Options:
     -h,--help                  Display this help and exit.
-    --file=<path>              Backup archive to restore. Defaults to the most recent backup/volumes-* (docker
+    --file <path>              Backup archive to restore. Defaults to the most recent backup/volumes-* (docker
                                volume backup) or backup/app-* (portable backup) archive.
                                Pass a backup/pre-upgrade-*.tar.gz archive (created by backup.sh --pre-upgrade)
                                to roll back the installation in the current directory to that point.
