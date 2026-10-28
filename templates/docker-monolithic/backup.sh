@@ -208,6 +208,17 @@ PHP
   return "${status}"
 }
 
+# Usage: abort_snapshot <volumes...>
+# Removes the copies left behind by a failed or interrupted snapshot_volumes and starts the container again.
+abort_snapshot() {
+  echo
+  echo "error: failed to copy the docker volumes"
+  echo "Starting container..."
+  docker compose start > /dev/null 2>&1 || true
+  echo "Removing the partial copies..."
+  remove_volumes "$@"
+}
+
 # Copies each of SNAPSHOT_VOLUMES to <volume><suffix>. The database is copied online where possible; everything
 # else is copied while the container is stopped, so that it is consistent on disk. The copies are plain copies on
 # the host filesystem (reflink copies where the filesystem supports it).
@@ -227,10 +238,11 @@ snapshot_volumes() {
   echo "Stopping container..."
   execute_command "docker compose stop"
 
-  # Start the container again if copying fails or is interrupted. An EXIT trap is used as ERR traps do not fire
-  # for failures inside functions.
-  trap 'echo; echo "error: failed to copy the docker volumes"; echo "Starting container..."; docker compose start > /dev/null 2>&1' EXIT
-  trap 'exit 1' INT TERM
+  # Remove the partial copies and start the container again if copying fails or is interrupted. An EXIT trap is
+  # used as ERR traps do not fire for failures inside functions.
+  # shellcheck disable=SC2064
+  trap "abort_snapshot ${targets[*]}" EXIT
+  trap 'exit 1' INT TERM HUP
 
   for volume in ${SNAPSHOT_VOLUMES}; do
     [[ "${volume}" != "${skip}" ]] || continue
@@ -238,7 +250,7 @@ snapshot_volumes() {
     copy_volume "${volume}" "." "${volume}${suffix}"
   done
 
-  trap - EXIT INT TERM
+  trap - EXIT INT TERM HUP
 
   echo "Starting container..."
   execute_command "docker compose start"
@@ -268,7 +280,7 @@ select_compressor() {
 #   docker-files/             the current working directory
 #   volumes/<volume name>/    the contents of each docker volume
 volume_backup() {
-  local archive="${ABS_BACKUP_PATH}/app-${TIMESTAMP}.tar.gz" volume manifest mounts=() status
+  local archive="${ABS_BACKUP_PATH}/app-${TIMESTAMP}.tar.gz" volume manifest mounts=() copies=() status
 
   inspect_container
   select_compressor
@@ -278,11 +290,18 @@ volume_backup() {
   for volume in ${SNAPSHOT_VOLUMES}; do
     manifest+="volume ${volume}"$'\n'
     mounts+=(-v "${volume}_backup:/volumes/${volume}:ro")
+    copies+=("${volume}_backup")
   done
   for volume in ${LIVE_VOLUMES}; do
     manifest+="volume ${volume}"$'\n'
     mounts+=(-v "${volume}:/volumes/${volume}:ro")
   done
+
+  # The archive is written under a temporary name and only renamed once it is complete, so that restore.sh never
+  # selects a truncated one. Remove it and the volume copies if archiving fails or is interrupted.
+  # shellcheck disable=SC2064
+  trap "abort_volume_backup '${archive}.part' ${copies[*]}" EXIT
+  trap 'exit 1' INT TERM HUP
 
   echo "Archiving to ${archive}, this may take a while..."
 
@@ -299,24 +318,34 @@ volume_backup() {
       set -o pipefail
       printf "%s" "${MANIFEST}" > /manifest.txt
       tar -C / --anchored --exclude="docker-files/${BACKUP_DIR}" -cf - manifest.txt docker-files volumes | "${COMPRESSOR}"
-    ' | "${HOST_COMPRESSOR}" > "${archive}"
+    ' | "${HOST_COMPRESSOR}" > "${archive}.part"
   status=("${PIPESTATUS[@]}")
   set -e -o pipefail
-
-  for volume in ${SNAPSHOT_VOLUMES}; do
-    execute_command "docker volume rm ${volume}_backup"
-  done
 
   if [[ "${status[0]}" -eq 1 ]]; then
     echo "warning: some files changed while they were being archived"
   elif [[ "${status[0]}" -ne 0 || "${status[1]}" -ne 0 ]]; then
-    rm -f "${archive}"
     echo "error: failed to create the backup"
     exit 1
   fi
 
+  trap - EXIT INT TERM HUP
+
+  remove_volumes "${copies[@]}"
+  mv "${archive}.part" "${archive}"
+
   echo "Backup created successfully at ${archive}"
   echo
+}
+
+# Usage: abort_volume_backup <partial archive> <volume copies...>
+# Removes the files left behind by a failed or interrupted volume backup.
+abort_volume_backup() {
+  echo
+  echo "Removing temporary files..."
+  rm -f "$1"
+  shift
+  remove_volumes "$@"
 }
 
 # Asks before replacing the volume copies from a previous --pre-upgrade run, as they may be the only way to roll
@@ -453,7 +482,7 @@ portable_backup() {
   # do not fire for failures inside functions. The paths are expanded now as they are local to this function.
   # shellcheck disable=SC2064
   trap "abort_portable_backup '${tmp_dir}' '${archive}'" EXIT
-  trap 'exit 1' INT TERM
+  trap 'exit 1' INT TERM HUP
 
   if ! $online; then
     echo "Stopping services..."
@@ -490,7 +519,7 @@ portable_backup() {
   (cd "${tmp_dir}" && tar -cf "${archive}" "${filesystem_backup_name}" ${db_file_name:+"${db_file_name}"} volumes-monolithic.tar.gz docker-files.tar.gz)
   rm -rf "${tmp_dir}"
 
-  trap - EXIT INT TERM
+  trap - EXIT INT TERM HUP
 
   echo "Backup created successfully at ${archive}"
   echo

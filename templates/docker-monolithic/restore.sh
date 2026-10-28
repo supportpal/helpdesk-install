@@ -277,6 +277,14 @@ echo "Found ${LAST_BACKUP_FILE}..."
 
 MANIFEST="$(read_manifest "${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}")"
 if [[ "${MANIFEST}" == format* ]]; then
+  # The manifest is readable from a truncated archive, so check the whole file before removing anything.
+  echo "Checking ${LAST_BACKUP_FILE}, this may take a while..."
+  if ! "$(command -v pigz || command -v gzip)" -t "${LAST_BACKUP_DIR}/${LAST_BACKUP_FILE}" 2>/dev/null; then
+    echo "error: ${LAST_BACKUP_FILE} is incomplete or corrupt"
+    echo "hint: the backup may have been interrupted or only partially copied, restore a different one"
+    exit 1
+  fi
+
   prepare_fresh_install
   volume_restore "${MANIFEST}"
   exit 0
