@@ -174,12 +174,15 @@ backup() {
     bash <(fetch_file "${backup_source}") --pre-upgrade
 }
 
+# Label that backup.sh puts on the volumes it creates, so that only those are ever suggested for removal.
+VOLUME_LABEL="com.supportpal.backup"
+
 # The volume copies and archive made by backup.sh --pre-upgrade are kept as a rollback point; remind the user to
 # remove them.
 volume_clone_notice() {
     local clones archive
 
-    clones="$(docker volume ls -q --filter 'name=_pre_upgrade' 2>>"$LOG_FILE" | { grep -E '_pre_upgrade$' || true; } | tr '\n' ' ')"
+    clones="$(docker volume ls -q --filter "label=${VOLUME_LABEL}" --filter 'name=_pre_upgrade' 2>>"$LOG_FILE" | { grep -E '_pre_upgrade$' || true; } | tr '\n' ' ')"
     if [ -z "${clones}" ]; then
         return
     fi
