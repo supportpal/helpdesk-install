@@ -197,7 +197,8 @@ clone_database() {
   fi
 
   # The helpdesk's database user holds the BACKUP_ADMIN and CLONE_ADMIN grants. Exits 2 if the plugin is not active.
-  docker compose exec -T -u supportpal supportpal php -- "${CLONE_MOUNT}/${dir}/data" <<'PHP' || status=$?
+  docker compose exec -T -u supportpal supportpal php -d opcache.enable_cli=0 -d display_errors=stderr -- \
+    "${CLONE_MOUNT}/${dir}/data" <<'PHP' || status=$?
 <?php
 $config = require '/var/www/supportpal/config/production/database.php';
 $connection = $config['connections']['mysql'];
