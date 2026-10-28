@@ -1,6 +1,7 @@
 #!/usr/bin/expect -f
 
-# Restores the most recent backup/app-* archive, answering the prompts that restore.sh asks along the way.
+# Restores the most recent backup/volumes-* or backup/app-* archive, answering the prompts that restore.sh asks along
+# the way.
 # Backups in the default (docker volume) format restore without any database prompts; portable backups
 # (backup.sh --portable) are restored by app:restore, which asks for the database connection details.
 

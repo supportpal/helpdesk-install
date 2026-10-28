@@ -72,7 +72,7 @@ jobs:
       - name: test backup/restore
         run: |
           bash backup.sh
-          ls backup/app-*.tar.gz
+          ls backup/volumes-*.tar.gz
           expect verify-restore.exp
 
           sleep 60

@@ -3,7 +3,8 @@ set -eu -o pipefail
 
 usage="Options:
     -h,--help                  Display this help and exit.
-    --file=<path>              Backup archive to restore. Defaults to the most recent backup/app-* archive.
+    --file=<path>              Backup archive to restore. Defaults to the most recent backup/volumes-* (docker
+                               volume backup) or backup/app-* (portable backup) archive.
                                Pass a backup/pre-upgrade-*.tar.gz archive (created by backup.sh --pre-upgrade)
                                to roll back the installation in the current directory to that point.
     --debug                    Enable verbose output.
@@ -244,21 +245,19 @@ else
 
   echo "Searching ${LAST_BACKUP_DIR}/ directory for backups..."
 
-  # Search for the most recent .tar.gz or .tar file
-  # Collect all matching backup files into an array
+  # Collect the docker volume backups (volumes-<timestamp>.tar.gz) and the helpdesk's own format (app-<timestamp>.tar
+  # or .tar.gz), keyed by timestamp so that the most recent is selected whatever its prefix.
   backup_files=()
-  for pattern in "app-*.tar.gz" "app-*.tar"; do
-      # shellcheck disable=SC2086
-      for file in "${LAST_BACKUP_DIR}/"${pattern}; do
-          if [[ -f "$file" ]]; then
-              backup_files+=("$file")
-          fi
-      done
+  for file in "${LAST_BACKUP_DIR}"/volumes-*.tar.gz "${LAST_BACKUP_DIR}"/app-*.tar.gz "${LAST_BACKUP_DIR}"/app-*.tar; do
+      if [[ -f "$file" ]]; then
+          name="$(basename "$file")"
+          backup_files+=("${name#*-} ${file}")
+      fi
   done
 
   # Select the most recent backup file
   if [[ ${#backup_files[@]} -gt 0 ]]; then
-      LAST_BACKUP_FILE_PATH=$(printf '%s\n' "${backup_files[@]}" | sort -r | head -n1)
+      LAST_BACKUP_FILE_PATH=$(printf '%s\n' "${backup_files[@]}" | sort -r | head -n1 | cut -d' ' -f2-)
   else
       LAST_BACKUP_FILE_PATH=""
   fi

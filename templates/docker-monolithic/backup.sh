@@ -6,8 +6,9 @@ usage="Options:
     --pre-upgrade              Create a rollback point for an upgrade rather than a full backup: the docker volumes
                                are copied to <volume>_pre_upgrade volumes and only the docker files are archived.
                                Roll back with: bash restore.sh --file backup/pre-upgrade-<timestamp>.tar.gz
-    --portable                 Use the helpdesk's own backup format (a database dump and the application files)
-                               rather than copies of the docker volumes. Slower, but can be restored on any
+    --portable                 Use the helpdesk's own backup format (a database dump and the application files),
+                               written to backup/app-<timestamp>.tar, rather than copies of the docker volumes,
+                               written to backup/volumes-<timestamp>.tar.gz. Slower, but can be restored on any
                                deployment type or MySQL version.
     --online                   Do not stop the services. Implies --portable.
     --debug                    Enable verbose output.
@@ -287,14 +288,15 @@ select_compressor() {
 
 # Default. Copies the volumes (see snapshot_volumes), then archives the copies and the live volumes while the
 # helpdesk is running. Everything is streamed from one helper container straight into the archive, so the only
-# disk space needed is the volume copies plus the archive itself.
+# disk space needed is the volume copies plus the archive itself. The archive is named volumes-<timestamp>.tar.gz,
+# so that readers of the helpdesk's own app-* format (app:restore, older restore scripts) never select it.
 #
 # Archive layout (a single gzip stream):
 #   manifest.txt              image and volume names; first, so restore.sh can read it without decompressing the rest
 #   docker-files/             the current working directory
 #   volumes/<volume name>/    the contents of each docker volume
 volume_backup() {
-  local archive="${ABS_BACKUP_PATH}/app-${TIMESTAMP}.tar.gz" volume manifest mounts=() copies=() status
+  local archive="${ABS_BACKUP_PATH}/volumes-${TIMESTAMP}.tar.gz" volume manifest mounts=() copies=() status
 
   inspect_container
   select_compressor
