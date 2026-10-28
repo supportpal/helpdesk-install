@@ -189,8 +189,8 @@ clone_database() {
 
   # Remove anything left behind by an interrupted run, then create a directory that MySQL can write to. The clone
   # plugin creates the target directory itself, so it is given a subdirectory of it.
-  if ! docker compose exec -T supportpal bash -c "
-    sudo rm -rf ${CLONE_MOUNT}/.clone-* && sudo mkdir ${CLONE_MOUNT}/${dir} && sudo chown mysql:mysql ${CLONE_MOUNT}/${dir}
+  if ! docker compose exec -T -u root supportpal bash -c "
+    rm -rf ${CLONE_MOUNT}/.clone-* && mkdir ${CLONE_MOUNT}/${dir} && chown mysql:mysql ${CLONE_MOUNT}/${dir}
   " > /dev/null 2>&1; then
     echo "warning: failed to create ${CLONE_MOUNT}/${dir} in the container, the database will be copied while the container is stopped instead"
     return 1
@@ -222,7 +222,7 @@ PHP
     copy_volume "${CLONE_VOLUME}" "${dir}/data" "${target}" || status=1
   fi
 
-  docker compose exec -T supportpal bash -c "sudo rm -rf ${CLONE_MOUNT}/${dir}" > /dev/null 2>&1 || true
+  docker compose exec -T -u root supportpal bash -c "rm -rf ${CLONE_MOUNT}/${dir}" > /dev/null 2>&1 || true
   return "${status}"
 }
 
@@ -457,8 +457,8 @@ pre_upgrade_backup() {
 
 # Stops every service except Redis and MySQL, so that the files and database do not change while they are backed up.
 stop_services() {
-  docker compose exec -T supportpal bash -c "
-    sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d \
+  docker compose exec -T -u root supportpal bash -c "
+    find -L /etc/service -maxdepth 1 -mindepth 1 -type d \
     ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' \
     -printf '%f\n' -exec sv stop {} \; $(if [ "$debug" = false ]; then echo '> /dev/null 2>&1'; fi)
   "

@@ -238,14 +238,14 @@ drop_meilisearch_data() {
 
     # Stop Meilisearch service
     echo "Stopping Meilisearch service..."
-    if ! docker compose exec supportpal sudo sv stop 00meilisearch; then
+    if ! docker compose exec -u root supportpal sv stop 00meilisearch; then
         error_exit "failed to stop the Meilisearch service"
     fi
     echo "Meilisearch service stopped"
 
     # Clear Meilisearch database directory (including hidden files)
     echo "Clearing Meilisearch database directory..."
-    if ! docker compose exec supportpal bash -c 'sudo rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
+    if ! docker compose exec -u root supportpal bash -c 'rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
         error_exit "failed to clear the Meilisearch database directory"
     fi
     echo "Meilisearch database directory cleared"
@@ -374,11 +374,11 @@ stop_app_services() {
 
     # runit may not be supervising the services yet if the container has only just started, so retry for a while.
     # shellcheck disable=SC2016
-    docker compose exec -T supportpal bash -c '
+    docker compose exec -T -u root supportpal bash -c '
         for service in "$@"; do
             [ -d "/etc/service/${service}" ] || continue
             attempt=0
-            until sudo sv -w 30 force-stop "${service}" > /dev/null 2>&1; do
+            until sv -w 30 force-stop "${service}" > /dev/null 2>&1; do
                 attempt=$((attempt + 1))
                 if [ "${attempt}" -ge 60 ]; then
                     echo "error: failed to stop ${service}" >&2
@@ -395,11 +395,11 @@ start_app_services() {
 
     # Reverse order so dependencies are started before the services that use them.
     # shellcheck disable=SC2016
-    docker compose exec -T supportpal bash -c '
+    docker compose exec -T -u root supportpal bash -c '
         for (( i = $#; i > 0; i-- )); do
             service="${!i}"
             [ -d "/etc/service/${service}" ] || continue
-            sudo sv start "${service}" > /dev/null
+            sv start "${service}" > /dev/null
         done
     ' bash "${APP_SERVICES[@]}" >> "$LOG_FILE" 2>&1
 }

@@ -315,13 +315,13 @@ if grep -qs "^docker-files.tar.gz" <<< "${ARCHIVE_CONTENTS}"; then
 
   # Wait for container to initialise.
   CONTAINER_ENV_PATH="/etc/container_environment.sh"
-  docker compose exec -e CONTAINER_ENV_PATH="$CONTAINER_ENV_PATH" supportpal bash -c '
+  docker compose exec -u root -e CONTAINER_ENV_PATH="$CONTAINER_ENV_PATH" supportpal bash -c '
   echo -n "Waiting for container setup to complete."
 
   FILE="/etc/container_environment.sh"
   while { [ "${MYSQL_ENABLED:-1}" = "1" ] && [ -z "${MYSQL_PASSWORD+x}" ]; } || [ -z "${INITIALIZED+x}" ]; do
     if [ -f "$FILE" ]; then
-      source <(sudo cat "$FILE")
+      source "$FILE"
     fi
 
     echo -n "."
@@ -353,8 +353,8 @@ GTE_v420="$(docker compose exec supportpal php -r "\$release = require '/var/www
 if [[ "$GTE_v420" = "0" ]]; then COMMAND_PATH="/var/www/supportpal"; else COMMAND_PATH="/var/www/supportpal/app-manager"; fi
 
 echo "Stopping services..."
-docker compose exec supportpal bash -c "
-    sudo find -L /etc/service -maxdepth 1 -mindepth 1 -type d \
+docker compose exec -u root supportpal bash -c "
+    find -L /etc/service -maxdepth 1 -mindepth 1 -type d \
     ! -name 'redis' ! -name '00redis' ! -name 'mysql' ! -name '00mysql' \
     -printf '%f\n' -exec sv stop {} \; $(if [ "$debug" = false ]; then echo '> /dev/null 2>&1'; fi)
   "
