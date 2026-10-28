@@ -83,12 +83,17 @@ fi
 LIVE_MOUNTS="/var/www/supportpal/storage /var/log"
 MYSQL_MOUNT="/var/lib/mysql"
 
+# The MySQL clone plugin refuses to write inside the data directory (which is the whole of the volume at MYSQL_MOUNT),
+# so the database is cloned to a scratch directory in the volume mounted here and copied from there. The logs are
+# never copied by --pre-upgrade, so a directory left behind by an interrupted run cannot end up in a rollback point.
+CLONE_MOUNT="/var/log"
+
 # Volumes created by this script are labelled with the backup timestamp, so that it never removes a volume it did
 # not create and restore.sh can check that a rollback point belongs to the archive being restored.
 VOLUME_LABEL="com.supportpal.backup"
 
 # Sets CONTAINER_IMAGE, SNAPSHOT_VOLUMES (copied while the container is stopped), LIVE_VOLUMES (archived from the
-# running container) and MYSQL_VOLUME.
+# running container), MYSQL_VOLUME and CLONE_VOLUME.
 inspect_container() {
   local container_id name destination
 
@@ -103,6 +108,7 @@ inspect_container() {
   SNAPSHOT_VOLUMES=""
   LIVE_VOLUMES=""
   MYSQL_VOLUME=""
+  CLONE_VOLUME=""
   while read -r name destination; do
     [[ -n "${name}" ]] || continue
     if [[ " ${LIVE_MOUNTS} " == *" ${destination} "* ]]; then
@@ -112,6 +118,8 @@ inspect_container() {
     fi
     if [[ "${destination}" == "${MYSQL_MOUNT}" ]]; then
       MYSQL_VOLUME="${name}"
+    elif [[ "${destination}" == "${CLONE_MOUNT}" ]]; then
+      CLONE_VOLUME="${name}"
     fi
   done < <(docker inspect --format '{{range .Mounts}}{{if eq .Type "volume"}}{{.Name}} {{.Destination}}{{"\n"}}{{end}}{{end}}' "${container_id}")
 
@@ -156,11 +164,22 @@ copy_volume() {
 clone_database() {
   local target="$1" dir=".clone-${TIMESTAMP}" status=0
 
-  # Remove anything left behind by an interrupted run.
-  docker compose exec -T supportpal bash -c "sudo rm -rf ${MYSQL_MOUNT}/.clone-*" > /dev/null 2>&1 || true
+  if [[ -z "${CLONE_VOLUME}" ]]; then
+    echo "notice: no docker volume is mounted at ${CLONE_MOUNT}, the database will be copied while the container is stopped"
+    return 1
+  fi
+
+  # Remove anything left behind by an interrupted run, then create a directory that MySQL can write to. The clone
+  # plugin creates the target directory itself, so it is given a subdirectory of it.
+  if ! docker compose exec -T supportpal bash -c "
+    sudo rm -rf ${CLONE_MOUNT}/.clone-* && sudo mkdir ${CLONE_MOUNT}/${dir} && sudo chown mysql:mysql ${CLONE_MOUNT}/${dir}
+  " > /dev/null 2>&1; then
+    echo "warning: failed to create ${CLONE_MOUNT}/${dir} in the container, the database will be copied while the container is stopped instead"
+    return 1
+  fi
 
   # The helpdesk's database user holds the BACKUP_ADMIN and CLONE_ADMIN grants. Exits 2 if the plugin is not active.
-  docker compose exec -T -u supportpal supportpal php -- "${MYSQL_MOUNT}/${dir}" <<'PHP' || status=$?
+  docker compose exec -T -u supportpal supportpal php -- "${CLONE_MOUNT}/${dir}/data" <<'PHP' || status=$?
 <?php
 $config = require '/var/www/supportpal/config/production/database.php';
 $connection = $config['connections']['mysql'];
@@ -182,10 +201,10 @@ PHP
     echo "warning: the online database copy failed, the database will be copied while the container is stopped instead"
   else
     echo "Copying the database to ${target}..."
-    copy_volume "${MYSQL_VOLUME}" "${dir}" "${target}" || status=1
+    copy_volume "${CLONE_VOLUME}" "${dir}/data" "${target}" || status=1
   fi
 
-  docker compose exec -T supportpal bash -c "sudo rm -rf ${MYSQL_MOUNT}/${dir}" > /dev/null 2>&1 || true
+  docker compose exec -T supportpal bash -c "sudo rm -rf ${CLONE_MOUNT}/${dir}" > /dev/null 2>&1 || true
   return "${status}"
 }
 
