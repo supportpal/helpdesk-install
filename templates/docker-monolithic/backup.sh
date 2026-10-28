@@ -319,12 +319,45 @@ volume_backup() {
   echo
 }
 
+# Asks before replacing the volume copies from a previous --pre-upgrade run, as they may be the only way to roll
+# back a failed upgrade. Exits unless the answer is Y: when called from upgrade.sh, this stops the upgrade.
+confirm_replace_rollback_point() {
+  local volume label existing=() timestamp=""
+
+  # Volumes without the label were not created by this script; remove_volumes refuses to touch those.
+  for volume in ${SNAPSHOT_VOLUMES}; do
+    label="$(docker volume inspect --format "{{index .Labels \"${VOLUME_LABEL}\"}}" "${volume}_pre_upgrade" 2>/dev/null || true)"
+    if [[ -n "${label}" ]]; then
+      existing+=("${volume}_pre_upgrade")
+      timestamp="${label}"
+    fi
+  done
+  if [[ ${#existing[@]} -eq 0 ]]; then
+    return
+  fi
+
+  echo "A rollback point from ${timestamp} already exists:"
+  echo
+  echo "    ${existing[*]}"
+  echo
+  echo "It will be replaced, after which ${BACKUP_DIR}/pre-upgrade-${timestamp}.tar.gz can no longer be used to roll back."
+  echo "hint: if the previous upgrade failed, roll back to it first (see restore.sh --help) rather than replacing it"
+  echo "Do you want to proceed? [Y/n]"
+  read -r PROCEED
+  if [[ "${PROCEED}" != "Y" ]]; then
+    echo "The existing rollback point has been kept."
+    exit 1
+  fi
+  echo
+}
+
 # Creates a rollback point for an upgrade: the volume copies are kept and only the docker files are archived. The
 # archive holds no application data, so it is named such that restore.sh never selects it by default.
 pre_upgrade_backup() {
   local archive="${ABS_BACKUP_PATH}/pre-upgrade-${TIMESTAMP}.tar.gz" volume manifest_dir
 
   inspect_container
+  confirm_replace_rollback_point
   snapshot_volumes "_pre_upgrade"
 
   # Record which volumes were copied, so that restore.sh can check they are all still present and from this run.
