@@ -5,7 +5,7 @@ usage="Options:
     -h,--help                  Display this help and exit.
     --pre-upgrade              Create a rollback point for an upgrade rather than a full backup: the docker volumes
                                are copied to <volume>_pre_upgrade volumes and only the docker files are archived.
-                               Roll back with: bash restore.sh --file backup/pre-upgrade-<timestamp>.tar.gz
+                               Roll back by passing the archive to restore.sh: --file backup/pre-upgrade-<timestamp>.tar.gz
     --portable                 Use the helpdesk's own backup format (a database dump and the application files),
                                written to backup/app-<timestamp>.tar, rather than copies of the docker volumes,
                                written to backup/volumes-<timestamp>.tar.gz. Slower, but can be restored on any
@@ -64,6 +64,9 @@ execute_command() {
 BACKUP_DIR="backup"
 ABS_BACKUP_PATH="$(pwd)/${BACKUP_DIR}"
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
+
+# The restore.sh that matches this script, for the rollback instructions.
+RESTORE_SCRIPT_URL="https://raw.githubusercontent.com/supportpal/helpdesk-install/6.x/templates/docker-monolithic/restore.sh"
 
 # Make sure that the script is executed in the directory where docker-compose.yml is.
 if ! grep -q "container_name: supportpal" < <(docker compose config 2>/dev/null); then
@@ -364,6 +367,13 @@ abort_volume_backup() {
   remove_volumes "$@"
 }
 
+# Usage: rollback_command <timestamp>
+# Prints the command that rolls back to the rollback point with the given timestamp. restore.sh is fetched from
+# GitHub, as setup.sh does not put it in the installation directory.
+rollback_command() {
+  echo "bash <(curl -fLsS ${RESTORE_SCRIPT_URL}) --file ${BACKUP_DIR}/pre-upgrade-$1.tar.gz"
+}
+
 # Asks before replacing the volume copies from a previous --pre-upgrade run, as they may be the only way to roll
 # back a failed upgrade. Exits unless the answer is Y: when called from upgrade.sh, this stops the upgrade.
 confirm_replace_rollback_point() {
@@ -386,7 +396,8 @@ confirm_replace_rollback_point() {
   echo "    ${existing[*]}"
   echo
   echo "It will be replaced, after which ${BACKUP_DIR}/pre-upgrade-${timestamp}.tar.gz can no longer be used to roll back."
-  echo "hint: if the previous upgrade failed, roll back to it first (see restore.sh --help) rather than replacing it"
+  echo "hint: if the previous upgrade failed, roll back to it first rather than replacing it:"
+  echo "    $(rollback_command "${timestamp}")"
   echo "Do you want to proceed? [Y/n]"
   read -r PROCEED
   if [[ "${PROCEED}" != "Y" ]]; then
@@ -423,7 +434,7 @@ pre_upgrade_backup() {
   echo
   echo "To roll back, run from this directory:"
   echo
-  echo "    bash restore.sh --file ${BACKUP_DIR}/pre-upgrade-${TIMESTAMP}.tar.gz"
+  echo "    $(rollback_command "${TIMESTAMP}")"
   echo
   echo "Once you are satisfied with the upgrade, remove the rollback point to free the disk space:"
   echo
