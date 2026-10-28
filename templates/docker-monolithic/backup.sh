@@ -95,7 +95,7 @@ VOLUME_LABEL="com.supportpal.backup"
 # Sets CONTAINER_IMAGE, SNAPSHOT_VOLUMES (copied while the container is stopped), LIVE_VOLUMES (archived from the
 # running container), MYSQL_VOLUME and CLONE_VOLUME.
 inspect_container() {
-  local container_id name destination
+  local container_id name destination type source cwd
 
   container_id="$(docker compose ps -q supportpal)"
   if [[ -z "${container_id}" ]]; then
@@ -128,6 +128,20 @@ inspect_container() {
     echo "hint: use --portable instead"
     exit 1
   fi
+
+  # Only docker volumes are copied. Bind mounts of paths within the installation directory are archived with the
+  # docker files; warn about any others (for example attachments on a separate disk) rather than skipping silently.
+  cwd="$(realpath "$(pwd)")"
+  while read -r type destination source; do
+    [[ "${type}" == "bind" ]] || continue
+    [[ "${source}" != "${cwd}" && "${source}" != "${cwd}/"* ]] || continue
+    if $pre_upgrade; then
+      echo "warning: ${destination} is bind mounted from ${source} on the host, it will not be copied to the rollback point or restored by a rollback"
+    else
+      echo "warning: ${destination} is bind mounted from ${source} on the host, it will not be included in the backup"
+    fi
+    echo "hint: back up ${source} yourself, this script only copies docker volumes"
+  done < <(docker inspect --format '{{range .Mounts}}{{if ne .Type "volume"}}{{.Type}} {{.Destination}} {{.Source}}{{"\n"}}{{end}}{{end}}' "${container_id}")
 }
 
 # Removes the given volumes if they were created by this script. Refuses to continue if one exists that was not.
