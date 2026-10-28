@@ -289,6 +289,28 @@ select_compressor() {
   fi
 }
 
+# Usage: write_archive <archive> <docker command...>
+# Runs the docker command and streams its output into <archive> through the host compressor, so that nothing is
+# copied to disk first. The command must run tar under "set -o pipefail" and pipe it through "${COMPRESSOR}", so
+# that tar's exit status is the command's. tar exits 1 if a file changes while it is read, which only earns a
+# warning; any other failure exits (the caller's EXIT trap removes the partial archive).
+write_archive() {
+  local archive="$1" status
+  shift
+
+  set +e +o pipefail
+  "$@" | "${HOST_COMPRESSOR}" > "${archive}"
+  status=("${PIPESTATUS[@]}")
+  set -e -o pipefail
+
+  if [[ "${status[0]}" -eq 1 ]]; then
+    echo "warning: some files changed while they were being archived"
+  elif [[ "${status[0]}" -ne 0 || "${status[1]}" -ne 0 ]]; then
+    echo "error: failed to create $(basename "${archive%.part}")"
+    exit 1
+  fi
+}
+
 # Default. Copies the volumes (see snapshot_volumes), then archives the copies and the live volumes while the
 # helpdesk is running. Everything is streamed from one helper container straight into the archive, so the only
 # disk space needed is the volume copies plus the archive itself. The archive is named volumes-<timestamp>.tar.gz,
@@ -299,7 +321,7 @@ select_compressor() {
 #   docker-files/             the current working directory
 #   volumes/<volume name>/    the contents of each docker volume
 volume_backup() {
-  local archive="${ABS_BACKUP_PATH}/volumes-${TIMESTAMP}.tar.gz" volume manifest mounts=() copies=() status
+  local archive="${ABS_BACKUP_PATH}/volumes-${TIMESTAMP}.tar.gz" volume manifest mounts=() copies=()
 
   inspect_container
   select_compressor
@@ -324,10 +346,9 @@ volume_backup() {
 
   echo "Archiving to ${archive}, this may take a while..."
 
-  # tar exits 1 if a live volume changes while it is read, which is harmless here (attachments added or removed
-  # after the database was copied). pipefail inside the container makes tar's status the container's.
-  set +e +o pipefail
-  docker run --rm --init -u root --entrypoint bash \
+  # A live volume changing while it is read (attachments added or removed after the database was copied) is harmless.
+  # shellcheck disable=SC2016
+  write_archive "${archive}.part" docker run --rm --init -u root --entrypoint bash \
     -e MANIFEST="${manifest}" \
     -e BACKUP_DIR="${BACKUP_DIR}" \
     -e COMPRESSOR="${CONTAINER_COMPRESSOR}" \
@@ -337,16 +358,7 @@ volume_backup() {
       set -o pipefail
       printf "%s" "${MANIFEST}" > /manifest.txt
       tar -C / --anchored --exclude="docker-files/${BACKUP_DIR}" -cf - manifest.txt docker-files volumes | "${COMPRESSOR}"
-    ' | "${HOST_COMPRESSOR}" > "${archive}.part"
-  status=("${PIPESTATUS[@]}")
-  set -e -o pipefail
-
-  if [[ "${status[0]}" -eq 1 ]]; then
-    echo "warning: some files changed while they were being archived"
-  elif [[ "${status[0]}" -ne 0 || "${status[1]}" -ne 0 ]]; then
-    echo "error: failed to create the backup"
-    exit 1
-  fi
+    '
 
   trap - EXIT INT TERM HUP
 
@@ -458,28 +470,16 @@ start_services() {
 }
 
 # Usage: archive_from_container <archive> <tar arguments...>
-# Runs tar inside the container with the given arguments and streams its output into <archive>, compressed with
-# pigz where available, so that nothing is copied to disk first. Prints a warning if files changed while they were
-# being archived and exits on any other failure.
+# Runs tar inside the container with the given arguments and streams its output into <archive> (see write_archive).
 archive_from_container() {
-  local archive="$1" status
+  local archive="$1"
   shift
 
-  # tar exits 1 if a file changes while it is read. pipefail inside the container makes tar's status the exec's.
-  set +e +o pipefail
-  docker compose exec -T -u root -e COMPRESSOR="${CONTAINER_COMPRESSOR}" supportpal bash -c '
+  # shellcheck disable=SC2016
+  write_archive "${archive}" docker compose exec -T -u root -e COMPRESSOR="${CONTAINER_COMPRESSOR}" supportpal bash -c '
     set -o pipefail
     tar "$@" | "${COMPRESSOR}"
-  ' bash "$@" | "${HOST_COMPRESSOR}" > "${archive}"
-  status=("${PIPESTATUS[@]}")
-  set -e -o pipefail
-
-  if [[ "${status[0]}" -eq 1 ]]; then
-    echo "warning: some files changed while they were being archived"
-  elif [[ "${status[0]}" -ne 0 || "${status[1]}" -ne 0 ]]; then
-    echo "error: failed to create $(basename "${archive}")"
-    exit 1
-  fi
+  ' bash "$@"
 }
 
 # Usage: abort_portable_backup <tmp dir> <archive>
