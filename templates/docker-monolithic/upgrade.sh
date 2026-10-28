@@ -156,9 +156,9 @@ backup() {
     fi
 
     echo
-    echo "It is recommended to take a backup before upgrading, which may take some time. If you have already taken a"
-    echo "backup you can skip this step."
-    echo "Do you want to take a backup? [Y/n]"
+    echo "It is recommended to create a rollback point before upgrading: the docker volumes are copied, so that the"
+    echo "upgrade can be undone if it fails. This is faster than a full backup but is not a substitute for one."
+    echo "Do you want to create a rollback point? [Y/n]"
     read -r PROCEED
     if [ "${PROCEED}" == "n" ] ; then
         return
