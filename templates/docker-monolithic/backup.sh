@@ -408,7 +408,7 @@ confirm_replace_rollback_point() {
   echo
   echo "    ${existing[*]}"
   echo
-  echo "It will be replaced, after which ${BACKUP_DIR}/pre-upgrade-${timestamp}.tar.gz can no longer be used to roll back."
+  echo "It will be replaced, and ${BACKUP_DIR}/pre-upgrade-${timestamp}.tar.gz removed, as it cannot be used to roll back without them."
   echo "hint: if the previous upgrade failed, roll back to it first rather than replacing it:"
   echo "    $(rollback_command "${timestamp}")"
   echo "Do you want to proceed? [Y/n]"
@@ -418,6 +418,8 @@ confirm_replace_rollback_point() {
     exit 1
   fi
   echo
+
+  rm -f "${ABS_BACKUP_PATH}/pre-upgrade-${timestamp}.tar.gz"
 }
 
 # Creates a rollback point for an upgrade: the volume copies are kept and only the docker files are archived. The
