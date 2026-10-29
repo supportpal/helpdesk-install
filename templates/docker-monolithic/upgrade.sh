@@ -177,10 +177,11 @@ backup() {
 # Label that backup.sh puts on the volumes it creates, so that only those are ever suggested for removal.
 VOLUME_LABEL="com.supportpal.backup"
 
+# Usage: volume_clone_notice [when]
 # The volume copies and archive made by backup.sh --pre-upgrade are kept as a rollback point; remind the user to
-# remove them.
+# remove them. <when> says at what point it is safe to do so, by default once the upgrade has been verified.
 volume_clone_notice() {
-    local clones archive
+    local when="${1:-Once you have verified the upgrade}" clones archive
 
     clones="$(docker volume ls -q --filter "label=${VOLUME_LABEL}" --filter 'name=_pre_upgrade' 2>>"$LOG_FILE" | { grep -E '_pre_upgrade$' || true; } | tr '\n' ' ')"
     if [ -z "${clones}" ]; then
@@ -191,8 +192,7 @@ volume_clone_notice() {
     archive="$(find backup -maxdepth 1 -name 'pre-upgrade-*.tar.gz' 2>/dev/null | sort | tail -n1)"
 
     echo
-    echo "Copies of the docker volumes were kept as a rollback point. Once you have verified the upgrade, remove the"
-    echo "rollback point to free the disk space:"
+    echo "Copies of the docker volumes were kept as a rollback point. ${when}, remove it to free the disk space:"
     echo
     echo "    docker volume rm ${clones}"
     if [ -n "${archive}" ]; then
@@ -483,8 +483,9 @@ upgrade() {
             echo "The Meilisearch database will be dropped and re-indexed."
             echo "Do you want to proceed? [Y/n]"
             read -r PROCEED
-            if [ "${PROCEED}" == "n" ]; then
-                echo "Meilisearch upgrade cancelled."
+            if [[ "${PROCEED}" =~ ^[nN]$ ]]; then
+                echo "Upgrade cancelled, nothing has been changed."
+                volume_clone_notice "If you do not intend to retry the upgrade"
                 exit 0
             fi
         fi
