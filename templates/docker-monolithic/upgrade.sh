@@ -234,18 +234,8 @@ update_env() {
 }
 
 drop_meilisearch_data() {
-    echo "Preparing Meilisearch for upgrade..."
-
-    # Stop Meilisearch service
-    echo "Stopping Meilisearch service..."
-    if ! docker compose exec -u root supportpal sv stop 00meilisearch; then
-        error_exit "failed to stop the Meilisearch service"
-    fi
-    echo "Meilisearch service stopped"
-
-    # Clear Meilisearch database directory (including hidden files)
     echo "Clearing Meilisearch database directory..."
-    if ! docker compose exec -u root supportpal bash -c 'rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
+    if ! docker compose run --rm --no-deps -u root --entrypoint bash supportpal -c 'rm -rf "${MEILI_DB_PATH:?}"/* "${MEILI_DB_PATH:?}"/.[!.]*'; then
         error_exit "failed to clear the Meilisearch database directory"
     fi
     echo "Meilisearch database directory cleared"
@@ -474,6 +464,7 @@ upgrade() {
     echo "Target Meilisearch version: ${next_meili_version}"
 
     # Check if dump is required
+    local drop_meili=false
     if meili_requires_upgrade "$current_meili_version" "$next_meili_version"; then
         echo "Meilisearch upgrade is required."
 
@@ -490,13 +481,17 @@ upgrade() {
             fi
         fi
 
-        drop_meilisearch_data
+        drop_meili=true
     fi
 
     echo "Stopping containers..."
     if ! docker compose down -v; then
         log_debug "Check docker compose status and try manually: docker compose down -v"
         error_exit "failed to stop the containers"
+    fi
+
+    if [ "${drop_meili}" = true ]; then
+        drop_meilisearch_data
     fi
 
     echo "Updating volumes..."
