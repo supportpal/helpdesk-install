@@ -10,7 +10,7 @@ usage="Options:
                                written to backup/app-<timestamp>.tar, rather than copies of the docker volumes,
                                written to backup/volumes-<timestamp>.tar.gz. Slower, but can be restored on any
                                deployment type or MySQL version.
-    --online                   Do not stop the services. Implies --portable.
+    --online                   Do not stop the helpdesk.
     --debug                    Enable verbose output.
 "
 
@@ -43,12 +43,6 @@ fi
 if $pre_upgrade && { $portable || $online; }; then
   echo "error: --pre-upgrade cannot be combined with --portable or --online"
   exit 1
-fi
-
-if $online && ! $portable; then
-  echo "notice: --online implies --portable, as the docker volumes can only be copied while the container is stopped"
-  echo
-  portable=true
 fi
 
 execute_command() {
@@ -88,9 +82,9 @@ LIVE_MOUNTS="/var/www/supportpal/storage /var/log"
 MYSQL_MOUNT="/var/lib/mysql"
 
 # The MySQL clone plugin refuses to write inside the data directory (which is the whole of the volume at MYSQL_MOUNT),
-# so the database is cloned to a scratch directory in the volume mounted here and copied from there. The logs are
-# never copied by --pre-upgrade, so a directory left behind by an interrupted run cannot end up in a rollback point.
+# so --online clones the database to a scratch directory in the volume mounted here and archives it from there.
 CLONE_MOUNT="/var/log"
+CLONE_DIR=".clone-${TIMESTAMP}"
 
 # Volumes created by this script are labelled with the backup timestamp, so that it never removes a volume it did
 # not create and restore.sh can check that a rollback point belongs to the archive being restored.
@@ -177,28 +171,25 @@ copy_volume() {
     "${CONTAINER_IMAGE}" -a --reflink=auto "/from/${path}/." /to/
 }
 
-# Copies the database to the given volume while MySQL keeps running, using the MySQL clone plugin (bundled with
-# the helpdesk image from SupportPal 6.2.0). Returns non-zero if the plugin is unavailable or the clone fails.
+# Clones the database to CLONE_MOUNT/CLONE_DIR/data while MySQL keeps running, using the MySQL clone plugin (bundled
+# with the helpdesk image from SupportPal 6.2.0).
 clone_database() {
-  local target="$1" dir=".clone-${TIMESTAMP}" status=0
+  local status=0
 
   if [[ -z "${CLONE_VOLUME}" ]]; then
-    echo "notice: no docker volume is mounted at ${CLONE_MOUNT}, the database will be copied while the container is stopped"
-    return 1
+    echo "error: --online requires a docker volume mounted at ${CLONE_MOUNT} to clone the database to"
+    exit 1
   fi
 
   # Remove anything left behind by an interrupted run, then create a directory that MySQL can write to. The clone
   # plugin creates the target directory itself, so it is given a subdirectory of it.
-  if ! docker compose exec -T -u root supportpal bash -c "
-    rm -rf ${CLONE_MOUNT}/.clone-* && mkdir ${CLONE_MOUNT}/${dir} && chown mysql:mysql ${CLONE_MOUNT}/${dir}
-  " > /dev/null 2>&1; then
-    echo "warning: failed to create ${CLONE_MOUNT}/${dir} in the container, the database will be copied while the container is stopped instead"
-    return 1
-  fi
+  docker compose exec -T -u root supportpal bash -c "
+    rm -rf ${CLONE_MOUNT}/.clone-* && mkdir ${CLONE_MOUNT}/${CLONE_DIR} && chown mysql:mysql ${CLONE_MOUNT}/${CLONE_DIR}
+  "
 
   # The helpdesk's database user holds the BACKUP_ADMIN and CLONE_ADMIN grants. Exits 2 if the plugin is not active.
   docker compose exec -T -u supportpal supportpal php -d opcache.enable_cli=0 -d display_errors=stderr -- \
-    "${CLONE_MOUNT}/${dir}/data" <<'PHP' || status=$?
+    "${CLONE_MOUNT}/${CLONE_DIR}/data" <<'PHP' || status=$?
 <?php
 $config = require '/var/www/supportpal/config/production/database.php';
 $connection = $config['connections']['mysql'];
@@ -210,21 +201,23 @@ if ($pdo->query("SELECT plugin_status FROM information_schema.plugins WHERE plug
     exit(2);
 }
 
-echo "Copying the database online using the MySQL clone plugin...\n";
+echo "Copying the database using the MySQL clone plugin...\n";
 $pdo->exec('CLONE LOCAL DATA DIRECTORY = ' . $pdo->quote($argv[1]));
 PHP
 
-  if [[ "${status}" -eq 2 ]]; then
-    echo "The MySQL clone plugin is not available (SupportPal 6.2.0 or later), the database will be copied while the container is stopped."
-  elif [[ "${status}" -ne 0 ]]; then
-    echo "warning: the online database copy failed, the database will be copied while the container is stopped instead"
-  else
-    echo "Copying the database to ${target}..."
-    copy_volume "${CLONE_VOLUME}" "${dir}/data" "${target}" || status=1
+  if [[ "${status}" -ne 0 ]]; then
+    if [[ "${status}" -eq 2 ]]; then
+      echo "error: --online requires the MySQL clone plugin (SupportPal 6.2.0 or later)"
+    else
+      echo "error: failed to clone the database"
+    fi
+    echo "hint: run the backup without --online, or with --portable"
+    exit 1
   fi
+}
 
-  docker compose exec -T -u root supportpal bash -c "rm -rf ${CLONE_MOUNT}/${dir}" > /dev/null 2>&1 || true
-  return "${status}"
+remove_clone() {
+  docker compose exec -T -u root supportpal bash -c "rm -rf ${CLONE_MOUNT}/${CLONE_DIR}" > /dev/null 2>&1 || true
 }
 
 # Usage: abort_snapshot <volumes...>
@@ -238,21 +231,17 @@ abort_snapshot() {
   remove_volumes "$@"
 }
 
-# Copies each of SNAPSHOT_VOLUMES to <volume><suffix>. The database is copied online where possible; everything
-# else is copied while the container is stopped, so that it is consistent on disk. The copies are plain copies on
-# the host filesystem (reflink copies where the filesystem supports it).
+# Usage: snapshot_volumes <suffix>
+# Copies each of SNAPSHOT_VOLUMES to <volume><suffix> while the container is stopped (reflink copies where the
+# filesystem supports it).
 snapshot_volumes() {
-  local suffix="$1" volume skip="" targets=()
+  local suffix="$1" volume targets=()
 
   # Replace the copies from a previous run before touching the container.
   for volume in ${SNAPSHOT_VOLUMES}; do
     targets+=("${volume}${suffix}")
   done
   remove_volumes "${targets[@]}"
-
-  if [[ -n "${MYSQL_VOLUME}" && "${MYSQL_ENABLED}" = "1" ]] && clone_database "${MYSQL_VOLUME}${suffix}"; then
-    skip="${MYSQL_VOLUME}"
-  fi
 
   echo "Stopping container..."
   execute_command "docker compose stop"
@@ -264,7 +253,6 @@ snapshot_volumes() {
   trap 'exit 1' INT TERM HUP
 
   for volume in ${SNAPSHOT_VOLUMES}; do
-    [[ "${volume}" != "${skip}" ]] || continue
     echo "Copying ${volume} to ${volume}${suffix}..."
     copy_volume "${volume}" "." "${volume}${suffix}"
   done
@@ -313,7 +301,8 @@ write_archive() {
 }
 
 # Default. Copies the volumes (see snapshot_volumes), then archives the copies and the live volumes while the
-# helpdesk is running. Everything is streamed from one helper container straight into the archive, so the only
+# helpdesk is running. With --online nothing is copied: every volume is archived from the running container, with
+# the database taken from a clone. Everything is streamed from one helper container straight into the archive, so the only
 # disk space needed is the volume copies plus the archive itself. The archive is named volumes-<timestamp>.tar.gz,
 # so that readers of the helpdesk's own app-* format (app:restore, older restore scripts) never select it.
 #
@@ -322,17 +311,38 @@ write_archive() {
 #   docker-files/             the current working directory
 #   volumes/<volume name>/    the contents of each docker volume
 volume_backup() {
-  local archive="${ABS_BACKUP_PATH}/volumes-${TIMESTAMP}.tar.gz" volume manifest mounts=() copies=()
+  local archive="${ABS_BACKUP_PATH}/volumes-${TIMESTAMP}.tar.gz" volume manifest mounts=() copies=() cloned=""
+  local tar_args=(-C / --anchored --exclude="docker-files/${BACKUP_DIR}") members=(manifest.txt docker-files volumes)
 
   inspect_container
   select_compressor
-  snapshot_volumes "_backup"
+
+  if ! $online; then
+    snapshot_volumes "_backup"
+  else
+    # Remove the database clone if the backup fails or is interrupted.
+    # shellcheck disable=SC2064
+    trap "abort_volume_backup '${archive}.part'" EXIT
+    trap 'exit 1' INT TERM HUP
+
+    # The clone is archived as the contents of the MySQL volume, which is not read at all.
+    if [[ -n "${MYSQL_VOLUME}" && "${MYSQL_ENABLED}" = "1" ]]; then
+      clone_database
+      cloned="${MYSQL_VOLUME}"
+      tar_args+=(--exclude="volumes/${CLONE_VOLUME}/.clone-*" --transform "s,^data,volumes/${MYSQL_VOLUME},S")
+      members+=(-C "/volumes/${CLONE_VOLUME}/${CLONE_DIR}" data)
+    fi
+  fi
 
   manifest="format 1"$'\n'"image ${CONTAINER_IMAGE}"$'\n'
   for volume in ${SNAPSHOT_VOLUMES}; do
     manifest+="volume ${volume}"$'\n'
-    mounts+=(-v "${volume}_backup:/volumes/${volume}:ro")
-    copies+=("${volume}_backup")
+    if ! $online; then
+      mounts+=(-v "${volume}_backup:/volumes/${volume}:ro")
+      copies+=("${volume}_backup")
+    elif [[ "${volume}" != "${cloned}" ]]; then
+      mounts+=(-v "${volume}:/volumes/${volume}:ro")
+    fi
   done
   for volume in ${LIVE_VOLUMES}; do
     manifest+="volume ${volume}"$'\n'
@@ -342,7 +352,7 @@ volume_backup() {
   # The archive is written under a temporary name and only renamed once it is complete, so that restore.sh never
   # selects a truncated one. Remove it and the volume copies if archiving fails or is interrupted.
   # shellcheck disable=SC2064
-  trap "abort_volume_backup '${archive}.part' ${copies[*]}" EXIT
+  trap "abort_volume_backup '${archive}.part' ${copies[*]-}" EXIT
   trap 'exit 1' INT TERM HUP
 
   echo "Archiving to ${archive}, this may take a while..."
@@ -351,19 +361,21 @@ volume_backup() {
   # shellcheck disable=SC2016
   write_archive "${archive}.part" docker run --rm --init -u root --entrypoint bash \
     -e MANIFEST="${manifest}" \
-    -e BACKUP_DIR="${BACKUP_DIR}" \
     -e COMPRESSOR="${CONTAINER_COMPRESSOR}" \
     -v "$(pwd):/docker-files:ro" \
     "${mounts[@]}" \
     "${CONTAINER_IMAGE}" -c '
       set -o pipefail
       printf "%s" "${MANIFEST}" > /manifest.txt
-      tar -C / --anchored --exclude="docker-files/${BACKUP_DIR}" -cf - manifest.txt docker-files volumes | "${COMPRESSOR}"
-    '
+      tar "$@" | "${COMPRESSOR}"
+    ' bash "${tar_args[@]}" -cf - "${members[@]}"
 
   trap - EXIT INT TERM HUP
 
-  remove_volumes "${copies[@]}"
+  if $online; then
+    remove_clone
+  fi
+  remove_volumes ${copies[@]+"${copies[@]}"}
   mv "${archive}.part" "${archive}"
 
   echo "Backup created successfully at ${archive}"
@@ -377,6 +389,9 @@ abort_volume_backup() {
   echo "Removing temporary files..."
   rm -f "$1"
   shift
+  if $online; then
+    remove_clone
+  fi
   remove_volumes "$@"
 }
 
